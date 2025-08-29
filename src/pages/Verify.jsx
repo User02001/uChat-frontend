@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './Login.css';
+import { API_BASE_URL } from '../config';
 
 const Verify = () => {
  const lottieRef = useRef(null);
@@ -93,7 +94,7 @@ const Verify = () => {
   }
 
   try {
-   const response = await fetch('http://localhost:5000/api/verify', {
+   const response = await fetch(`${API_BASE_URL}/api/verify`, {
     method: 'POST',
     headers: {
      'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ const Verify = () => {
   setSuccess('');
 
   try {
-   const response = await fetch('http://localhost:5000/api/resend-verification', {
+   const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
     method: 'POST',
     headers: {
      'Content-Type': 'application/json',

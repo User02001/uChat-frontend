@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import { API_BASE_URL } from '../config';
 
 const Login = () => {
  const lottieRef = useRef(null);
@@ -71,7 +72,7 @@ const Login = () => {
  };
 
  const handleGoogleLogin = () => {
-  window.location.href = 'http://localhost:5000/api/auth/google';
+  window.location.href = `${API_BASE_URL}/api/auth/google`;
  };
 
  const handleEmailLogin = async (e) => {
@@ -80,7 +81,7 @@ const Login = () => {
   setError('');
 
   try {
-   const response = await fetch('http://localhost:5000/api/login', {
+   const response = await fetch(`${API_BASE_URL}/api/login`, {
     method: 'POST',
     headers: {
      'Content-Type': 'application/json',

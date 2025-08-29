@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
+import { API_BASE_URL, SOCKET_URL } from './config';
 
 const App = () => {
  const navigate = useNavigate();
@@ -80,7 +81,7 @@ const App = () => {
 
  const checkAuth = async () => {
   try {
-   const response = await fetch('http://localhost:5000/api/me', {
+   const response = await fetch(`${API_BASE_URL}/api/me`, {
     credentials: 'include'
    });
 
@@ -119,7 +120,7 @@ const App = () => {
 
  const initializeSocket = () => {
   // Real Socket.IO connection
-  socketRef.current = io('http://localhost:5000', {
+  socketRef.current = io(SOCKET_URL, {
    withCredentials: true,
    transports: ['websocket', 'polling']
   });
@@ -205,7 +206,7 @@ const App = () => {
 
  const loadContacts = async () => {
   try {
-   const response = await fetch('http://localhost:5000/api/contacts', {
+   const response = await fetch(`${API_BASE_URL}/api/contacts`, {
     credentials: 'include'
    });
 
@@ -223,7 +224,7 @@ const App = () => {
 
  const loadMessages = async (contactId) => {
   try {
-   const response = await fetch(`http://localhost:5000/api/messages/${contactId}`, {
+   const response = await fetch(`${API_BASE_URL}/api/messages/${contactId}`, {
     credentials: 'include'
    });
 
@@ -245,7 +246,7 @@ const App = () => {
   }
 
   try {
-   const response = await fetch(`http://localhost:5000/api/search_users?q=${encodeURIComponent(query)}`, {
+   const response = await fetch(`${API_BASE_URL}/api/search_users?q=${encodeURIComponent(query)}`, {
     credentials: 'include'
    });
 
@@ -262,7 +263,7 @@ const App = () => {
 
  const addContact = async (userId) => {
   try {
-   const response = await fetch(`http://localhost:5000/api/add_contact/${userId}`, {
+   const response = await fetch(`${API_BASE_URL}/api/add_contact/${userId}`, {
     method: 'POST',
     credentials: 'include'
    });
@@ -371,7 +372,7 @@ const App = () => {
 
  const handleLogout = async () => {
   try {
-   await fetch('http://localhost:5000/api/logout', {
+   await fetch(`${API_BASE_URL}/api/logout`, {
     method: 'POST',
     credentials: 'include'
    });
