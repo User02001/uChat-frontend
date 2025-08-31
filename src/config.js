@@ -4,8 +4,8 @@ const config = {
   SOCKET_URL: 'http://localhost:5000'
  },
  production: {
-  API_BASE_URL: 'http://uchat.ddns.net',
-  SOCKET_URL: 'http://uchat.ddns.net'
+  API_BASE_URL: 'https://c775385d43a8.ngrok-free.app',
+  SOCKET_URL: 'https://c775385d43a8.ngrok-free.app'
  }
 };
 
