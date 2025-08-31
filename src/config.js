@@ -4,8 +4,8 @@ const config = {
   SOCKET_URL: 'http://localhost:5000'
  },
  production: {
-  API_BASE_URL: 'https://c775385d43a8.ngrok-free.app',
-  SOCKET_URL: 'https://c775385d43a8.ngrok-free.app'
+  API_BASE_URL: 'https://bd88bbedf4d0.ngrok-free.app',
+  SOCKET_URL: 'https://bd88bbedf4d0.ngrok-free.app'
  }
 };
 
