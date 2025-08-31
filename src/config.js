@@ -1,11 +1,11 @@
 const config = {
  development: {
-  API_BASE_URL: 'http://localhost:5000',
-  SOCKET_URL: 'http://localhost:5000'
+  API_BASE_URL: 'http://localhost:5001',
+  SOCKET_URL: 'http://localhost:5001'
  },
  production: {
-  API_BASE_URL: 'https://pathology-dover-travelers-equilibrium.trycloudflare.com',
-  SOCKET_URL: 'https://pathology-dover-travelers-equilibrium.trycloudflare.com'
+  API_BASE_URL: 'https://gregory-m-rpm-termination.trycloudflare.com',
+  SOCKET_URL: 'https://gregory-m-rpm-termination.trycloudflare.com'
  }
 };
 
