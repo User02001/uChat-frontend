@@ -4,8 +4,8 @@ const config = {
   SOCKET_URL: 'http://localhost:5000'
  },
  production: {
-  API_BASE_URL: 'https://server-uchat.ufonic.xyz',
-  SOCKET_URL: 'https://server-uchat.ufonic.xyz'
+  API_BASE_URL: 'http://uchat.ddns.net',
+  SOCKET_URL: 'http://uchat.ddns.net'
  }
 };
 
