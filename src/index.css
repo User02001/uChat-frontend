@@ -207,6 +207,75 @@ body, html {
     z-index: 5;
 }
 
+.mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-search-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+    .mobile-search-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        transform: scale(1.05);
+    }
+
+    .mobile-search-btn:active {
+        transform: scale(0.95);
+    }
+
+.mobile-search-section {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 70px;
+    z-index: 4;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-search-section .search-input-container {
+    margin-bottom: 16px;
+}
+
+.mobile-search-section .search-results {
+    position: static;
+    margin-top: 0;
+    border-radius: 8px;
+    box-shadow: none;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    animation: none;
+    opacity: 1;
+    transform: none;
+}
+
 .mobile-logo {
     display: flex;
     align-items: center;

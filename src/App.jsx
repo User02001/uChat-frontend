@@ -47,7 +47,7 @@ const App = () => {
    if (showUserMenu && !event.target.closest('.user-profile')) {
     setShowUserMenu(false);
    }
-   if (showSearch && !event.target.closest('.search-section')) {
+   if (showSearch && !event.target.closest('.search-section') && !event.target.closest('.mobile-search-section')) {
     setShowSearch(false);
     setSearchQuery('');
     setSearchResults([]);
@@ -533,18 +533,77 @@ const App = () => {
       <img src="/resources/main-logo.svg" alt="uChat" width="32" height="32" />
       <span className="mobile-logo-text">uChat</span>
      </div>
-     <img
-      src="/resources/default_avatar.png"
-      alt="Profile"
-      className="mobile-avatar"
-      onClick={() => setShowUserMenu(!showUserMenu)}
-     />
-     {showUserMenu && (
-      <div className="user-menu" style={{ top: '60px', right: '20px' }}>
-       <button onClick={handleLogout}>Logout</button>
-      </div>
-     )}
+     <div className="mobile-header-actions">
+      <button
+       className="mobile-search-btn"
+       onClick={() => setShowSearch(!showSearch)}
+       title="Search users"
+      >
+       <i className="fas fa-search"></i>
+      </button>
+      <img
+       src="/resources/default_avatar.png"
+       alt="Profile"
+       className="mobile-avatar"
+       onClick={() => setShowUserMenu(!showUserMenu)}
+      />
+      {showUserMenu && (
+       <div className="user-menu" style={{ top: '60px', right: '20px' }}>
+        <button onClick={handleLogout}>Logout</button>
+       </div>
+      )}
+     </div>
     </div>
+
+    {/* Mobile Search Section */}
+    {showSearch && (
+     <div className="mobile-search-section">
+      <div className="search-input-container">
+       <input
+        type="text"
+        placeholder="Search users..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="search-input"
+        autoFocus
+       />
+       <button
+        className="search-close"
+        onClick={() => {
+         setShowSearch(false);
+         setSearchQuery('');
+         setSearchResults([]);
+        }}
+       >
+        ×
+       </button>
+      </div>
+
+      {searchResults.length > 0 && (
+       <div className="search-results">
+        {searchResults.map(result => (
+         <div key={result.id} className="search-result">
+          <img
+           src="/resources/default_avatar.png"
+           alt={result.username}
+           className="search-avatar"
+          />
+          <div className="search-user-info">
+           <span className="search-username">{result.username}</span>
+           <span className="search-handle">@{result.handle}</span>
+          </div>
+          <button
+           className="add-contact-btn"
+           onClick={() => addContact(result.id)}
+          >
+           Add
+          </button>
+         </div>
+        ))}
+       </div>
+      )}
+     </div>
+    )}
 
     <div className="contacts-list">
      <h3>Contacts</h3>

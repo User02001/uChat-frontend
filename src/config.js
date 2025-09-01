@@ -1,11 +1,11 @@
 const config = {
  development: {
-  API_BASE_URL: 'http://localhost:5001',
-  SOCKET_URL: 'http://localhost:5001'
+  API_BASE_URL: 'https://tooth-procurement-scholarships-dictionary.trycloudflare.com',
+  SOCKET_URL: 'https://tooth-procurement-scholarships-dictionary.trycloudflare.com'
  },
  production: {
-  API_BASE_URL: 'https://gregory-m-rpm-termination.trycloudflare.com',
-  SOCKET_URL: 'https://gregory-m-rpm-termination.trycloudflare.com'
+  API_BASE_URL: 'https://tooth-procurement-scholarships-dictionary.trycloudflare.com',
+  SOCKET_URL: 'https://tooth-procurement-scholarships-dictionary.trycloudflare.com'
  }
 };
 
