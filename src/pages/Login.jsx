@@ -165,7 +165,9 @@ const Login = () => {
    const data = await response.json();
 
    if (response.ok) {
-    navigate('/chat', { state: { user: data.user } });
+    // Login successful
+    localStorage.setItem('user', JSON.stringify(data.user));
+    navigate('/chat');
    } else {
     setError(data.error || 'Login failed');
    }

@@ -67,12 +67,7 @@ const App = () => {
 
  // Authentication check and initialization
  useEffect(() => {
-  // Don't check auth immediately, let the login flow complete first
-  const timer = setTimeout(() => {
-   checkAuth();
-  }, 100); // Small delay to let session establish
-
-  return () => clearTimeout(timer);
+  checkAuth();
  }, []);
 
  useEffect(() => {
