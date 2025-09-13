@@ -157,9 +157,9 @@ const Verify = () => {
     <div className="login-header">
      <div ref={lottieRef} className="logo-animation"></div>
      <h1>Verify Your Email</h1>
-     <p>We've sent a 7-digit code to <strong>{email}</strong></p>
+     <p>We've sent a 7-digit code to <strong>{email}</strong> in order to verify that you own this email.</p>
      <p className="helper-text">
-      Check your spam folder if you don't see it in your inbox
+      Check your spam folder if you don't see it in your inbox.
      </p>
     </div>
 

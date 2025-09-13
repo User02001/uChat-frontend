@@ -7,4 +7,8 @@ export default defineConfig({
  build: {
   outDir: 'dist-obfuscated',
  },
+ server: {
+  host: '0.0.0.0', // listen on all addresses
+  port: 5173,      // you can change this if needed
+ },
 })

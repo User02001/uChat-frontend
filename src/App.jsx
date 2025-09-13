@@ -22,6 +22,7 @@ const App = () => {
  const [typingUsers, setTypingUsers] = useState(new Set());
  const [error, setError] = useState('');
  const [showUserMenu, setShowUserMenu] = useState(false);
+ const [showMobileSearch, setShowMobileSearch] = useState(false);
 
  // Mobile responsiveness state
  const [isMobile, setIsMobile] = useState(false);
@@ -44,11 +45,17 @@ const App = () => {
  // Close user menu when clicking outside
  useEffect(() => {
   const handleClickOutside = (event) => {
-   if (showUserMenu && !event.target.closest('.user-profile')) {
+   if (showUserMenu && !event.target.closest('.user-profile') && !event.target.closest('.mobile-avatar')) {
     setShowUserMenu(false);
    }
-   if (showSearch && !event.target.closest('.search-section') && !event.target.closest('.mobile-search-section')) {
+   if (showMobileSearch && !event.target.closest('.mobile-search-container')) {
+    setShowMobileSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+   }
+   if (showSearch && !event.target.closest('.search-section')) {
     setShowSearch(false);
+    setShowMobileSearch(false);
     setSearchQuery('');
     setSearchResults([]);
    }
@@ -60,7 +67,12 @@ const App = () => {
 
  // Authentication check and initialization
  useEffect(() => {
-  checkAuth();
+  // Don't check auth immediately, let the login flow complete first
+  const timer = setTimeout(() => {
+   checkAuth();
+  }, 100); // Small delay to let session establish
+
+  return () => clearTimeout(timer);
  }, []);
 
  useEffect(() => {
@@ -530,74 +542,53 @@ const App = () => {
     {/* Mobile header */}
     <div className="mobile-header">
      <div className="mobile-logo">
-      <img src="/resources/main-logo.svg" alt="uChat" width="32" height="32" />
       <span className="mobile-logo-text">uChat</span>
      </div>
      <div className="mobile-header-actions">
-      <button
-       className="mobile-search-btn"
-       onClick={() => setShowSearch(!showSearch)}
-       title="Search users"
-      >
-       <i className="fas fa-search"></i>
-      </button>
-      <img
-       src="/resources/default_avatar.png"
-       alt="Profile"
-       className="mobile-avatar"
-       onClick={() => setShowUserMenu(!showUserMenu)}
-      />
-      {showUserMenu && (
-       <div className="user-menu" style={{ top: '60px', right: '20px' }}>
-        <button onClick={handleLogout}>Logout</button>
-       </div>
-      )}
+      <img src="/resources/default_avatar.png" alt="Profile" className="mobile-avatar" onClick={() => setShowUserMenu(!showUserMenu)} />
      </div>
+     {showUserMenu && (
+      <div className="user-menu mobile-user-menu">
+       <button onClick={handleLogout}>Logout</button>
+      </div>
+     )}
     </div>
 
-    {/* Mobile Search Section */}
-    {showSearch && (
-     <div className="mobile-search-section">
-      <div className="search-input-container">
-       <input
-        type="text"
-        placeholder="Search users..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="search-input"
-        autoFocus
-       />
-       <button
-        className="search-close"
-        onClick={() => {
-         setShowSearch(false);
-         setSearchQuery('');
-         setSearchResults([]);
-        }}
-       >
-        ×
-       </button>
-      </div>
+    <div style={{ padding: '4px 16px', background: 'var(--bg-secondary)' }}>
+     <input
+      type="text"
+      placeholder="Search..."
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      onFocus={() => setShowSearch(true)}
+      style={{
+       width: '100%',
+       padding: '8px 16px',
+       borderRadius: '20px',
+       border: '1px solid var(--border)',
+       background: 'var(--bg-tertiary)',
+       fontSize: '14px',
+       color: 'var(--text-primary)'
+      }}
+     />
+    </div>
 
+    {showMobileSearch && (
+     <div className="mobile-search-container">
+      <div className="search-input-container">
+       <input type="text" placeholder="Search users..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="search-input" autoFocus />
+       <button className="search-close" onClick={() => { setShowMobileSearch(false); setSearchQuery(''); setSearchResults([]); }}>×</button>
+      </div>
       {searchResults.length > 0 && (
        <div className="search-results">
         {searchResults.map(result => (
          <div key={result.id} className="search-result">
-          <img
-           src="/resources/default_avatar.png"
-           alt={result.username}
-           className="search-avatar"
-          />
+          <img src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
           <div className="search-user-info">
            <span className="search-username">{result.username}</span>
            <span className="search-handle">@{result.handle}</span>
           </div>
-          <button
-           className="add-contact-btn"
-           onClick={() => addContact(result.id)}
-          >
-           Add
-          </button>
+          <button className="add-contact-btn" onClick={() => addContact(result.id)}>Add</button>
          </div>
         ))}
        </div>
@@ -606,7 +597,6 @@ const App = () => {
     )}
 
     <div className="contacts-list">
-     <h3>Contacts</h3>
      {contacts.length === 0 ? (
       <div className="empty-contacts">
        <p>No contacts yet</p>

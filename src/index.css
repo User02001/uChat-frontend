@@ -19,82 +19,82 @@ body, html {
 /* Theme variables */
 :root {
     /* Light theme */
-    --bg-primary: #f5f5f5;
-    --bg-secondary: #ffffff;
-    --bg-tertiary: #fafafa;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
-    --text-muted: #999999;
-    --border: #e0e0e0;
-    --border-light: #f0f0f0;
-    --border-focus: #ff9800;
-    --accent-blue: #0084ff;
-    --accent-blue-light: #44a3ff;
-    --accent-blue-hover: #006dd6;
-    --button-primary: #ff9800;
-    --button-primary-hover: #f57c00;
-    --button-secondary: #0084ff;
-    --button-secondary-hover: #006dd6;
-    --button-primary-text: #ffffff;
-    --shadow: rgba(0, 0, 0, 0.1);
-    --shadow-light: rgba(0, 0, 0, 0.05);
-    --shadow-hover: rgba(0, 0, 0, 0.15);
-    --online-indicator: #10b981;
-    --message-sent: #ff9800;
-    --message-received: #f0f0f0;
-    --message-sent-text: #ffffff;
-    --message-received-text: #1a1a1a;
-    --typing-bg: #e8e8e8;
+    --bg-primary: #f5f5f5 !important;
+    --bg-secondary: #ffffff !important;
+    --bg-tertiary: #fafafa !important;
+    --text-primary: #ff9800 !important;
+    --text-secondary: #666666 !important;
+    --text-muted: #999999 !important;
+    --border: #e0e0e0 !important;
+    --border-light: #f0f0f0 !important;
+    --border-focus: #ff9800 !important;
+    --accent-blue: #0084ff !important;
+    --accent-blue-light: #44a3ff !important;
+    --accent-blue-hover: #006dd6 !important;
+    --button-primary: #ff9800 !important;
+    --button-primary-hover: #f57c00 !important;
+    --button-secondary: #0084ff !important;
+    --button-secondary-hover: #006dd6 !important;
+    --button-primary-text: #ffffff !important;
+    --shadow: rgba(0, 0, 0, 0.1) !important;
+    --shadow-light: rgba(0, 0, 0, 0.05) !important;
+    --shadow-hover: rgba(0, 0, 0, 0.15) !important;
+    --online-indicator: #10b981 !important;
+    --message-sent: #ff9800 !important;
+    --message-received: #f0f0f0 !important;
+    --message-sent-text: #ffffff !important;
+    --message-received-text: #1a1a1a !important;
+    --typing-bg: #e8e8e8 !important;
     /* Alert colors - light theme */
-    --error-bg: #fef2f2;
-    --error-text: #dc2626;
-    --error-border: #fecaca;
-    --success-bg: #f0fdf4;
-    --success-text: #16a34a;
-    --success-border: #bbf7d0;
-    --warning-bg: #fffbeb;
-    --warning-text: #d97706;
-    --warning-border: #fed7aa;
+    --error-bg: #fef2f2 !important;
+    --error-text: #dc2626 !important;
+    --error-border: #fecaca !important;
+    --success-bg: #f0fdf4 !important;
+    --success-text: #16a34a !important;
+    --success-border: #bbf7d0 !important;
+    --warning-bg: #fffbeb !important;
+    --warning-text: #d97706 !important;
+    --warning-border: #fed7aa !important;
 }
 
 [data-theme="dark"] {
     /* Dark theme */
-    --bg-primary: #0f0f0f;
-    --bg-secondary: #1a1a1a;
-    --bg-tertiary: #262626;
-    --text-primary: #ffffff;
-    --text-secondary: #a3a3a3;
-    --text-muted: #737373;
-    --border: #404040;
-    --border-light: #525252;
-    --border-focus: #ff9800;
-    --accent-blue: #0084ff;
-    --accent-blue-light: #44a3ff;
-    --accent-blue-hover: #006dd6;
-    --button-primary: #ff9800;
-    --button-primary-hover: #f57c00;
-    --button-secondary: #0084ff;
-    --button-secondary-hover: #006dd6;
-    --button-primary-text: #ffffff;
-    --shadow: rgba(0, 0, 0, 0.3);
-    --shadow-light: rgba(0, 0, 0, 0.15);
-    --shadow-hover: rgba(0, 0, 0, 0.4);
-    --online-indicator: #10b981;
-    --message-sent: #ff9800;
-    --message-received: #262626;
-    --message-sent-text: #ffffff;
-    --message-received-text: #ffffff;
-    --typing-bg: #262626;
+    --bg-primary: #000000 !important;
+    --bg-secondary: #0a0a0a !important;
+    --bg-tertiary: #141414 !important;
+    --text-primary: #ffffff !important;
+    --text-secondary: #888888 !important;
+    --text-muted: #666666 !important;
+    --border: #1a1a1a !important;
+    --border-light: #222222 !important;
+    --border-focus: #ff9800 !important;
+    --accent-blue: #0084ff !important;
+    --accent-blue-light: #44a3ff !important;
+    --accent-blue-hover: #006dd6 !important;
+    --button-primary: #ff9800 !important;
+    --button-primary-hover: #f57c00 !important;
+    --button-secondary: #0084ff !important;
+    --button-secondary-hover: #006dd6 !important;
+    --button-primary-text: #ffffff !important;
+    --shadow: rgba(0, 0, 0, 0.3) !important;
+    --shadow-light: rgba(0, 0, 0, 0.15) !important;
+    --shadow-hover: rgba(0, 0, 0, 0.4) !important;
+    --online-indicator: #10b981 !important;
+    --message-sent: #ff9800 !important;
+    --message-received: #111111 !important;
+    --message-sent-text: #ffffff !important;
+    --message-received-text: #ffffff !important;
+    --typing-bg: #111111;
     /* Alert colors - dark theme */
-    --error-bg: #1f1315;
-    --error-text: #f87171;
-    --error-border: #991b1b;
-    --success-bg: #0f1b0f;
-    --success-text: #4ade80;
-    --success-border: #166534;
-    --warning-bg: #1c1917;
-    --warning-text: #fbbf24;
-    --warning-border: #92400e;
+    --error-bg: #1f1315 !important;
+    --error-text: #f87171 !important;
+    --error-border: #991b1b !important;
+    --success-bg: #0f1b0f !important;
+    --success-text: #4ade80 !important;
+    --success-border: #166534 !important;
+    --warning-bg: #1c1917 !important;
+    --warning-text: #fbbf24 !important;
+    --warning-border: #92400e !important;
 }
 
 /* Smooth transitions for all interactive elements */
@@ -199,100 +199,24 @@ body, html {
     display: none;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
     background: var(--bg-secondary);
     position: sticky;
     top: 0;
     z-index: 5;
-}
-
-.mobile-header-actions {
-    display: flex;
-    align-items: center;
     gap: 12px;
-}
-
-.mobile-search-btn {
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-    .mobile-search-btn:hover {
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        transform: scale(1.05);
-    }
-
-    .mobile-search-btn:active {
-        transform: scale(0.95);
-    }
-
-.mobile-search-section {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-secondary);
-    position: sticky;
-    top: 70px;
-    z-index: 4;
-    animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.mobile-search-section .search-input-container {
-    margin-bottom: 16px;
-}
-
-.mobile-search-section .search-results {
-    position: static;
-    margin-top: 0;
-    border-radius: 8px;
-    box-shadow: none;
-    border: 1px solid var(--border);
-    background: var(--bg-tertiary);
-    animation: none;
-    opacity: 1;
-    transform: none;
 }
 
 .mobile-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
 }
 
-    .mobile-logo svg {
-        width: 32px;
-        height: 32px;
-        flex-shrink: 0;
-    }
-
 .mobile-logo-text {
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 700;
-    color: var(--accent-blue);
-    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    letter-spacing: -1px;
 }
 
 .mobile-avatar {
@@ -303,6 +227,23 @@ body, html {
     border: 2px solid var(--border);
     flex-shrink: 0;
     cursor: pointer;
+}
+
+.mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.mobile-search-container {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.mobile-user-menu {
+    top: 60px;
+    right: 20px;
 }
 
 .user-profile {

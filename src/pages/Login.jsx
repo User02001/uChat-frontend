@@ -5,6 +5,7 @@ import { API_BASE_URL } from '../config';
 
 const Login = () => {
  const lottieRef = useRef(null);
+ const animationRef = useRef(null); // Store animation instance
  const navigate = useNavigate();
  const [formData, setFormData] = useState({
   email: '',
@@ -12,26 +13,97 @@ const Login = () => {
  });
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
+ const [animationError, setAnimationError] = useState('');
 
  useEffect(() => {
-  // Load Lottie animation
-  const script = document.createElement('script');
-  script.src = '/resources/lottie.js';
-  script.onload = () => {
-   if (window.lottie && lottieRef.current) {
-    window.lottie.loadAnimation({
-     container: lottieRef.current,
-     renderer: 'svg',
-     loop: true,
-     autoplay: true,
-     path: '/resources/data.json'
-    });
-   }
+  let script = null;
+
+  const loadLottie = () => {
+   script = document.createElement('script');
+   script.src = '/resources/lottie.js';
+
+   script.onload = () => {
+    console.log('Lottie script loaded successfully');
+
+    if (window.lottie && lottieRef.current) {
+     try {
+      // Destroy existing animation if any
+      if (animationRef.current) {
+       animationRef.current.destroy();
+      }
+
+      // Create new animation with better error handling
+      animationRef.current = window.lottie.loadAnimation({
+       container: lottieRef.current,
+       renderer: 'svg',
+       loop: true,
+       autoplay: true,
+       path: '/resources/data.json',
+       // Add error handling
+       rendererSettings: {
+        preserveAspectRatio: 'xMidYMid meet'
+       }
+      });
+
+      // Listen for animation events
+      animationRef.current.addEventListener('complete', () => {
+       console.log('Animation completed one loop');
+      });
+
+      animationRef.current.addEventListener('loopComplete', () => {
+       console.log('Animation loop completed');
+      });
+
+      animationRef.current.addEventListener('enterFrame', () => {
+       // This will log every frame - comment out if too verbose
+       // console.log('Animation frame');
+      });
+
+      animationRef.current.addEventListener('segmentStart', () => {
+       console.log('Animation segment started');
+      });
+
+      animationRef.current.addEventListener('data_ready', () => {
+       console.log('Animation data loaded and ready');
+      });
+
+      animationRef.current.addEventListener('data_failed', () => {
+       console.error('Animation data failed to load');
+       setAnimationError('Failed to load animation data');
+      });
+
+      animationRef.current.addEventListener('loadError', (error) => {
+       console.error('Animation load error:', error);
+       setAnimationError('Animation load error');
+      });
+
+     } catch (error) {
+      console.error('Error creating Lottie animation:', error);
+      setAnimationError('Failed to create animation');
+     }
+    } else {
+     console.error('Lottie not available or container not found');
+     setAnimationError('Lottie library not loaded');
+    }
+   };
+
+   script.onerror = () => {
+    console.error('Failed to load Lottie script');
+    setAnimationError('Failed to load animation library');
+   };
+
+   document.head.appendChild(script);
   };
-  document.head.appendChild(script);
+
+  loadLottie();
 
   return () => {
-   if (document.head.contains(script)) {
+   // Cleanup
+   if (animationRef.current) {
+    animationRef.current.destroy();
+    animationRef.current = null;
+   }
+   if (script && document.head.contains(script)) {
     document.head.removeChild(script);
    }
   };
@@ -93,9 +165,7 @@ const Login = () => {
    const data = await response.json();
 
    if (response.ok) {
-    // Login successful
-    localStorage.setItem('user', JSON.stringify(data.user));
-    navigate('/chat');
+    navigate('/chat', { state: { user: data.user } });
    } else {
     setError(data.error || 'Login failed');
    }
@@ -112,6 +182,15 @@ const Login = () => {
    <div className="login-card">
     <div className="login-header">
      <div ref={lottieRef} className="logo-animation"></div>
+     {animationError && (
+      <div style={{
+       fontSize: '12px',
+       color: 'var(--error-text)',
+       marginTop: '8px'
+      }}>
+       Debug: {animationError}
+      </div>
+     )}
      <h1>Welcome to uChat</h1>
      <p>Login to your existing account to start chatting</p>
     </div>
