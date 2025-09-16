@@ -23,6 +23,7 @@ const App = () => {
  const [error, setError] = useState('');
  const [showUserMenu, setShowUserMenu] = useState(false);
  const [showMobileSearch, setShowMobileSearch] = useState(false);
+ const [searchExiting, setSearchExiting] = useState(false);
 
  // Mobile responsiveness state
  const [isMobile, setIsMobile] = useState(false);
@@ -395,6 +396,16 @@ const App = () => {
   }
  };
 
+ const closeMobileSearch = () => {
+  setSearchExiting(true);
+  setTimeout(() => {
+   setShowMobileSearch(false);
+   setSearchExiting(false);
+   setSearchQuery('');
+   setSearchResults([]);
+  }, 200);
+ };
+
  // Auto-scroll to bottom of messages
  useEffect(() => {
   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -498,9 +509,13 @@ const App = () => {
         <button
          className="search-close"
          onClick={() => {
-          setShowSearch(false);
-          setSearchQuery('');
-          setSearchResults([]);
+          setSearchExiting(true);
+          setTimeout(() => {
+           setShowMobileSearch(false);
+           setSearchExiting(false);
+           setSearchQuery('');
+           setSearchResults([]);
+          }, 200);
          }}
         >
          ×
@@ -549,13 +564,11 @@ const App = () => {
      )}
     </div>
 
-    <div style={{ padding: '4px 16px', background: 'var(--bg-secondary)' }}>
+    <div className="mobile-search-trigger" onClick={() => setShowMobileSearch(true)}>
      <input
       type="text"
       placeholder="Search..."
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onFocus={() => setShowSearch(true)}
+      readOnly
       style={{
        width: '100%',
        padding: '8px 16px',
@@ -563,31 +576,60 @@ const App = () => {
        border: '1px solid var(--border)',
        background: 'var(--bg-tertiary)',
        fontSize: '14px',
-       color: 'var(--text-primary)'
+       color: 'var(--text-primary)',
+       cursor: 'pointer'
       }}
      />
     </div>
 
     {showMobileSearch && (
-     <div className="mobile-search-container">
-      <div className="search-input-container">
-       <input type="text" placeholder="Search users..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="search-input" autoFocus />
-       <button className="search-close" onClick={() => { setShowMobileSearch(false); setSearchQuery(''); setSearchResults([]); }}>×</button>
-      </div>
-      {searchResults.length > 0 && (
-       <div className="search-results">
-        {searchResults.map(result => (
-         <div key={result.id} className="search-result">
-          <img src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
-          <div className="search-user-info">
-           <span className="search-username">{result.username}</span>
-           <span className="search-handle">@{result.handle}</span>
-          </div>
-          <button className="add-contact-btn" onClick={() => addContact(result.id)}>Add</button>
-         </div>
-        ))}
+     <div className={`mobile-search-overlay ${searchExiting ? 'exiting' : 'entering'}`}>
+      <div className="mobile-search-header">
+       <button
+        className="mobile-search-back"
+        onClick={closeMobileSearch}
+       >
+       </button>
+       <div className="search-input-container">
+        <input
+         type="text"
+         placeholder="Search users..."
+         value={searchQuery}
+         onChange={(e) => setSearchQuery(e.target.value)}
+         className="mobile-search-input"
+         autoFocus
+        />
        </div>
-      )}
+      </div>
+      <div className="mobile-search-content">
+       {searchResults.length > 0 ? (
+        <div className="search-results">
+         {searchResults.map(result => (
+          <div key={result.id} className="search-result">
+           <img src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
+           <div className="search-user-info">
+            <span className="search-username">{result.username}</span>
+            <span className="search-handle">@{result.handle}</span>
+           </div>
+           <button className="add-contact-btn" onClick={() => {
+            addContact(result.id);
+            setShowMobileSearch(false);
+            setSearchQuery('');
+            setSearchResults([]);
+           }}>Add</button>
+          </div>
+         ))}
+        </div>
+       ) : searchQuery.trim() ? (
+        <div className="no-search-results">
+         <p>No users found</p>
+        </div>
+       ) : (
+        <div className="search-placeholder">
+         <p>Start typing to search for users...</p>
+        </div>
+       )}
+      </div>
      </div>
     )}
 
@@ -647,7 +689,6 @@ const App = () => {
          className="mobile-back-btn"
          onClick={handleBackToContacts}
         >
-         ←
         </button>
        )}
        <img

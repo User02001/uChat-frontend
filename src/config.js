@@ -4,8 +4,8 @@ const config = {
   SOCKET_URL: 'http://192.168.1.48:5001'
  },
  production: {
-  API_BASE_URL: 'https://sofa-sacrifice-computed-levels.trycloudflare.com',
-  SOCKET_URL: 'https://sofa-sacrifice-computed-levels.trycloudflare.com'
+  API_BASE_URL: 'https://serum-helicopter-nine-wires.trycloudflare.com',
+  SOCKET_URL: 'https://serum-helicopter-nine-wires.trycloudflare.com'
  }
 };
 
