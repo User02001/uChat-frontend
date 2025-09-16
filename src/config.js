@@ -1,7 +1,7 @@
 const config = {
  development: {
-  API_BASE_URL: 'http://192.168.1.48:5001',
-  SOCKET_URL: 'http://192.168.1.48:5001'
+  API_BASE_URL: 'https://192.168.1.48:5001',
+  SOCKET_URL: 'https://192.168.1.48:5001'
  },
  production: {
   API_BASE_URL: 'https://api.ufonic.xyz',

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
 import { API_BASE_URL, SOCKET_URL } from './config';
+import useCalls from './hooks/useCalls';
 
 const App = () => {
  const navigate = useNavigate();
  const socketRef = useRef(null);
 
- // State management
  const [user, setUser] = useState(null);
  const [loading, setLoading] = useState(true);
  const [contacts, setContacts] = useState([]);
@@ -24,15 +24,24 @@ const App = () => {
  const [showUserMenu, setShowUserMenu] = useState(false);
  const [showMobileSearch, setShowMobileSearch] = useState(false);
  const [searchExiting, setSearchExiting] = useState(false);
-
- // Mobile responsiveness state
  const [isMobile, setIsMobile] = useState(false);
  const [showMobileChat, setShowMobileChat] = useState(false);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
 
- // Check if device is mobile
+ // Initialize calls hook
+ const {
+  callState,
+  localVideoRef,
+  remoteVideoRef,
+  startCall,
+  answerCall,
+  endCall,
+  setupSocketListeners
+ } = useCalls(socketRef, setError);
+
+ // Check if device is mobile on window resize
  useEffect(() => {
   const checkMobile = () => {
    setIsMobile(window.innerWidth <= 768);
@@ -43,7 +52,7 @@ const App = () => {
   return () => window.removeEventListener('resize', checkMobile);
  }, []);
 
- // Close user menu when clicking outside
+ // Handle clicks outside dropdowns to close them
  useEffect(() => {
   const handleClickOutside = (event) => {
    if (showUserMenu && !event.target.closest('.user-profile') && !event.target.closest('.mobile-avatar')) {
@@ -66,27 +75,39 @@ const App = () => {
   return () => document.removeEventListener('click', handleClickOutside);
  }, [showUserMenu, showSearch]);
 
- // Authentication check and initialization
+ // Initialize authentication check on component mount
  useEffect(() => {
   checkAuth();
  }, []);
 
+ // Handle local video setup only
  useEffect(() => {
-  // Update title
+  if (callState.localStream && localVideoRef.current && !localVideoRef.current.srcObject) {
+   console.log('Setting up local video from useEffect:', callState.localStream.id);
+   localVideoRef.current.srcObject = callState.localStream;
+   localVideoRef.current.muted = true;
+   localVideoRef.current.autoplay = true;
+   localVideoRef.current.playsInline = true;
+   localVideoRef.current.play().catch(e => console.log('Local video play error:', e));
+  }
+ }, [callState.localStream]);
+
+ // Update document title and favicon based on active contact
+ useEffect(() => {
   if (activeContact) {
    document.title = `${activeContact.username} | uChat`;
   } else {
    document.title = "uChat";
   }
 
-  // Update favicon
   const favicon = document.querySelector("link[rel='icon']") || document.createElement("link");
   favicon.rel = "icon";
   favicon.type = "image/png";
-  favicon.href = "resources/favicon.png"; // make sure favicon.png is in /public
+  favicon.href = "resources/favicon.png";
   document.head.appendChild(favicon);
  }, [activeContact]);
 
+ // Check user authentication status
  const checkAuth = async () => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/me`, {
@@ -111,9 +132,10 @@ const App = () => {
   }
  };
 
+ // Format timestamp to human readable format
  const formatTimeAgo = (timestamp) => {
   const now = new Date();
-  const time = new Date(timestamp + 'Z'); // Force UTC interpretation
+  const time = new Date(timestamp + 'Z');
   const diff = now - time;
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
@@ -126,8 +148,8 @@ const App = () => {
   return time.toLocaleDateString();
  };
 
+ // Initialize socket connection and event listeners
  const initializeSocket = () => {
-  // Real Socket.IO connection
   socketRef.current = io(SOCKET_URL, {
    withCredentials: true,
    transports: ['websocket', 'polling']
@@ -135,7 +157,6 @@ const App = () => {
 
   const socket = socketRef.current;
 
-  // Connection events
   socket.on('connect', () => {
    console.log('Socket connected:', socket.id);
   });
@@ -144,7 +165,6 @@ const App = () => {
    console.log('Socket disconnected');
   });
 
-  // User status events
   socket.on('user_status', (data) => {
    console.log('User status update:', data);
    setOnlineUsers(prev => {
@@ -156,15 +176,10 @@ const App = () => {
    });
   });
 
-  // New message event
   socket.on('new_message', (data) => {
    console.log('New message received:', data);
    const message = data.message;
-
-   // Only add message if it's for the current active chat
    setMessages(prev => [...prev, message]);
-
-   // Clear typing indicator for this user
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     newSet.delete(message.sender_id);
@@ -172,7 +187,6 @@ const App = () => {
    });
   });
 
-  // Contact update event
   socket.on('contact_updated', (data) => {
    setContacts(prev => prev.map(contact =>
     contact.id === data.contact_id
@@ -186,7 +200,6 @@ const App = () => {
    ));
   });
 
-  // Typing events
   socket.on('typing_status', (data) => {
    console.log('Typing status:', data);
    setTypingUsers(prev => {
@@ -199,7 +212,6 @@ const App = () => {
     return newSet;
    });
 
-   // Clear typing indicator after 3 seconds
    if (data.is_typing) {
     setTimeout(() => {
      setTypingUsers(prev => {
@@ -210,8 +222,12 @@ const App = () => {
     }, 3000);
    }
   });
+
+  // Setup call-related socket listeners
+  setupSocketListeners();
  };
 
+ // Load user contacts and online status
  const loadContacts = async () => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/contacts`, {
@@ -230,6 +246,7 @@ const App = () => {
   }
  };
 
+ // Load messages for a specific contact
  const loadMessages = async (contactId) => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/messages/${contactId}`, {
@@ -247,6 +264,7 @@ const App = () => {
   }
  };
 
+ // Search for users by query string
  const searchUsers = async (query) => {
   if (!query.trim()) {
    setSearchResults([]);
@@ -269,6 +287,7 @@ const App = () => {
   }
  };
 
+ // Add a user to contacts list
  const addContact = async (userId) => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/add_contact/${userId}`, {
@@ -294,9 +313,9 @@ const App = () => {
   }
  };
 
+ // Select a contact and load their messages
  const selectContact = (contact) => {
   if (activeContact?.id !== contact.id) {
-   // Leave previous room
    if (activeContact && socketRef.current) {
     socketRef.current.emit('leave_chat', { contact_id: activeContact.id });
    }
@@ -306,36 +325,34 @@ const App = () => {
    setTypingUsers(new Set());
    loadMessages(contact.id);
 
-   // Join new room
    if (socketRef.current) {
     socketRef.current.emit('join_chat', { contact_id: contact.id });
    }
 
-   // Show mobile chat view
    if (isMobile) {
     setShowMobileChat(true);
    }
   }
  };
 
+ // Handle back button on mobile to return to contacts list
  const handleBackToContacts = () => {
   setShowMobileChat(false);
   setActiveContact(null);
   setMessages([]);
   setTypingUsers(new Set());
 
-  // Leave current room
   if (activeContact && socketRef.current) {
    socketRef.current.emit('leave_chat', { contact_id: activeContact.id });
   }
  };
 
+ // Send a message to the active contact
  const sendMessage = (e) => {
   e.preventDefault();
 
   if (!messageText.trim() || !activeContact || !socketRef.current) return;
 
-  // Emit the message via socket
   socketRef.current.emit('send_message', {
    receiver_id: activeContact.id,
    content: messageText.trim()
@@ -343,7 +360,6 @@ const App = () => {
 
   setMessageText('');
 
-  // Stop typing indicator
   if (typingTimeoutRef.current) {
    clearTimeout(typingTimeoutRef.current);
   }
@@ -353,6 +369,7 @@ const App = () => {
   });
  };
 
+ // Emit typing status to other users
  const handleTyping = (isTyping) => {
   if (!activeContact || !socketRef.current) return;
 
@@ -362,13 +379,12 @@ const App = () => {
   });
  };
 
+ // Handle message input changes and typing indicators
  const handleMessageInputChange = (e) => {
   setMessageText(e.target.value);
 
-  // Handle typing indicators
   if (e.target.value.trim()) {
    handleTyping(true);
-
    clearTimeout(typingTimeoutRef.current);
    typingTimeoutRef.current = setTimeout(() => {
     handleTyping(false);
@@ -378,6 +394,7 @@ const App = () => {
   }
  };
 
+ // Handle user logout
  const handleLogout = async () => {
   try {
    await fetch(`${API_BASE_URL}/api/logout`, {
@@ -396,6 +413,7 @@ const App = () => {
   }
  };
 
+ // Close mobile search overlay with animation
  const closeMobileSearch = () => {
   setSearchExiting(true);
   setTimeout(() => {
@@ -406,12 +424,12 @@ const App = () => {
   }, 200);
  };
 
- // Auto-scroll to bottom of messages
+ // Auto-scroll to bottom when new messages arrive
  useEffect(() => {
   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
  }, [messages]);
 
- // Handle search input changes
+ // Debounced search when query changes
  useEffect(() => {
   const timeoutId = setTimeout(() => {
    searchUsers(searchQuery);
@@ -420,7 +438,7 @@ const App = () => {
   return () => clearTimeout(timeoutId);
  }, [searchQuery]);
 
- // Clear error after 3 seconds
+ // Auto-clear error messages after 3 seconds
  useEffect(() => {
   if (error) {
    const timeoutId = setTimeout(() => setError(''), 3000);
@@ -428,7 +446,7 @@ const App = () => {
   }
  }, [error]);
 
- // Set theme on load
+ // Set theme based on user preference
  useEffect(() => {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
@@ -442,7 +460,7 @@ const App = () => {
   return () => mediaQuery.removeEventListener('change', handleThemeChange);
  }, []);
 
- // Cleanup socket on unmount
+ // Cleanup resources on component unmount
  useEffect(() => {
   return () => {
    if (socketRef.current) {
@@ -465,12 +483,9 @@ const App = () => {
 
  return (
   <div className={`app-container ${isMobile && showMobileChat ? 'mobile-chat-open' : ''}`}>
-   {/* Navigation Sidebar */}
    <Sidebar showMobileChat={showMobileChat} />
 
-   {/* Chat Sidebar */}
    <div className="sidebar">
-    {/* Desktop header */}
     <div className="sidebar-header">
      <div className="user-profile">
       <img
@@ -549,7 +564,6 @@ const App = () => {
      </div>
     </div>
 
-    {/* Mobile header */}
     <div className="mobile-header">
      <div className="mobile-logo">
       <span className="mobile-logo-text">uChat</span>
@@ -679,28 +693,34 @@ const App = () => {
     </div>
    </div>
 
-   {/* Chat Area */}
    <div className="chat-container">
     {activeContact ? (
      <>
       <div className="chat-header">
        {isMobile && (
-        <button
-         className="mobile-back-btn"
-         onClick={handleBackToContacts}
-        >
+        <button className="mobile-back-btn" onClick={handleBackToContacts}>
         </button>
        )}
-       <img
-        src="/resources/default_avatar.png"
-        alt={activeContact.username}
-        className="chat-avatar"
-       />
+       <img src="/resources/default_avatar.png" alt={activeContact.username} className="chat-avatar" />
        <div className="chat-user-info">
         <span className="chat-username">{activeContact.username}</span>
         <span className="chat-status">
          {onlineUsers.includes(activeContact.id) ? 'Online' : 'Offline'}
         </span>
+       </div>
+       <div className="call-buttons">
+        <button
+         className="call-btn audio-call"
+         onClick={() => startCall(activeContact, 'audio')}
+         disabled={callState.isActive}
+        >
+        </button>
+        <button
+         className="call-btn video-call"
+         onClick={() => startCall(activeContact, 'video')}
+         disabled={callState.isActive}
+        >
+        </button>
        </div>
       </div>
 
@@ -710,31 +730,31 @@ const App = () => {
          <p>Start a conversation with {activeContact.username}</p>
         </div>
        ) : (
-          messages.map(message => (
-           <div
-            key={message.id}
-            className={`message ${message.sender_id === user.id ? 'sent' : 'received'}`}
-           >
-            {message.sender_id !== user.id && (
-             <img
-              src="/resources/default_avatar.png"
-              alt={activeContact.username}
-              className="message-avatar"
-             />
-            )}
-            <div className="message-bubble">
-             <div className="message-content">
-              {message.content}
-             </div>
-             <div className="message-time">
-              {new Date(message.timestamp + 'Z').toLocaleTimeString([], {
-               hour: '2-digit',
-               minute: '2-digit'
-              })}
-             </div>
-            </div>
+        messages.map(message => (
+         <div
+          key={message.id}
+          className={`message ${message.sender_id === user.id ? 'sent' : 'received'}`}
+         >
+          {message.sender_id !== user.id && (
+           <img
+            src="/resources/default_avatar.png"
+            alt={activeContact.username}
+            className="message-avatar"
+           />
+          )}
+          <div className="message-bubble">
+           <div className="message-content">
+            {message.content}
            </div>
-          ))
+           <div className="message-time">
+            {new Date(message.timestamp + 'Z').toLocaleTimeString([], {
+             hour: '2-digit',
+             minute: '2-digit'
+            })}
+           </div>
+          </div>
+         </div>
+        ))
        )}
 
        {Array.from(typingUsers).filter(id => id !== user?.id && id === activeContact?.id).length > 0 && (
@@ -771,10 +791,108 @@ const App = () => {
     )}
    </div>
 
-   {/* Error Toast */}
    {error && (
     <div className="error-toast">
      {error}
+    </div>
+   )}
+
+   {callState.isIncoming && (
+    <div className="call-overlay">
+     <div className="incoming-call">
+      <img src="/resources/default_avatar.png" alt={callState.contact?.username} />
+      <h3>{callState.contact?.username} is calling</h3>
+      <p>{callState.type === 'video' ? 'Video Call' : 'Audio Call'}</p>
+      <div className="call-actions">
+       <button
+        className="decline-btn"
+        onClick={() => answerCall(false)}
+       >
+       </button>
+       <button
+        className="accept-btn"
+        onClick={() => answerCall(true)}
+       >
+       </button>
+      </div>
+     </div>
+    </div>
+   )}
+
+   {(callState.isOutgoing || callState.isActive) && !callState.isIncoming && (
+    <div className="call-overlay">
+     <div className="active-call">
+      {(callState.isOutgoing || callState.isActive) && callState.contact && (
+       <div className="call-status-overlay">
+        <h3>
+         {callState.isOutgoing ? `Calling ${callState.contact.username}...` : callState.contact.username}
+        </h3>
+       </div>
+      )}
+
+      {callState.type === 'video' ? (
+       <div className="video-container">
+        <video
+         ref={remoteVideoRef}
+         className="remote-video"
+         autoPlay
+         playsInline
+         controls={false}
+         muted={false}
+         style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover'
+         }}
+        />
+        <video
+         ref={localVideoRef}
+         className="local-video"
+         autoPlay
+         playsInline
+         controls={false}
+         muted={true}
+         style={{
+          transform: 'scaleX(-1)',
+          width: '200px',
+          height: '150px',
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          borderRadius: '8px',
+          border: '2px solid white'
+         }}
+        />
+       </div>
+      ) : (
+       <div className="audio-call-ui">
+        <img
+         src="/resources/default_avatar.png"
+         alt={callState.contact?.username}
+        />
+        <h3>{callState.contact?.username}</h3>
+        <p>Audio Call</p>
+        {/* Single audio element for remote stream */}
+        <audio
+         ref={remoteVideoRef}
+         autoPlay
+         muted={false}
+         style={{ display: 'none' }}
+        />
+        {/* Local audio stream (usually not needed for UI) */}
+        <audio
+         ref={localVideoRef}
+         autoPlay
+         muted={true}
+         style={{ display: 'none' }}
+        />
+       </div>
+      )}
+
+      <div className="call-controls">
+       <button className="end-call-btn" onClick={endCall}></button>
+      </div>
+     </div>
     </div>
    )}
   </div>

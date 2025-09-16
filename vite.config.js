@@ -1,14 +1,15 @@
-// vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
 
 export default defineConfig({
  plugins: [react()],
- build: {
-  outDir: 'dist-obfuscated',
- },
  server: {
-  host: '0.0.0.0', // listen on all addresses
-  port: 5173,      // you can change this if needed
- },
+  https: {
+   key: fs.readFileSync('../uChat-backend/server.key'),
+   cert: fs.readFileSync('../uChat-backend/server.crt'),
+  },
+  host: '0.0.0.0',
+  port: 5173
+ }
 })
