@@ -80,17 +80,18 @@ const App = () => {
   checkAuth();
  }, []);
 
- // Handle local video setup only
+ // Handle local video setup for both caller and receiver
  useEffect(() => {
-  if (callState.localStream && localVideoRef.current && !localVideoRef.current.srcObject) {
+  if (callState.localStream && localVideoRef.current) {
    console.log('Setting up local video from useEffect:', callState.localStream.id);
    localVideoRef.current.srcObject = callState.localStream;
    localVideoRef.current.muted = true;
    localVideoRef.current.autoplay = true;
    localVideoRef.current.playsInline = true;
+   localVideoRef.current.style.transform = 'scaleX(-1)';
    localVideoRef.current.play().catch(e => console.log('Local video play error:', e));
   }
- }, [callState.localStream]);
+ }, [callState.localStream, callState.isActive, callState.isIncoming]);
 
  // Update document title and favicon based on active contact
  useEffect(() => {

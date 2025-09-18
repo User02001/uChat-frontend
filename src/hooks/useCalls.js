@@ -1,248 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
+import Peer from 'simple-peer';
 
 const useCalls = (socketRef, setError) => {
- const [callState, setCallState] = useState({
-  isActive: false,
-  isIncoming: false,
-  isOutgoing: false,
-  type: null,
-  contact: null,
-  localStream: null,
-  remoteStream: null,
-  incomingOffer: null
- });
-
- const [peerConnection, setPeerConnection] = useState(null);
- const localVideoRef = useRef(null);
- const remoteVideoRef = useRef(null);
- const pendingIceCandidates = useRef([]);
- const remoteVideoSetup = useRef(false); // Prevent duplicate setup
-
- const pcConfig = {
-  iceServers: [
-   { urls: 'stun:stun.l.google.com:19302' },
-   { urls: 'stun:stun1.l.google.com:19302' }
-  ]
- };
-
- // Simple function to set up local video
- const setupLocalVideo = (stream) => {
-  if (localVideoRef.current) {
-   localVideoRef.current.srcObject = stream;
-   localVideoRef.current.muted = true;
-   localVideoRef.current.play().catch(console.log);
-   console.log('Local video set up');
-  }
- };
-
- // Simple function to set up remote video
- const setupRemoteVideo = async (stream) => {
-  console.log('Setting up remote video...');
-
-  if (remoteVideoSetup.current) {
-   console.log('Remote video already being set up, skipping duplicate');
-   return;
-  }
-
-  remoteVideoSetup.current = true;
-
-  // Wait for the video element to be available
-  let attempts = 0;
-  while (!remoteVideoRef.current && attempts < 30) {
-   await new Promise(resolve => setTimeout(resolve, 100));
-   attempts++;
-  }
-
-  if (remoteVideoRef.current) {
-   const video = remoteVideoRef.current;
-   video.srcObject = stream;
-   video.autoplay = true;
-   video.playsInline = true;
-   video.muted = false; // We want to hear the remote person
-
-   console.log('Remote video element configured, attempting play...');
-
-   const playPromise = video.play();
-   if (playPromise !== undefined) {
-    playPromise
-     .then(() => {
-      console.log('Remote video playing successfully');
-     })
-     .catch(error => {
-      console.log('Remote video autoplay failed, setting up click handler');
-      // FORCE UNMUTE AND RETRY
-      video.muted = false;
-      video.volume = 1.0;
-
-      // Set up click handler for user interaction
-      const playOnClick = async () => {
-       console.log('CLICK DETECTED - Attempting to play remote video');
-       try {
-        video.muted = false;
-        await video.play();
-        console.log('SUCCESS: Remote video started after click');
-        document.removeEventListener('click', playOnClick);
-        document.removeEventListener('touchstart', playOnClick);
-        document.removeEventListener('keydown', playOnClick);
-       } catch (e) {
-        console.error('FAILED: Still cannot play remote video after click:', e);
-       }
-      };
-
-      document.addEventListener('click', playOnClick);
-      document.addEventListener('touchstart', playOnClick);
-      document.addEventListener('keydown', playOnClick);
-      console.log('>>> CLICK, TOUCH, OR PRESS ANY KEY TO START REMOTE VIDEO <<<');
-     });
-   }
-  } else {
-   console.log('Remote video element not available after waiting');
-   remoteVideoSetup.current = false;
-  }
- };
-
- // Setup socket listeners
- const setupSocketListeners = useCallback(() => {
-  if (!socketRef.current) return;
-
-  const socket = socketRef.current;
-
-  socket.on('incoming_call', (data) => {
-   console.log('Incoming call:', data);
-   remoteVideoSetup.current = false; // Reset for new call
-   setCallState(prev => ({
-    ...prev,
-    isIncoming: true,
-    contact: data.caller,
-    type: data.type,
-    incomingOffer: data.offer
-   }));
-  });
-
-  socket.on('call_accepted', async (data) => {
-   console.log('Call accepted:', data);
-   if (peerConnection && data.answerSDP) {
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answerSDP));
-    await processPendingIceCandidates(peerConnection);
-   }
-   setCallState(prev => ({
-    ...prev,
-    isActive: true,
-    isOutgoing: false
-   }));
-  });
-
-  socket.on('call_rejected', () => {
-   console.log('Call rejected');
-   endCall();
-  });
-
-  socket.on('webrtc_signal', async (data) => {
-   if (data.signal.ice) {
-    if (peerConnection && peerConnection.remoteDescription) {
-     await peerConnection.addIceCandidate(new RTCIceCandidate(data.signal.ice));
-    } else {
-     pendingIceCandidates.current.push(data.signal.ice);
-    }
-   }
-  });
-
-  socket.on('call_ended', () => {
-   console.log('Call ended');
-   endCall();
-  });
-
-  return () => {
-   socket.off('incoming_call');
-   socket.off('call_accepted');
-   socket.off('call_rejected');
-   socket.off('webrtc_signal');
-   socket.off('call_ended');
-  };
- }, [socketRef]);
-
- // Start a call
- const startCall = async (contact, type) => {
-  try {
-   console.log('Starting call with', contact.username);
-
-   const stream = await navigator.mediaDevices.getUserMedia({
-    video: type === 'video',
-    audio: true
-   });
-
-   const pc = new RTCPeerConnection(pcConfig);
-   setPeerConnection(pc);
-
-   // Add local stream
-   stream.getTracks().forEach(track => {
-    pc.addTrack(track, stream);
-   });
-
-   // Handle ICE candidates
-   pc.onicecandidate = (event) => {
-    if (event.candidate && socketRef.current) {
-     socketRef.current.emit('webrtc_signal', {
-      target_id: contact.id,
-      signal: { ice: event.candidate }
-     });
-    }
-   };
-
-   // Handle remote stream - SIMPLE approach
-   pc.ontrack = async (event) => {
-    const [remoteStream] = event.streams;
-    console.log('Got remote stream');
-    setCallState(prev => ({
-     ...prev,
-     remoteStream,
-     isActive: true,
-     isOutgoing: false
-    }));
-    // Add delay to ensure React has time to render the video element
-    setTimeout(() => setupRemoteVideo(remoteStream), 100);
-   };
-
-   // Create offer
-   const offer = await pc.createOffer();
-   await pc.setLocalDescription(offer);
-
-   // Update state
-   setCallState({
-    isActive: false,
-    isOutgoing: true,
-    isIncoming: false,
-    type,
-    contact,
-    localStream: stream,
-    remoteStream: null,
-    incomingOffer: null
-   });
-
-   // Set up local video
-   setupLocalVideo(stream);
-
-   // Send offer
-   socketRef.current.emit('call_initiate', {
-    receiver_id: contact.id,
-    type,
-    offer
-   });
-
-  } catch (error) {
-   console.error('Failed to start call:', error);
-   setError('Failed to access camera/microphone');
-  }
- };
-
- // Answer a call
- const answerCall = async (accept) => {
-  if (!accept) {
-   socketRef.current.emit('call_answer', {
-    caller_id: callState.contact.id,
-    answer: false
-   });
-   setCallState({
+  const [callState, setCallState] = useState({
     isActive: false,
     isIncoming: false,
     isOutgoing: false,
@@ -251,146 +11,308 @@ const useCalls = (socketRef, setError) => {
     localStream: null,
     remoteStream: null,
     incomingOffer: null
-   });
-   return;
-  }
+  });
 
-  try {
-   console.log('Answering call');
+  const peerRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const localStreamRef = useRef(null);
 
-   const stream = await navigator.mediaDevices.getUserMedia({
-    video: callState.type === 'video',
-    audio: true
-   });
+  // Get user media
+  const getUserMedia = async (video = true) => {
+    return navigator.mediaDevices.getUserMedia({
+      video,
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true
+      }
+    });
+  };
 
-   const pc = new RTCPeerConnection(pcConfig);
-   setPeerConnection(pc);
-
-   // Add local stream
-   stream.getTracks().forEach(track => {
-    pc.addTrack(track, stream);
-   });
-
-   // Handle ICE candidates
-   pc.onicecandidate = (event) => {
-    if (event.candidate && socketRef.current) {
-     socketRef.current.emit('webrtc_signal', {
-      target_id: callState.contact.id,
-      signal: { ice: event.candidate }
-     });
+  // Set local stream to video element
+  const setLocalStream = (stream) => {
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+      localVideoRef.current.style.transform = 'scaleX(-1)';
+      localVideoRef.current.muted = true;
+      localVideoRef.current.autoplay = true;
+      localVideoRef.current.playsInline = true;
+      localVideoRef.current.play().catch(console.error);
     }
-   };
+    localStreamRef.current = stream;
+  };
 
-   // Handle remote stream - SIMPLE approach
-   pc.ontrack = async (event) => {
-    const [remoteStream] = event.streams;
-    console.log('Got remote stream in answer');
+  // Create peer connection
+  const createPeer = (initiator, stream) => {
+    const peer = new Peer({
+      initiator,
+      trickle: false,
+      stream
+    });
+
+    peer.on('signal', (data) => {
+      console.log('Peer signal:', data);
+     if (socketRef.current) {
+      socketRef.current.emit('webrtc_signal', {
+        target_id: callState.contact?.id,
+        signal: data
+      });
+     }
+    });
+
+   peer.on('stream', (remoteStream) => {
+    console.log('Got remote stream, setting up video element');
+
     setCallState(prev => ({
      ...prev,
      remoteStream,
      isActive: true,
-     isIncoming: false
+     isIncoming: false,
+     isOutgoing: false
     }));
-    // Add delay to ensure React has time to render the video element
-    setTimeout(() => setupRemoteVideo(remoteStream), 100);
-   };
 
-   // Set remote description
-   await pc.setRemoteDescription(new RTCSessionDescription(callState.incomingOffer));
-
-   // Create answer
-   const answer = await pc.createAnswer();
-   await pc.setLocalDescription(answer);
-
-   // Process pending ICE candidates
-   await processPendingIceCandidates(pc);
-
-   // Update state
-   setCallState(prev => ({
-    ...prev,
-    localStream: stream
-   }));
-
-   // Set up local video
-   setupLocalVideo(stream);
-
-   // Send answer
-   socketRef.current.emit('call_answer', {
-    caller_id: callState.contact.id,
-    answer: true,
-    answerSDP: answer
+    // Set up remote video with a small delay to ensure element exists
+    setTimeout(() => {
+     if (remoteVideoRef.current && remoteStream) {
+      console.log('Setting remote video srcObject');
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.autoplay = true;
+      remoteVideoRef.current.playsInline = true;
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.play().catch(e => {
+       console.log('Remote video play error:', e);
+       // Try again after a short delay
+       setTimeout(() => {
+        if (remoteVideoRef.current) {
+         remoteVideoRef.current.play().catch(console.error);
+        }
+       }, 500);
+      });
+     }
+    }, 200);
    });
 
-  } catch (error) {
-   console.error('Failed to answer call:', error);
-   setError('Failed to access camera/microphone');
-  }
- };
+    peer.on('error', (error) => {
+      console.error('Peer error:', error);
+      setError('Call connection failed');
+      endCall();
+    });
 
- // Process pending ICE candidates
- const processPendingIceCandidates = async (pc) => {
-  for (const candidate of pendingIceCandidates.current) {
-   try {
-    await pc.addIceCandidate(new RTCIceCandidate(candidate));
-   } catch (error) {
-    console.error('Error adding ICE candidate:', error);
-   }
-  }
-  pendingIceCandidates.current = [];
- };
+    peer.on('close', () => {
+      console.log('Peer connection closed');
+      endCall();
+    });
 
- // End call
- const endCall = () => {
-  console.log('Ending call');
+    return peer;
+  };
 
-  remoteVideoSetup.current = false; // Reset flag
+  // Setup socket listeners
+  const setupSocketListeners = useCallback(() => {
+    if (!socketRef.current) return;
 
-  if (callState.localStream) {
-   callState.localStream.getTracks().forEach(track => track.stop());
-  }
+    const socket = socketRef.current;
 
-  if (peerConnection) {
-   peerConnection.close();
-   setPeerConnection(null);
-  }
+    socket.on('incoming_call', (data) => {
+      console.log('Incoming call:', data);
+      setCallState(prev => ({
+        ...prev,
+        isIncoming: true,
+        contact: data.caller,
+        type: data.type,
+        incomingOffer: data.offer
+      }));
+    });
 
-  if (callState.contact && socketRef.current) {
-   socketRef.current.emit('call_end', {
-    target_id: callState.contact.id
-   });
-  }
+    socket.on('call_accepted', (data) => {
+      console.log('Call accepted:', data);
+      setCallState(prev => ({
+        ...prev,
+        isActive: true,
+        isOutgoing: false
+      }));
+    });
 
-  // Clear video elements
-  if (localVideoRef.current) {
-   localVideoRef.current.srcObject = null;
-  }
-  if (remoteVideoRef.current) {
-   remoteVideoRef.current.srcObject = null;
-  }
+    socket.on('call_rejected', () => {
+      console.log('Call rejected');
+      endCall();
+    });
 
-  pendingIceCandidates.current = [];
+    socket.on('webrtc_signal', (data) => {
+      console.log('Received WebRTC signal:', data);
+      if (peerRef.current && !peerRef.current.destroyed) {
+        peerRef.current.signal(data.signal);
+      }
+    });
 
-  setCallState({
-   isActive: false,
-   isIncoming: false,
-   isOutgoing: false,
-   type: null,
-   contact: null,
-   localStream: null,
-   remoteStream: null,
-   incomingOffer: null
-  });
- };
+    socket.on('call_ended', () => {
+      console.log('Call ended');
+      endCall();
+    });
 
- return {
-  callState,
-  localVideoRef,
-  remoteVideoRef,
-  startCall,
-  answerCall,
-  endCall,
-  setupSocketListeners
- };
+    return () => {
+      socket.off('incoming_call');
+      socket.off('call_accepted');
+      socket.off('call_rejected');
+      socket.off('webrtc_signal');
+      socket.off('call_ended');
+    };
+  }, [socketRef, callState.contact]);
+
+  // Start call
+  const startCall = async (contact, type) => {
+    try {
+      console.log('Starting call with', contact.username);
+
+      const stream = await getUserMedia(type === 'video');
+      setLocalStream(stream);
+
+      setCallState({
+        isActive: false,
+        isOutgoing: true,
+        isIncoming: false,
+        type,
+        contact,
+        localStream: stream,
+        remoteStream: null,
+        incomingOffer: null
+      });
+
+      // Create peer as initiator
+      peerRef.current = createPeer(true, stream);
+
+      // Send call initiate with the peer's signal data
+      peerRef.current.on('signal', (data) => {
+        socketRef.current.emit('call_initiate', {
+          receiver_id: contact.id,
+          type,
+          offer: data
+        });
+      });
+
+    } catch (error) {
+      console.error('Failed to start call:', error);
+      setError('Failed to access camera/microphone');
+    }
+  };
+
+  // Answer call
+  const answerCall = async (accept) => {
+    if (!accept) {
+      socketRef.current.emit('call_answer', {
+        caller_id: callState.contact.id,
+        answer: false
+      });
+
+      setCallState({
+        isActive: false,
+        isIncoming: false,
+        isOutgoing: false,
+        type: null,
+        contact: null,
+        localStream: null,
+        remoteStream: null,
+        incomingOffer: null
+      });
+      return;
+    }
+
+    try {
+      console.log('Answering call');
+
+      const stream = await getUserMedia(callState.type === 'video');
+      setLocalStream(stream);
+
+      // Create peer as non-initiator
+      peerRef.current = createPeer(false, stream);
+
+     // Signal the incoming offer after peer is ready
+     if (callState.incomingOffer) {
+      setTimeout(() => {
+       if (peerRef.current && !peerRef.current.destroyed) {
+        peerRef.current.signal(callState.incomingOffer);
+       }
+      }, 100);
+     }
+
+      // Send answer with peer's signal data
+      peerRef.current.on('signal', (data) => {
+        socketRef.current.emit('call_answer', {
+          caller_id: callState.contact.id,
+          answer: true,
+          answerSDP: data
+        });
+      });
+
+     peerRef.current = createPeer(false, stream);
+
+     // ADD THIS LINE:
+     console.log('Created receiver peer, waiting for remote stream...');
+
+      setCallState(prev => ({
+        ...prev,
+        localStream: stream,
+        isIncoming: false
+      }));
+
+    } catch (error) {
+      console.error('Failed to answer call:', error);
+      setError('Failed to access camera/microphone');
+    }
+  };
+
+  // End call
+  const endCall = () => {
+    console.log('Ending call');
+
+    // Stop local stream
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+
+    // Destroy peer connection
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    // Emit call end
+    if (callState.contact && socketRef.current) {
+      socketRef.current.emit('call_end', {
+        target_id: callState.contact.id
+      });
+    }
+
+    // Clear video elements
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    // Reset state
+    setCallState({
+      isActive: false,
+      isIncoming: false,
+      isOutgoing: false,
+      type: null,
+      contact: null,
+      localStream: null,
+      remoteStream: null,
+      incomingOffer: null
+    });
+  };
+
+  return {
+    callState,
+    localVideoRef,
+    remoteVideoRef,
+    startCall,
+    answerCall,
+    endCall,
+    setupSocketListeners
+  };
 };
 
 export default useCalls;

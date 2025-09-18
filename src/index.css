@@ -14,6 +14,17 @@ body, html {
     width: 100%;
     height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-text-size-adjust: 100%;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    position: fixed;
+    overflow: hidden;
+}
+
+body {
+    position: static;
+    overflow: auto;
 }
 
 /* Theme variables */
@@ -154,8 +165,30 @@ body, html {
 .app-container {
     display: flex;
     height: 100vh;
+    height: 100dvh;
     background: var(--bg-primary);
     overflow: hidden;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+@supports (-webkit-touch-callout: none) {
+    .app-container {
+        height: -webkit-fill-available;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .sidebar {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
+
+    .chat-container {
+        height: -webkit-fill-available;
+        min-height: -webkit-fill-available;
+    }
 }
 
 /* Mobile view states */
@@ -366,10 +399,12 @@ body, html {
     padding: 14px 20px;
     border: 1px solid var(--border);
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 16px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     font-weight: 400;
+    -webkit-appearance: none;
+    -webkit-border-radius: 12px;
 }
 
     .search-input:focus {
@@ -518,6 +553,8 @@ body, html {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
 }
 
     .contacts-list h3 {
@@ -749,6 +786,9 @@ body, html {
     gap: 16px;
     background: var(--bg-primary);
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
+    will-change: scroll-position;
 }
 
     /* Custom scrollbar */
@@ -909,12 +949,14 @@ body, html {
     padding: 14px 20px;
     border: 1px solid var(--border);
     border-radius: 24px;
-    font-size: 15px;
+    font-size: 16px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     resize: none;
     max-height: 120px;
     font-weight: 400;
+    -webkit-appearance: none;
+    -webkit-border-radius: 24px;
 }
 
     .message-input:focus {
@@ -1376,11 +1418,35 @@ input:focus-visible {
     padding: 12px 18px;
     border: 1px solid var(--border);
     border-radius: 25px;
-    font-size: 15px;
+    font-size: 16px;
     background: var(--bg-tertiary);
     color: var(--text-primary);
     font-weight: 400;
     min-width: 0;
+    -webkit-appearance: none;
+    -webkit-border-radius: 25px;
+}
+
+/* iPhone X and newer safe area support */
+@supports (padding: max(0px)) {
+    @media (max-width: 768px) {
+        .app-container {
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        .mobile-header {
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+        }
+
+        .message-input-container {
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
+        }
+    }
 }
 
     .mobile-search-input:focus {
@@ -1446,423 +1512,36 @@ input:focus-visible {
         }
 }
 
-/* Call UI Styles */
-.call-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.95);
-    backdrop-filter: blur(10px);
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: overlayFadeIn 0.3s ease forwards;
-}
-
-@keyframes overlayFadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-.incoming-call {
-    background: var(--bg-secondary);
-    border-radius: 24px;
-    padding: 40px;
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: callSlideUp 0.4s ease forwards;
-}
-
-@keyframes callSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px) scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.incoming-call img {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 4px solid var(--border);
-    margin-bottom: 20px;
-    object-fit: cover;
-}
-
-.incoming-call h3 {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 8px;
-}
-
-.incoming-call p {
-    font-size: 16px;
-    color: var(--text-secondary);
-    margin-bottom: 30px;
-}
-
-.call-actions {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
-
-.decline-btn, .accept-btn {
-    width: 70px;
-    height: 70px;
-    border: none;
-    border-radius: 50%;
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: all 0.2s ease;
-}
-
-.decline-btn {
-    background: #ff4757;
-    color: white;
-}
-
-    .decline-btn:hover {
-        background: #ff3838;
-        transform: scale(1.1);
-    }
-
-    .decline-btn::before {
-        content: '\f095';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        transform: rotate(135deg);
-    }
-
-.accept-btn {
-    background: #2ed573;
-    color: white;
-}
-
-    .accept-btn:hover {
-        background: #26d063;
-        transform: scale(1.1);
-    }
-
-    .accept-btn::before {
-        content: '\f095';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-    }
-
-/* Active Call Styles */
-.active-call {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    background: #000;
-}
-
-.video-container {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background: #000;
-}
-
-.remote-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: #000;
-}
-
-.local-video {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 200px;
-    height: 150px;
-    border-radius: 12px;
-    object-fit: cover;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    background: #333;
-    z-index: 10;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.call-status-overlay {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    padding: 12px 20px;
-    border-radius: 25px;
-    z-index: 15;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-    .call-status-overlay h3 {
-        font-size: 16px;
-        font-weight: 500;
-        color: white;
-        margin: 0;
-    }
-
-.audio-call-ui {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-align: center;
-}
-
-    .audio-call-ui img {
-        width: 160px;
-        height: 160px;
-        border-radius: 50%;
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        margin-bottom: 30px;
-        object-fit: cover;
-    }
-
-    .audio-call-ui h3 {
-        font-size: 28px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    .audio-call-ui p {
-        font-size: 18px;
-        opacity: 0.8;
-    }
-
-.call-controls {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 20px;
-    z-index: 15;
-}
-
-.end-call-btn {
-    width: 70px;
-    height: 70px;
-    border: none;
-    border-radius: 50%;
-    background: #ff4757;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: all 0.2s ease;
-}
-
-    .end-call-btn:hover {
-        background: #ff3838;
-        transform: scale(1.1);
-    }
-
-    .end-call-btn::before {
-        content: '\f095';
-        font-family: 'Font Awesome 6 Free';
-        font-weight: 900;
-        transform: rotate(135deg);
-    }
-
-/* Call Buttons in Header */
-.call-buttons {
-    display: flex;
-    gap: 12px;
-    margin-left: auto;
-}
-
-.call-btn {
-    width: 44px;
-    height: 44px;
-    border: 1px solid var(--border);
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    transition: all 0.2s ease;
-    position: relative;
-}
-
-    .call-btn:hover:not(:disabled) {
-        background: var(--accent-blue);
-        color: white;
-        transform: scale(1.1);
-        border-color: var(--accent-blue);
-    }
-
-    .call-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-
-.audio-call::before {
-    content: '\f095';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-}
-
-.video-call::before {
-    content: '\f03d';
-    font-family: 'Font Awesome 6 Free';
-    font-weight: 900;
-}
-
-/* Mobile Call UI */
+/* iOS touch improvements */
 @media (max-width: 768px) {
-    .incoming-call {
-        padding: 30px 20px;
-        border-radius: 16px;
+    .contact-item,
+    .search-result,
+    .user-menu-btn,
+    .mobile-back-btn,
+    .send-button,
+    .add-contact-btn {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 
-        .incoming-call img {
-            width: 100px;
-            height: 100px;
-        }
-
-        .incoming-call h3 {
-            font-size: 22px;
-        }
-
-    .call-actions {
-        gap: 30px;
-    }
-
-    .decline-btn, .accept-btn {
-        width: 80px;
-        height: 80px;
-        font-size: 28px;
-    }
-
-    .local-video {
-        width: 120px;
-        height: 160px;
-        top: 20px;
-        right: 15px;
-    }
-
-    .audio-call-ui img {
-        width: 140px;
-        height: 140px;
-        margin-bottom: 20px;
-    }
-
-    .audio-call-ui h3 {
-        font-size: 24px;
-    }
-
-    .audio-call-ui p {
-        font-size: 16px;
-    }
-
-    .call-controls {
-        bottom: 30px;
-    }
-
-    .end-call-btn {
-        width: 80px;
-        height: 80px;
-        font-size: 28px;
-    }
-
-    .call-buttons {
-        gap: 8px;
-    }
-
-    .call-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
+    /* Ensure minimum touch target size */
+    .user-menu-btn,
+    .mobile-back-btn,
+    .search-close {
+        min-width: 44px;
+        min-height: 44px;
     }
 }
 
-.active-call-status {
-    position: absolute;
-    top: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(10px);
-    padding: 16px 32px;
-    border-radius: 12px;
-    z-index: 20;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+/* Prevent zoom on double tap */
+* {
+    touch-action: manipulation;
 }
 
-    .active-call-status h3 {
-        font-size: 18px;
-        font-weight: 600;
-        color: white;
-        margin-bottom: 4px;
-        letter-spacing: 0.3px;
-    }
-
-    .active-call-status p {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.8);
-        margin: 0;
-        font-weight: 500;
-    }
-
-.outgoing-call-status {
-    text-align: center;
-    color: white;
+/* Fix for iOS momentum scrolling */
+.messages-container,
+.contacts-list,
+.mobile-search-content {
+    -webkit-overflow-scrolling: touch;
+    transform: translate3d(0,0,0);
 }
-
-    .outgoing-call-status img {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 3px solid rgba(255, 255, 255, 0.3);
-        margin-bottom: 24px;
-        object-fit: cover;
-    }
-
-    .outgoing-call-status h3 {
-        font-size: 24px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    .outgoing-call-status p {
-        font-size: 16px;
-        opacity: 0.9;
-        margin: 0;
-    }

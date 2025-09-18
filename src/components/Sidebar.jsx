@@ -137,6 +137,16 @@ const Sidebar = ({ showMobileChat = false }) => {
        <i className="fas fa-user-circle"></i>
        <span>Profile</span>
       </button>
+      <button
+       className="mobile-more-item"
+       onClick={() => {
+        window.location.href = '/logout'; // redirect
+        setShowMore(false);
+       }}
+      >
+       <i className="fas fa-sign-out-alt"></i>
+       <span>Logout</span>
+      </button>
      </div>
     )}
    </div>
