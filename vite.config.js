@@ -12,10 +12,15 @@ export default defineConfig({
   include: ['simple-peer'],
  },
  server: {
-  https: {
-   key: fs.readFileSync('../uChat-backend/server.key'),
-   cert: fs.readFileSync('../uChat-backend/server.crt'),
-  },
+  // Only use HTTPS in development when the SSL files exist
+  ...(process.env.NODE_ENV !== 'production' &&
+   fs.existsSync('../uChat-backend/server.key') &&
+   fs.existsSync('../uChat-backend/server.crt') ? {
+   https: {
+    key: fs.readFileSync('../uChat-backend/server.key'),
+    cert: fs.readFileSync('../uChat-backend/server.crt'),
+   }
+  } : {}),
   host: '0.0.0.0',
   port: 5173,
  },
