@@ -11,6 +11,9 @@ export default defineConfig({
  optimizeDeps: {
   include: ['simple-peer'],
  },
+ build: {
+  outDir: 'dist-obfuscated',
+ },
  server: {
   // Only use HTTPS in development when the SSL files exist
   ...(process.env.NODE_ENV !== 'production' &&
