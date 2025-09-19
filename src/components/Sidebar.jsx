@@ -67,6 +67,7 @@ const Sidebar = ({ showMobileChat = false }) => {
      <i className="fas fa-cog"></i>
     </button>
    </div>
+
    <div className="nav-bottom">
     <button
      className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`}
@@ -74,6 +75,15 @@ const Sidebar = ({ showMobileChat = false }) => {
      onClick={() => handleTabClick('profile')}
     >
      <i className="fas fa-user-circle"></i>
+    </button>
+
+    {/* 🔴 Logout for desktop */}
+    <button
+     className="nav-btn logout-btn"
+     title="Logout"
+     onClick={() => (window.location.href = '/logout')}
+    >
+     <i className="fas fa-sign-out-alt"></i>
     </button>
    </div>
 
@@ -138,7 +148,7 @@ const Sidebar = ({ showMobileChat = false }) => {
        <span>Profile</span>
       </button>
       <button
-       className="mobile-more-item"
+       className="mobile-more-item logout-item"
        onClick={() => {
         window.location.href = '/logout'; // redirect
         setShowMore(false);

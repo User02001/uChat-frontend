@@ -7,6 +7,7 @@ import App from './App.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import Verify from './pages/Verify.jsx'
+import Profile from './pages/Profile.jsx'
 
 createRoot(document.getElementById('root')).render(
  <Router>
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')).render(
    <Route path="/signup" element={<Signup />} />
    <Route path="/verify" element={<Verify />} />
    <Route path="/chat" element={<App />} />
+   <Route path="/profile" element={<Profile />} />
    <Route path="/" element={<Navigate to="/login" replace />} />
    <Route path="*" element={<Navigate to="/login" replace />} />
   </Routes>

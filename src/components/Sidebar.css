@@ -245,3 +245,13 @@
         display: none;
     }
 }
+
+/* 🔴 Desktop Logout */
+.logout-btn {
+  color: red;
+}
+
+.logout-btn:hover {
+  background-color: rgba(255, 0, 0, 0.1);
+  color: darkred;
+}

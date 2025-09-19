@@ -493,6 +493,7 @@ const App = () => {
        src="/resources/default_avatar.png"
        alt="Profile"
        className="profile-avatar"
+       draggable="false"
       />
       <div className="user-info">
        <span className="username">{user?.username}</span>
@@ -570,7 +571,7 @@ const App = () => {
       <span className="mobile-logo-text">uChat</span>
      </div>
      <div className="mobile-header-actions">
-      <img src="/resources/default_avatar.png" alt="Profile" className="mobile-avatar" onClick={() => setShowUserMenu(!showUserMenu)} />
+      <img src="/resources/default_avatar.png" alt="Profile" draggable="false" className="mobile-avatar" onClick={() => setShowUserMenu(!showUserMenu)} />
      </div>
      {showUserMenu && (
       <div className="user-menu mobile-user-menu">
@@ -621,7 +622,7 @@ const App = () => {
         <div className="search-results">
          {searchResults.map(result => (
           <div key={result.id} className="search-result">
-           <img src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
+           <img draggable="false" src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
            <div className="search-user-info">
             <span className="search-username">{result.username}</span>
             <span className="search-handle">@{result.handle}</span>
@@ -666,6 +667,7 @@ const App = () => {
           src="/resources/default_avatar.png"
           alt={contact.username}
           className="contact-avatar"
+          draggable="false"
          />
          {onlineUsers.includes(contact.id) && (
           <div className="online-indicator"></div>
@@ -702,7 +704,7 @@ const App = () => {
         <button className="mobile-back-btn" onClick={handleBackToContacts}>
         </button>
        )}
-       <img src="/resources/default_avatar.png" alt={activeContact.username} className="chat-avatar" />
+       <img draggable="false" src="/resources/default_avatar.png" alt={activeContact.username} className="chat-avatar" />
        <div className="chat-user-info">
         <span className="chat-username">{activeContact.username}</span>
         <span className="chat-status">
@@ -741,6 +743,7 @@ const App = () => {
             src="/resources/default_avatar.png"
             alt={activeContact.username}
             className="message-avatar"
+            draggable="false"
            />
           )}
           <div className="message-bubble">
@@ -801,7 +804,7 @@ const App = () => {
    {callState.isIncoming && (
     <div className="call-overlay">
      <div className="incoming-call">
-      <img src="/resources/default_avatar.png" alt={callState.contact?.username} />
+      <img draggable="false" src="/resources/default_avatar.png" alt={callState.contact?.username} />
       <h3>{callState.contact?.username} is calling</h3>
       <p>{callState.type === 'video' ? 'Video Call' : 'Audio Call'}</p>
       <div className="call-actions">
@@ -870,6 +873,7 @@ const App = () => {
         <img
          src="/resources/default_avatar.png"
          alt={callState.contact?.username}
+         draggable="false"
         />
         <h3>{callState.contact?.username}</h3>
         <p>Audio Call</p>
