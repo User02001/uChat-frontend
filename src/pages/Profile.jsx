@@ -1,25 +1,82 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Profile.css';
+import { API_BASE_URL } from '../config';
 
-const Profile = ({ user, onBack }) => {
+const Profile = ({ onBack }) => {
+ const navigate = useNavigate();
+ const [user, setUser] = useState(null);
+ const [loading, setLoading] = useState(true);
  const [isEditing, setIsEditing] = useState(false);
- const [originalData] = useState({
-  username: user?.username || 'John Doe',
-  handle: user?.handle || 'johndoe',
-  email: user?.email || 'john@example.com',
-  bio: 'Hey there! I am using uChat.',
-  phone: '+1 (555) 123-4567',
-  location: 'New York, USA',
+ const [profileData, setProfileData] = useState({
+  username: '',
+  handle: '',
+  email: '',
  });
- const [profileData, setProfileData] = useState(originalData);
+ const [originalData, setOriginalData] = useState({});
 
  const handleEdit = () => {
   setIsEditing(!isEditing);
+  if (!isEditing) {
+   setOriginalData({ ...profileData });
+  }
  };
 
  useEffect(() => {
+  checkAuth();
+ }, []);
+
+ useEffect(() => {
   document.title = "uChat | Profile Settings";
- }, []); // <-- dependency array, runs once on mount
+ }, []);
+
+ const checkAuth = async () => {
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/me`, {
+    credentials: 'include'
+   });
+
+   if (response.ok) {
+    const data = await response.json();
+    const userData = {
+     username: data.user.username,
+     handle: data.user.handle,
+     email: data.user.email,
+     bio: 'Hey there! I am using uChat.',
+    };
+    setUser(data.user);
+    setProfileData(userData);
+    setOriginalData(userData);
+   } else {
+    navigate('/login', { replace: true });
+    return;
+   }
+  } catch (error) {
+   console.error('Auth check failed:', error);
+   navigate('/login', { replace: true });
+   return;
+  } finally {
+   setLoading(false);
+  }
+ };
+
+ useEffect(() => {
+  // Apply dark mode based on system preference
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+  // Listen for changes
+  const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleThemeChange = (e) => {
+   document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+  };
+
+  darkModeMediaQuery.addEventListener('change', handleThemeChange);
+
+  return () => {
+   darkModeMediaQuery.removeEventListener('change', handleThemeChange);
+  };
+ }, []);
 
  const handleSave = () => {
   // TODO: Implement real save logic (API call etc.)
@@ -27,7 +84,7 @@ const Profile = ({ user, onBack }) => {
  };
 
  const handleCancel = () => {
-  setProfileData(originalData); // reset to original data
+  setProfileData({ ...originalData });
   setIsEditing(false);
  };
 
@@ -36,6 +93,62 @@ const Profile = ({ user, onBack }) => {
    ...prev,
    [field]: value,
   }));
+ };
+
+ const handleAvatarChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type and size
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+  if (!validTypes.includes(file.type)) {
+   alert('Please select a JPG, PNG or GIF image');
+   return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+   alert('File size must be less than 5MB');
+   return;
+  }
+
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/upload-avatar`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData
+   });
+
+   if (response.ok) {
+    const data = await response.json();
+    // Update user avatar URL
+    setUser(prev => ({ ...prev, avatar_url: data.avatar_url }));
+    alert('Profile picture updated successfully!');
+   } else {
+    alert('Failed to update profile picture');
+   }
+  } catch (error) {
+   console.error('Avatar upload error:', error);
+   alert('Failed to update profile picture');
+  }
+ };
+
+ const handleLogout = async () => {
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/logout`, {
+    method: 'POST',
+    credentials: 'include'
+   });
+
+   if (response.ok) {
+    navigate('/login', { replace: true });
+   }
+  } catch (error) {
+   console.error('Logout failed:', error);
+   navigate('/login', { replace: true });
+  }
  };
 
  const sidebarItems = [
@@ -47,14 +160,26 @@ const Profile = ({ user, onBack }) => {
   { icon: 'fas fa-sign-out-alt', label: 'Logout' },
  ];
 
+ if (loading) {
+  return (
+   <div className="app-loading">
+    <div className="loading-spinner"></div>
+    <p>Loading Profile...</p>
+   </div>
+  );
+ }
+
  return (
   <div className="profile-container">
    {/* Sidebar */}
    <div className="profile-sidebar">
     {/* Sidebar Header */}
     <div className="sidebar-header">
-     <h2>uChat</h2>
-     <p>Stay connected</p>
+     <div className="sidebar-brand">
+      <img draggable="false" src="/resources/main-logo.svg" alt="uChat Logo" className="sidebar-logo" />
+      <h2>uChat</h2>
+     </div>
+     <p>:D</p>
     </div>
 
     {/* Navigation */}
@@ -63,8 +188,9 @@ const Profile = ({ user, onBack }) => {
       {sidebarItems.map((item, index) => (
        <li key={index}>
         <div
-         className={`sidebar-nav-item ${item.active ? 'active' : ''
-          }`}
+         className={`sidebar-nav-item ${item.active ? 'active' : ''}`}
+         onClick={item.label === 'Logout' ? handleLogout : undefined}
+         style={item.label === 'Logout' ? { cursor: 'pointer' } : {}}
         >
          <i className={item.icon}></i>
          <span>{item.label}</span>
@@ -77,10 +203,10 @@ const Profile = ({ user, onBack }) => {
     {/* Sidebar Footer */}
     <div className="sidebar-footer">
      <div className="sidebar-user">
-      <img src="/resources/default_avatar.png" alt="User Avatar" />
+      <img draggable="false" src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"} alt="User Avatar" />
       <div className="sidebar-user-info">
-       <p className="sidebar-username">{profileData.username}</p>
-       <p className="sidebar-handle">@{profileData.handle}</p>
+       <p className="sidebar-username">{user?.username}</p>
+       <p className="sidebar-handle">@{user?.handle}</p>
       </div>
      </div>
     </div>
@@ -119,11 +245,22 @@ const Profile = ({ user, onBack }) => {
        <div className="picture-content">
         <div className="avatar-container">
          <img
-          src="/resources/default_avatar.png"
+          src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
           alt="Profile Avatar"
           className="profile-avatar-main"
+          draggable="false"
          />
-         <button className="avatar-edit-btn">
+         <input
+          type="file"
+          id="avatar-upload"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={handleAvatarChange}
+         />
+         <button
+          className="avatar-edit-btn"
+          onClick={() => document.getElementById('avatar-upload').click()}
+         >
           <i className="fas fa-camera"></i>
          </button>
         </div>
@@ -196,57 +333,16 @@ const Profile = ({ user, onBack }) => {
          )}
         </div>
 
-        {/* Phone */}
-        <div className="info-field">
-         <label>Phone</label>
-         {isEditing ? (
-          <input
-           type="tel"
-           className="field-input"
-           value={profileData.phone}
-           onChange={(e) =>
-            handleInputChange('phone', e.target.value)
-           }
-          />
-         ) : (
-          <div className="field-display">{profileData.phone}</div>
-         )}
-        </div>
-
-        {/* Location */}
+        {/* Member Since */}
         <div className="info-field full-width">
-         <label>Location</label>
+         <label>Member Since (MM/DD/YYYY)</label>
          {isEditing ? (
-          <input
-           type="text"
-           className="field-input"
-           value={profileData.location}
-           onChange={(e) =>
-            handleInputChange('location', e.target.value)
-           }
-          />
+          <div className="field-display">
+           {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+          </div>
          ) : (
           <div className="field-display">
-           {profileData.location}
-          </div>
-         )}
-        </div>
-
-        {/* Bio */}
-        <div className="info-field full-width">
-         <label>Bio</label>
-         {isEditing ? (
-          <textarea
-           rows="4"
-           className="field-textarea"
-           value={profileData.bio}
-           onChange={(e) =>
-            handleInputChange('bio', e.target.value)
-           }
-          />
-         ) : (
-          <div className="field-display bio">
-           {profileData.bio}
+           {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
           </div>
          )}
         </div>
@@ -268,15 +364,21 @@ const Profile = ({ user, onBack }) => {
       {/* Stats Section */}
       <div className="stats-section">
        <div className="stat-card">
-        <div className="stat-number">42</div>
-        <div className="stat-label">Contacts</div>
+        <div className="stat-number">
+         <i className={`fas ${user?.email ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
+        </div>
+        <div className="stat-label">Email Verified?</div>
        </div>
        <div className="stat-card">
-        <div className="stat-number">1.2k</div>
-        <div className="stat-label">Messages</div>
+        <div className="stat-number">@{user?.handle}</div>
+        <div className="stat-label">Your Handle</div>
        </div>
        <div className="stat-card">
-        <div className="stat-number">15d</div>
+        <div className="stat-number">
+         {user?.created_at ?
+          Math.floor((new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24)) + 'd'
+          : 'N/A'}
+        </div>
         <div className="stat-label">Member for</div>
        </div>
       </div>

@@ -9,6 +9,7 @@ const App = () => {
  const navigate = useNavigate();
  const socketRef = useRef(null);
 
+ // Define ALL state first
  const [user, setUser] = useState(null);
  const [loading, setLoading] = useState(true);
  const [contacts, setContacts] = useState([]);
@@ -20,7 +21,7 @@ const App = () => {
  const [searchResults, setSearchResults] = useState([]);
  const [showSearch, setShowSearch] = useState(false);
  const [typingUsers, setTypingUsers] = useState(new Set());
- const [error, setError] = useState('');
+ const [error, setError] = useState(''); // <- setError is now defined
  const [showUserMenu, setShowUserMenu] = useState(false);
  const [showMobileSearch, setShowMobileSearch] = useState(false);
  const [searchExiting, setSearchExiting] = useState(false);
@@ -30,15 +31,18 @@ const App = () => {
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
 
- // Initialize calls hook
+ // NOW call useCalls after setError exists
  const {
   callState,
   localVideoRef,
   remoteVideoRef,
+  ringtoneRef,
   startCall,
   answerCall,
   endCall,
-  setupSocketListeners
+  setupSocketListeners,
+  audioEnabled,
+  enableAudio
  } = useCalls(socketRef, setError);
 
  // Check if device is mobile on window resize
@@ -133,6 +137,32 @@ const App = () => {
   }
  };
 
+ // Save last selected contact (desktop only)
+ const saveLastContact = (contact) => {
+  if (!isMobile && contact) {
+   localStorage.setItem('lastSelectedContact', JSON.stringify({
+    id: contact.id,
+    username: contact.username,
+    avatar_url: contact.avatar_url
+   }));
+  }
+ };
+
+ // Load last selected contact (desktop only)
+ const loadLastContact = () => {
+  if (!isMobile) {
+   try {
+    const saved = localStorage.getItem('lastSelectedContact');
+    if (saved) {
+     return JSON.parse(saved);
+    }
+   } catch (error) {
+    console.error('Failed to load last contact:', error);
+   }
+  }
+  return null;
+ };
+
  // Format timestamp to human readable format
  const formatTimeAgo = (timestamp) => {
   const now = new Date();
@@ -157,17 +187,7 @@ const App = () => {
   });
 
   const socket = socketRef.current;
-
-  socket.on('connect', () => {
-   console.log('Socket connected:', socket.id);
-  });
-
-  socket.on('disconnect', () => {
-   console.log('Socket disconnected');
-  });
-
   socket.on('user_status', (data) => {
-   console.log('User status update:', data);
    setOnlineUsers(prev => {
     if (data.status === 'online') {
      return [...prev, data.user_id].filter((id, index, arr) => arr.indexOf(id) === index);
@@ -247,6 +267,19 @@ const App = () => {
   }
  };
 
+ // Restore last selected contact on desktop after contacts are loaded
+ useEffect(() => {
+  if (contacts.length > 0 && !isMobile && !activeContact) {
+   const lastContact = loadLastContact();
+   if (lastContact) {
+    const contact = contacts.find(c => c.id === lastContact.id);
+    if (contact) {
+     selectContact(contact);
+    }
+   }
+  }
+ }, [contacts, isMobile, activeContact]);
+
  // Load messages for a specific contact
  const loadMessages = async (contactId) => {
   try {
@@ -322,6 +355,7 @@ const App = () => {
    }
 
    setActiveContact(contact);
+   saveLastContact(contact);
    setMessages([]);
    setTypingUsers(new Set());
    loadMessages(contact.id);
@@ -484,17 +518,20 @@ const App = () => {
 
  return (
   <div className={`app-container ${isMobile && showMobileChat ? 'mobile-chat-open' : ''}`}>
-   <Sidebar showMobileChat={showMobileChat} />
+   <Sidebar showMobileChat={showMobileChat} onLogout={handleLogout} />
 
    <div className="sidebar">
     <div className="sidebar-header">
      <div className="user-profile">
-      <img
-       src="/resources/default_avatar.png"
-       alt="Profile"
-       className="profile-avatar"
-       draggable="false"
-      />
+      <div className="contact-avatar-container">
+       <img
+        src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
+        alt="Profile"
+        className="profile-avatar"
+        draggable="false"
+       />
+       <div className={`status-indicator ${onlineUsers.includes(user?.id) ? 'online' : 'offline'}`}></div>
+      </div>
       <div className="user-info">
        <span className="username">{user?.username}</span>
        <span className="handle">@{user?.handle}</span>
@@ -545,7 +582,7 @@ const App = () => {
         {searchResults.map(result => (
          <div key={result.id} className="search-result">
           <img
-           src="/resources/default_avatar.png"
+           src={result.avatar_url ? `${API_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"}
            alt={result.username}
            className="search-avatar"
           />
@@ -571,7 +608,10 @@ const App = () => {
       <span className="mobile-logo-text">uChat</span>
      </div>
      <div className="mobile-header-actions">
-      <img src="/resources/default_avatar.png" alt="Profile" draggable="false" className="mobile-avatar" onClick={() => setShowUserMenu(!showUserMenu)} />
+      <div className="contact-avatar-container" onClick={() => setShowUserMenu(!showUserMenu)}>
+       <img src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"} alt="Profile" draggable="false" className="mobile-avatar" />
+       <div className={`status-indicator ${onlineUsers.includes(user?.id) ? 'online' : 'offline'}`}></div>
+      </div>
      </div>
      {showUserMenu && (
       <div className="user-menu mobile-user-menu">
@@ -622,7 +662,7 @@ const App = () => {
         <div className="search-results">
          {searchResults.map(result => (
           <div key={result.id} className="search-result">
-           <img draggable="false" src="/resources/default_avatar.png" alt={result.username} className="search-avatar" />
+           <img draggable="false" src={result.avatar_url ? `${API_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"} alt={result.username} className="search-avatar" />
            <div className="search-user-info">
             <span className="search-username">{result.username}</span>
             <span className="search-handle">@{result.handle}</span>
@@ -664,14 +704,12 @@ const App = () => {
        >
         <div className="contact-avatar-container">
          <img
-          src="/resources/default_avatar.png"
+          src={contact.avatar_url ? `${API_BASE_URL}${contact.avatar_url}` : "/resources/default_avatar.png"}
           alt={contact.username}
           className="contact-avatar"
           draggable="false"
          />
-         {onlineUsers.includes(contact.id) && (
-          <div className="online-indicator"></div>
-         )}
+         <div className={`status-indicator ${onlineUsers.includes(contact.id) ? 'online' : 'offline'}`}></div>
         </div>
         <div className="contact-info">
          <div className="contact-main">
@@ -704,11 +742,14 @@ const App = () => {
         <button className="mobile-back-btn" onClick={handleBackToContacts}>
         </button>
        )}
-       <img draggable="false" src="/resources/default_avatar.png" alt={activeContact.username} className="chat-avatar" />
+       <div className="contact-avatar-container">
+        <img draggable="false" src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"} alt={activeContact.username} className="chat-avatar" />
+        <div className={`status-indicator ${onlineUsers.includes(activeContact.id) ? 'online' : 'offline'}`}></div>
+       </div>
        <div className="chat-user-info">
         <span className="chat-username">{activeContact.username}</span>
         <span className="chat-status">
-         {onlineUsers.includes(activeContact.id) ? 'Online' : 'Offline'}
+         {onlineUsers.includes(activeContact.id) ? 'Available Now' : 'Offline Now'}
         </span>
        </div>
        <div className="call-buttons">
@@ -740,7 +781,7 @@ const App = () => {
          >
           {message.sender_id !== user.id && (
            <img
-            src="/resources/default_avatar.png"
+            src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"}
             alt={activeContact.username}
             className="message-avatar"
             draggable="false"
@@ -804,7 +845,7 @@ const App = () => {
    {callState.isIncoming && (
     <div className="call-overlay">
      <div className="incoming-call">
-      <img draggable="false" src="/resources/default_avatar.png" alt={callState.contact?.username} />
+      <img draggable="false" src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"} alt={callState.contact?.username} />
       <h3>{callState.contact?.username} is calling</h3>
       <p>{callState.type === 'video' ? 'Video Call' : 'Audio Call'}</p>
       <div className="call-actions">
@@ -871,7 +912,7 @@ const App = () => {
       ) : (
        <div className="audio-call-ui">
         <img
-         src="/resources/default_avatar.png"
+         src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
          alt={callState.contact?.username}
          draggable="false"
         />
@@ -897,9 +938,18 @@ const App = () => {
       <div className="call-controls">
        <button className="end-call-btn" onClick={endCall}></button>
       </div>
+      
      </div>
     </div>
    )}
+   <audio
+    ref={ringtoneRef}
+    preload="auto"
+    crossOrigin="anonymous"
+   >
+    <source src="/resources/ringtones/default_ringtone.mp3" type="audio/mpeg" />
+    <source src="/resources/ringtones/default_ringtone.wav" type="audio/wav" />
+   </audio>
   </div>
  );
 };

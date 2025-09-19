@@ -23,7 +23,6 @@ const Login = () => {
    script.src = '/resources/lottie.js';
 
    script.onload = () => {
-    console.log('Lottie script loaded successfully');
 
     if (window.lottie && lottieRef.current) {
      try {

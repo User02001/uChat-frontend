@@ -1,17 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ showMobileChat = false }) => {
+const Sidebar = ({ showMobileChat = false, onLogout }) => {
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
+ const [isDarkMode, setIsDarkMode] = useState(false);
  const moreMenuRef = useRef(null);
+
+ useEffect(() => {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  setIsDarkMode(mediaQuery.matches);
+
+  const handleChange = (e) => setIsDarkMode(e.matches);
+  mediaQuery.addEventListener('change', handleChange);
+
+  return () => mediaQuery.removeEventListener('change', handleChange);
+ }, []);
+
+ useEffect(() => {
+  document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+ }, [isDarkMode]);
 
  const handleTabClick = (tab) => {
   setActiveTab(tab);
-  // Add your navigation logic here if needed
+  if (tab === 'profile') {
+   window.location.href = '/profile';
+  }
  };
 
- // Close more menu when clicking outside
  useEffect(() => {
   const handleClickOutside = (event) => {
    if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
@@ -38,35 +54,8 @@ const Sidebar = ({ showMobileChat = false }) => {
     >
      <i className="fas fa-comment-dots"></i>
     </button>
-    <button
-     className={`nav-btn ${activeTab === 'calls' ? 'active' : ''}`}
-     title="Calls"
-     onClick={() => handleTabClick('calls')}
-    >
-     <i className="fas fa-phone"></i>
-    </button>
-    <button
-     className={`nav-btn ${activeTab === 'stories' ? 'active' : ''}`}
-     title="Stories"
-     onClick={() => handleTabClick('stories')}
-    >
-     <i className="fas fa-circle-play"></i>
-    </button>
-    <button
-     className={`nav-btn ${activeTab === 'groups' ? 'active' : ''}`}
-     title="Groups"
-     onClick={() => handleTabClick('groups')}
-    >
-     <i className="fas fa-users"></i>
-    </button>
-    <button
-     className={`nav-btn ${activeTab === 'settings' ? 'active' : ''}`}
-     title="Settings"
-     onClick={() => handleTabClick('settings')}
-    >
-     <i className="fas fa-cog"></i>
-    </button>
    </div>
+
 
    <div className="nav-bottom">
     <button
@@ -77,17 +66,15 @@ const Sidebar = ({ showMobileChat = false }) => {
      <i className="fas fa-user-circle"></i>
     </button>
 
-    {/* 🔴 Logout for desktop */}
     <button
      className="nav-btn logout-btn"
      title="Logout"
-     onClick={() => (window.location.href = '/logout')}
+     onClick={onLogout}
     >
      <i className="fas fa-sign-out-alt"></i>
     </button>
    </div>
 
-   {/* Mobile Navigation */}
    <div className="mobile-nav">
     <button
      className={`mobile-nav-btn ${activeTab === 'chats' ? 'active' : ''}`}
@@ -139,9 +126,24 @@ const Sidebar = ({ showMobileChat = false }) => {
       </button>
       <button
        className="mobile-more-item"
-       onClick={() => {
-        handleTabClick('profile');
+       onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
         setShowMore(false);
+        handleTabClick('profile');
+       }}
+       onTouchStart={() => { }}
+       onTouchEnd={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowMore(false);
+        handleTabClick('profile');
+       }}
+       style={{
+        cursor: 'pointer',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
        }}
       >
        <i className="fas fa-user-circle"></i>
@@ -149,9 +151,28 @@ const Sidebar = ({ showMobileChat = false }) => {
       </button>
       <button
        className="mobile-more-item logout-item"
-       onClick={() => {
-        window.location.href = '/logout'; // redirect
+       onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
         setShowMore(false);
+        if (onLogout) {
+         onLogout();
+        }
+       }}
+       onTouchStart={() => { }}
+       onTouchEnd={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowMore(false);
+        if (onLogout) {
+         onLogout();
+        }
+       }}
+       style={{
+        cursor: 'pointer',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
        }}
       >
        <i className="fas fa-sign-out-alt"></i>

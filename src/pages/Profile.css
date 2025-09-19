@@ -1,3 +1,48 @@
+/* Light Mode (default) */
+:root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #f1f3f5;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border: #dee2e6;
+    --button-primary: #ff9800;
+    --button-primary-hover: #f57c00;
+    --button-primary-text: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-light: rgba(0, 0, 0, 0.05);
+    --online-indicator: #28a745;
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --bg-tertiary: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --border: #404040;
+    --button-primary: #ff9800;
+    --button-primary-hover: #ffb74d;
+    --button-primary-text: #000000;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-light: rgba(0, 0, 0, 0.15);
+    --online-indicator: #4caf50;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    user-select: none;
+}
+
+.sidebar-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
 /* Profile Container */
 .profile-container {
     display: flex;
