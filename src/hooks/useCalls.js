@@ -46,12 +46,10 @@ const useCalls = (socketRef, setError) => {
     ringtoneRef.current.currentTime = 0;
     ringtoneRef.current.volume = 0.7; // Reset to normal volume
 
-    console.log('Audio enabled successfully');
     setAudioEnabled(true);
     return true;
    }
   } catch (err) {
-   console.log('Failed to enable audio:', err);
    return false;
   }
  }, [audioEnabled]);
@@ -77,12 +75,7 @@ const useCalls = (socketRef, setError) => {
 
  // Play ringtone with fallback strategies
  const playRingtone = useCallback(async () => {
-  console.log('🔍 ringtoneRef.current:', ringtoneRef.current);
-  console.log('🔍 Audio element src:', ringtoneRef.current?.src);
-  console.log('🔍 Audio element readyState:', ringtoneRef.current?.readyState);
-
   if (!ringtoneRef.current) {
-   console.log('❌ No ringtone ref found');
    return;
   }
 
@@ -100,11 +93,8 @@ const useCalls = (socketRef, setError) => {
 
    if (playPromise !== undefined) {
     await playPromise;
-    console.log('Ringtone started successfully');
    }
   } catch (error) {
-   console.log('Ringtone blocked by browser policy:', error);
-
    // Show visual notification if audio is blocked
    if (setError) {
     setError('Incoming call (audio blocked by browser)');
@@ -119,9 +109,7 @@ const useCalls = (socketRef, setError) => {
  const testAudio = () => {
   const audio = new Audio('/resources/ringtones/default_ringtone.mp3');
   audio.play().then(() => {
-   console.log('✅ Audio file works');
   }).catch(err => {
-   console.log('❌ Audio file failed:', err);
   });
  };
 
@@ -172,7 +160,6 @@ const useCalls = (socketRef, setError) => {
   });
 
   peer.on('signal', (data) => {
-   console.log('Peer signal:', data);
    if (socketRef.current) {
     socketRef.current.emit('webrtc_signal', {
      target_id: callState.contact?.id,
@@ -182,8 +169,6 @@ const useCalls = (socketRef, setError) => {
   });
 
   peer.on('stream', (remoteStream) => {
-   console.log('Got remote stream, setting up video element');
-
    setCallState(prev => ({
     ...prev,
     remoteStream,
@@ -195,13 +180,11 @@ const useCalls = (socketRef, setError) => {
    // Set up remote video with a small delay to ensure element exists
    setTimeout(() => {
     if (remoteVideoRef.current && remoteStream) {
-     console.log('Setting remote video srcObject');
      remoteVideoRef.current.srcObject = remoteStream;
      remoteVideoRef.current.autoplay = true;
      remoteVideoRef.current.playsInline = true;
      remoteVideoRef.current.muted = false;
      remoteVideoRef.current.play().catch(e => {
-      console.log('Remote video play error:', e);
       // Try again after a short delay
       setTimeout(() => {
        if (remoteVideoRef.current) {
@@ -220,7 +203,6 @@ const useCalls = (socketRef, setError) => {
   });
 
   peer.on('close', () => {
-   console.log('Peer connection closed');
    endCall();
   });
 
@@ -234,8 +216,6 @@ const useCalls = (socketRef, setError) => {
   const socket = socketRef.current;
 
   socket.on('incoming_call', (data) => {
-   console.log('Incoming call:', data);
-
    // Stop any existing ringtone and play new one
    stopRingtone();
    playRingtone();
@@ -250,7 +230,6 @@ const useCalls = (socketRef, setError) => {
   });
 
   socket.on('call_accepted', (data) => {
-   console.log('Call accepted:', data);
    stopRingtone();
    setCallState(prev => ({
     ...prev,
@@ -260,20 +239,17 @@ const useCalls = (socketRef, setError) => {
   });
 
   socket.on('call_rejected', () => {
-   console.log('Call rejected');
    stopRingtone();
    endCall();
   });
 
   socket.on('webrtc_signal', (data) => {
-   console.log('Received WebRTC signal:', data);
    if (peerRef.current && !peerRef.current.destroyed) {
     peerRef.current.signal(data.signal);
    }
   });
 
   socket.on('call_ended', () => {
-   console.log('Call ended');
    stopRingtone();
    endCall();
   });
@@ -290,8 +266,6 @@ const useCalls = (socketRef, setError) => {
  // Start call
  const startCall = async (contact, type) => {
   try {
-   console.log('Starting call with', contact.username);
-
    // Enable audio before starting call - if it fails, show error
    const audioUnlocked = await enableAudio();
    if (!audioUnlocked) {
@@ -356,8 +330,6 @@ const useCalls = (socketRef, setError) => {
   }
 
   try {
-   console.log('Answering call');
-
    const stream = await getUserMedia(callState.type === 'video');
    setLocalStream(stream);
 
@@ -382,8 +354,6 @@ const useCalls = (socketRef, setError) => {
     });
    });
 
-   console.log('Created receiver peer, waiting for remote stream...');
-
    setCallState(prev => ({
     ...prev,
     localStream: stream,
@@ -398,8 +368,6 @@ const useCalls = (socketRef, setError) => {
 
  // End call
  const endCall = () => {
-  console.log('Ending call');
-
   // Stop ringtone
   stopRingtone();
 

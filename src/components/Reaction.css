@@ -1,0 +1,345 @@
+/* Reaction Popup Component */
+.reaction-popup {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px var(--shadow);
+    padding: 8px;
+    display: flex;
+    gap: 6px;
+    z-index: 20;
+    margin-bottom: 8px;
+    opacity: 0;
+    animation: reactionPopupIn 0.2s ease forwards;
+}
+
+    /* Adjust popup position if it would go off-screen */
+    .reaction-popup.flip-horizontal {
+        left: auto;
+        right: 0;
+        transform: none;
+    }
+
+    .reaction-popup.flip-vertical {
+        bottom: auto;
+        top: 100%;
+        margin-bottom: 0;
+        margin-top: 8px;
+    }
+
+@keyframes reactionPopupIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.reaction-option {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+    .reaction-option:hover {
+        background: var(--bg-tertiary);
+        transform: scale(1.2);
+    }
+
+    .reaction-option:active {
+        transform: scale(1.0);
+    }
+
+    /* Fixed icon colors that work in both themes */
+    .reaction-option.like {
+        color: #3b82f6;
+    }
+
+    .reaction-option.love {
+        color: #ef4444;
+    }
+
+    .reaction-option.happy {
+        color: #f59e0b;
+    }
+
+    .reaction-option.sad {
+        color: #6b7280;
+    }
+
+    .reaction-option.angry {
+        color: #dc2626;
+    }
+
+    .reaction-option.dislike {
+        color: #7c3aed;
+    }
+
+    .reaction-option.skull {
+        color: #374151;
+    }
+
+/* Dark theme adjustments for skull */
+[data-theme="dark"] .reaction-option.skull {
+    color: #9ca3af;
+}
+
+/* Message reaction button positioning */
+.message-reaction-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 5;
+}
+
+/* Position reaction button next to reply button */
+.message.sent .message-reaction-btn {
+    left: -80px;
+}
+
+.message.received .message-reaction-btn {
+    right: -80px;
+}
+
+.message:hover .message-reaction-btn {
+    opacity: 1;
+}
+
+.message-reaction-btn:hover {
+    background: var(--button-primary);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.message-reaction-btn:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+/* Message reactions display */
+.message-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    margin-top: -6px;
+    padding: 0;
+    position: relative;
+    z-index: 10;
+}
+
+.reaction-display {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 22px;
+}
+
+    .reaction-display:hover {
+        background: var(--bg-secondary);
+        transform: scale(1.05);
+    }
+
+    .reaction-display.user-reacted {
+        background: var(--button-primary);
+        color: white;
+        border: 2px solid #3b82f6;
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+    }
+
+        .reaction-display.user-reacted:hover {
+            background: var(--button-primary);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+        }
+
+/* Dark theme glow for user-reacted */
+[data-theme="dark"] .reaction-display {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+    [data-theme="dark"] .reaction-display:hover {
+        background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] .reaction-display.user-reacted {
+        border: 2px solid #60a5fa;
+        box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+    }
+
+        [data-theme="dark"] .reaction-display.user-reacted:hover {
+            box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
+        }
+
+/* Override colors when user reacted (white text) */
+.reaction-display.user-reacted .reaction-icon {
+    color: white !important;
+}
+
+.reaction-display.user-reacted .reaction-count {
+    color: white !important;
+}
+
+.reaction-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.reaction-count {
+    font-weight: 500;
+    font-size: 11px;
+    min-width: 8px;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+/* Message reaction display colors */
+.reaction-display.like .reaction-icon {
+    color: #3b82f6;
+}
+
+.reaction-display.love .reaction-icon {
+    color: #ef4444;
+}
+
+.reaction-display.happy .reaction-icon {
+    color: #f59e0b;
+}
+
+.reaction-display.sad .reaction-icon {
+    color: #6b7280;
+}
+
+.reaction-display.angry .reaction-icon {
+    color: #dc2626;
+}
+
+.reaction-display.dislike .reaction-icon {
+    color: #7c3aed;
+}
+
+.reaction-display.skull .reaction-icon {
+    color: #374151;
+}
+
+[data-theme="dark"] .reaction-display.skull .reaction-icon {
+    color: #9ca3af;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .message.sent .message-reaction-btn {
+        left: -70px;
+    }
+
+    .message.received .message-reaction-btn {
+        right: -70px;
+    }
+
+    .reaction-popup {
+        bottom: 120%;
+        margin-bottom: 4px;
+    }
+
+    .reaction-option {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .message-reaction-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .reaction-display {
+        padding: 1px 5px;
+        gap: 2px;
+        min-height: 20px;
+    }
+
+    .reaction-icon {
+        font-size: 12px;
+    }
+
+    .reaction-count {
+        font-size: 10px;
+    }
+
+    .message-reactions {
+        gap: 3px;
+        margin-top: -4px;
+    }
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .reaction-popup {
+    background: var(--bg-tertiary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .message-reaction-btn {
+    background: var(--bg-tertiary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .reaction-display {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+    [data-theme="dark"] .reaction-display:hover {
+        background: var(--bg-secondary);
+    }
+
+[data-theme="dark"] .reaction-count {
+    color: var(--text-primary);
+}
+
+/* Hide popup when clicked outside */
+.reaction-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 15;
+    background: transparent;
+}

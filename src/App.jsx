@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
+import Reply from './components/Reply';
 import { API_BASE_URL, SOCKET_URL } from './config';
 import useCalls from './hooks/useCalls';
+import MessagesSkeleton from './components/MessagesSkeleton';
+import ContactsSkeleton from './components/ContactsSkeleton';
+import Reaction from './components/Reaction';
 
 const App = () => {
  const navigate = useNavigate();
@@ -27,6 +31,19 @@ const App = () => {
  const [searchExiting, setSearchExiting] = useState(false);
  const [isMobile, setIsMobile] = useState(false);
  const [showMobileChat, setShowMobileChat] = useState(false);
+ const [replyingTo, setReplyingTo] = useState(null);
+ const [isTransitioning, setIsTransitioning] = useState(false);
+ const [showChatContent, setShowChatContent] = useState(false);
+ const [contactsLoading, setContactsLoading] = useState(true);
+ const [isTyping, setIsTyping] = useState(false);
+ const [messageReactions, setMessageReactions] = useState({});
+ const [showReactionPopup, setShowReactionPopup] = useState(null); // stores messageId
+ const [socketConnected, setSocketConnected] = useState(false);
+ const [reconnectAttempts, setReconnectAttempts] = useState(0);
+ const reconnectTimeoutRef = useRef(null);
+ const maxReconnectAttempts = 10;
+ const fileInputRef = useRef(null);
+ const [dragOver, setDragOver] = useState(false);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -73,16 +90,66 @@ const App = () => {
     setSearchQuery('');
     setSearchResults([]);
    }
+   if (showReactionPopup && !event.target.closest('.reaction-modal') && !event.target.closest('.message-reaction-btn')) {
+    setShowReactionPopup(null);
+   }
   };
 
   document.addEventListener('click', handleClickOutside);
   return () => document.removeEventListener('click', handleClickOutside);
- }, [showUserMenu, showSearch]);
+ }, [showUserMenu, showSearch, showReactionPopup]);
 
  // Initialize authentication check on component mount
  useEffect(() => {
   checkAuth();
  }, []);
+
+ // Scroll to and highlight original message
+ const scrollToMessage = (messageId) => {
+  const messageElement = document.getElementById(`message-${messageId}`);
+  if (messageElement) {
+   // Check if element is already in view
+   const rect = messageElement.getBoundingClientRect();
+   const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+   if (isInView) {
+    // No scrolling needed, highlight immediately
+    const messageBubble = messageElement.querySelector('.message-bubble');
+    if (messageBubble) {
+     messageBubble.classList.add('message-highlighted');
+
+     setTimeout(() => {
+      messageBubble.classList.remove('message-highlighted');
+     }, 800);
+    }
+   } else {
+    // Scrolling needed, wait for scroll to finish
+    messageElement.scrollIntoView({
+     behavior: 'smooth',
+     block: 'center'
+    });
+
+    let scrollTimeout;
+    const handleScrollEnd = () => {
+     clearTimeout(scrollTimeout);
+     scrollTimeout = setTimeout(() => {
+      const messageBubble = messageElement.querySelector('.message-bubble');
+      if (messageBubble) {
+       messageBubble.classList.add('message-highlighted');
+
+       setTimeout(() => {
+        messageBubble.classList.remove('message-highlighted');
+       }, 400);
+      }
+
+      document.removeEventListener('scroll', handleScrollEnd, true);
+     }, 150);
+    };
+
+    document.addEventListener('scroll', handleScrollEnd, true);
+   }
+  }
+ };
 
  // Handle local video setup for both caller and receiver
  useEffect(() => {
@@ -179,14 +246,138 @@ const App = () => {
   return time.toLocaleDateString();
  };
 
- // Initialize socket connection and event listeners
+ const formatLastSeen = (lastSeenTimestamp) => {
+  if (!lastSeenTimestamp) return 'Offline';
+
+  const now = new Date();
+  const lastSeen = new Date(lastSeenTimestamp + 'Z');
+  const diffMs = now - lastSeen;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMinutes < 2) return 'Last seen just now';
+  if (diffMinutes < 60) return `Last seen ${diffMinutes}m ago`;
+  if (diffHours < 24) return `Last seen ${diffHours}h ago`;
+  if (diffDays === 1) return 'Last seen yesterday';
+  if (diffDays < 7) return `Last seen ${diffDays}d ago`;
+  return 'Last seen long ago';
+ };
+
+ // File size formatter
+ const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+ };
+
+ // Get file icon based on extension
+ const getFileIcon = (fileType) => {
+  const iconMap = {
+   // Documents
+   pdf: 'fas fa-file-pdf',
+   doc: 'fas fa-file-word',
+   docx: 'fas fa-file-word',
+   txt: 'fas fa-file-alt',
+   rtf: 'fas fa-file-alt',
+
+   // Archives
+   zip: 'fas fa-file-archive',
+   rar: 'fas fa-file-archive',
+   '7z': 'fas fa-file-archive',
+   tar: 'fas fa-file-archive',
+   gz: 'fas fa-file-archive',
+
+   // Media
+   mp4: 'fas fa-file-video',
+   avi: 'fas fa-file-video',
+   mkv: 'fas fa-file-video',
+   mov: 'fas fa-file-video',
+   wmv: 'fas fa-file-video',
+   mp3: 'fas fa-file-audio',
+   wav: 'fas fa-file-audio',
+   flac: 'fas fa-file-audio',
+   aac: 'fas fa-file-audio',
+
+   // Spreadsheets
+   xlsx: 'fas fa-file-excel',
+   xls: 'fas fa-file-excel',
+   csv: 'fas fa-file-csv',
+
+   // Presentations
+   pptx: 'fas fa-file-powerpoint',
+   ppt: 'fas fa-file-powerpoint',
+
+   // Code files
+   js: 'fas fa-file-code',
+   html: 'fas fa-file-code',
+   css: 'fas fa-file-code',
+   py: 'fas fa-file-code',
+   java: 'fas fa-file-code',
+   cpp: 'fas fa-file-code',
+   c: 'fas fa-file-code',
+   php: 'fas fa-file-code',
+
+   // Executables
+   exe: 'fas fa-cog',
+   msi: 'fas fa-cog',
+   app: 'fas fa-cog',
+   deb: 'fas fa-cog',
+
+   default: 'fas fa-file'
+  };
+  return iconMap[fileType?.toLowerCase()] || iconMap.default;
+ };
+
  const initializeSocket = () => {
+  if (socketRef.current) {
+   socketRef.current.disconnect();
+  }
+
   socketRef.current = io(SOCKET_URL, {
    withCredentials: true,
-   transports: ['websocket', 'polling']
+   transports: ['websocket', 'polling'],
+   timeout: 20000,
+   forceNew: true,
+   reconnection: true,
+   reconnectionAttempts: maxReconnectAttempts,
+   reconnectionDelay: 1000,
+   reconnectionDelayMax: 30000,
+   maxReconnectionAttempts: maxReconnectAttempts
   });
 
   const socket = socketRef.current;
+
+  socket.on('connect', () => {
+   console.log('Socket connected');
+   setSocketConnected(true);
+   setReconnectAttempts(0);
+
+   // Rejoin active chat if there is one
+   if (activeContact) {
+    socket.emit('join_chat', { contact_id: activeContact.id });
+   }
+  });
+
+  socket.on('disconnect', (reason) => {
+   console.log('Socket disconnected:', reason);
+   setSocketConnected(false);
+
+   // Only attempt manual reconnection for certain disconnect reasons
+   if (reason === 'io server disconnect' || reason === 'transport close') {
+    attemptReconnect();
+   }
+  });
+
+  socket.on('connect_error', (error) => {
+   console.error('Socket connection error:', error);
+   setSocketConnected(false);
+   attemptReconnect();
+  });
+
+  // Your existing socket event listeners
   socket.on('user_status', (data) => {
    setOnlineUsers(prev => {
     if (data.status === 'online') {
@@ -222,7 +413,6 @@ const App = () => {
   });
 
   socket.on('typing_status', (data) => {
-   console.log('Typing status:', data);
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     if (data.is_typing) {
@@ -232,38 +422,179 @@ const App = () => {
     }
     return newSet;
    });
-
-   if (data.is_typing) {
-    setTimeout(() => {
-     setTypingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(data.user_id);
-      return newSet;
-     });
-    }, 3000);
-   }
   });
 
-  // Setup call-related socket listeners
+  socket.on('reaction_added', (data) => {
+   setMessageReactions(prev => ({
+    ...prev,
+    [data.message_id]: {
+     ...prev[data.message_id],
+     [data.reaction_type]: {
+      count: data.count,
+      users: data.users
+     }
+    }
+   }));
+  });
+
+  socket.on('reaction_removed', (data) => {
+   setMessageReactions(prev => ({
+    ...prev,
+    [data.message_id]: {
+     ...prev[data.message_id],
+     [data.reaction_type]: {
+      count: data.count,
+      users: data.users
+     }
+    }
+   }));
+  });
+
   setupSocketListeners();
  };
+
+ const uploadFile = async (file, receiverId) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('receiver_id', receiverId);
+
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/upload-file`, {
+    method: 'POST',
+    credentials: 'include',
+    body: formData
+   });
+
+   if (!response.ok) {
+    const error = await response.json();
+    setError(error.error || 'Upload failed');
+   }
+  } catch (error) {
+   setError('Upload failed');
+  }
+ };
+
+ const handleFileSelect = (files) => {
+  if (!activeContact) return;
+
+  Array.from(files).forEach(file => {
+   uploadFile(file, activeContact.id);
+  });
+ };
+
+ const handlePaste = (e) => {
+  const items = e.clipboardData.items;
+
+  for (let i = 0; i < items.length; i++) {
+   if (items[i].type.indexOf('image') !== -1) {
+    e.preventDefault();
+    const file = items[i].getAsFile();
+    if (file && activeContact) {
+     uploadFile(file, activeContact.id);
+    }
+    break;
+   }
+  }
+ };
+
+ const handleDragOver = (e) => {
+  e.preventDefault();
+  setDragOver(true);
+ };
+
+ const handleDragLeave = (e) => {
+  e.preventDefault();
+  setDragOver(false);
+ };
+
+ const handleDrop = (e) => {
+  e.preventDefault();
+  setDragOver(false);
+
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+   handleFileSelect(files);
+  }
+ };
+
+ const attemptReconnect = () => {
+  if (reconnectAttempts >= maxReconnectAttempts) {
+   console.log('Max reconnection attempts reached');
+   return;
+  }
+
+  if (reconnectTimeoutRef.current) {
+   clearTimeout(reconnectTimeoutRef.current);
+  }
+
+  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+  console.log(`Attempting reconnection in ${delay}ms (attempt ${reconnectAttempts + 1})`);
+
+  reconnectTimeoutRef.current = setTimeout(() => {
+   setReconnectAttempts(prev => prev + 1);
+   initializeSocket();
+  }, delay);
+ };
+
+ // Handle page visibility changes and browser sleep/wake
+ useEffect(() => {
+  const handleVisibilityChange = () => {
+   if (document.visibilityState === 'visible') {
+    // Page became visible, check socket connection
+    if (socketRef.current && !socketRef.current.connected) {
+     console.log('Page visible, reconnecting socket...');
+     initializeSocket();
+    }
+   }
+  };
+
+  const handleFocus = () => {
+   // Window gained focus, ensure socket is connected
+   if (socketRef.current && !socketRef.current.connected) {
+    console.log('Window focused, reconnecting socket...');
+    initializeSocket();
+   }
+  };
+
+  const handleOnline = () => {
+   // Network came back online
+   console.log('Network online, reconnecting socket...');
+   initializeSocket();
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', handleFocus);
+  window.addEventListener('online', handleOnline);
+
+  return () => {
+   document.removeEventListener('visibilitychange', handleVisibilityChange);
+   window.removeEventListener('focus', handleFocus);
+   window.removeEventListener('online', handleOnline);
+  };
+ }, []);
 
  // Load user contacts and online status
  const loadContacts = async () => {
   try {
+   setContactsLoading(true);
    const response = await fetch(`${API_BASE_URL}/api/contacts`, {
     credentials: 'include'
    });
 
    if (response.ok) {
     const data = await response.json();
-    setContacts(data.contacts);
-    setOnlineUsers(data.online_users);
+    // Add 1 second delay to show skeleton
+    setTimeout(() => {
+     setContacts(data.contacts);
+     setOnlineUsers(data.online_users);
+     setContactsLoading(false);
+    }, 1000);
    } else if (response.status === 401) {
     navigate('/login', { replace: true });
    }
   } catch (error) {
    console.error('Failed to load contacts:', error);
+   setContactsLoading(false);
   }
  };
 
@@ -290,6 +621,15 @@ const App = () => {
    if (response.ok) {
     const data = await response.json();
     setMessages(data.messages);
+
+    // Load reactions for these messages
+    const reactionsData = {};
+    data.messages.forEach(message => {
+     if (message.reactions && Object.keys(message.reactions).length > 0) {
+      reactionsData[message.id] = message.reactions;
+     }
+    });
+    setMessageReactions(reactionsData);
    } else if (response.status === 401) {
     navigate('/login', { replace: true });
    }
@@ -354,18 +694,47 @@ const App = () => {
     socketRef.current.emit('leave_chat', { contact_id: activeContact.id });
    }
 
-   setActiveContact(contact);
-   saveLastContact(contact);
-   setMessages([]);
-   setTypingUsers(new Set());
-   loadMessages(contact.id);
-
-   if (socketRef.current) {
-    socketRef.current.emit('join_chat', { contact_id: contact.id });
-   }
-
    if (isMobile) {
+    // Clear current contact immediately to avoid showing "Welcome to uChat"
+    setActiveContact(null);
+    setMessages([]);
+    setShowChatContent(false); // Add this line
+
+    // START the transition FIRST (like back button does)
     setShowMobileChat(true);
+
+    // Wait for the full transition duration before setting new contact
+    setTimeout(() => {
+     setActiveContact(contact);
+     saveLastContact(contact);
+     setTypingUsers(new Set());
+     setIsTyping(false); // Add this line
+
+     if (socketRef.current) {
+      socketRef.current.emit('join_chat', { contact_id: contact.id });
+     }
+
+     // Show chat content with opacity animation
+     setTimeout(() => {
+      setShowChatContent(true);
+     }, 100);
+
+     // Add 1 second delay before loading messages to show skeleton
+     setTimeout(() => {
+      loadMessages(contact.id);
+     }, 1000);
+    }, 350); // Add 50ms buffer after transition
+   } else {
+    setActiveContact(contact);
+    saveLastContact(contact);
+    setMessages([]);
+    setTypingUsers(new Set());
+
+    if (socketRef.current) {
+     socketRef.current.emit('join_chat', { contact_id: contact.id });
+    }
+
+    loadMessages(contact.id);
    }
   }
  };
@@ -376,13 +745,44 @@ const App = () => {
   setActiveContact(null);
   setMessages([]);
   setTypingUsers(new Set());
+  setShowChatContent(false); // Add this line
 
   if (activeContact && socketRef.current) {
    socketRef.current.emit('leave_chat', { contact_id: activeContact.id });
   }
  };
 
- // Send a message to the active contact
+ // Handle reply to message
+ const handleReplyToMessage = (message) => {
+  setReplyingTo({
+   ...message,
+   currentUserId: user.id
+  });
+ };
+
+ const handleAddReaction = (messageId, reactionType) => {
+  if (!socketRef.current) return;
+
+  socketRef.current.emit('add_reaction', {
+   message_id: messageId,
+   reaction_type: reactionType
+  });
+ };
+
+ const handleRemoveReaction = (messageId, reactionType) => {
+  if (!socketRef.current) return;
+
+  socketRef.current.emit('remove_reaction', {
+   message_id: messageId,
+   reaction_type: reactionType
+  });
+ };
+
+ // Cancel reply
+ const handleCancelReply = () => {
+  setReplyingTo(null);
+ };
+
  const sendMessage = (e) => {
   e.preventDefault();
 
@@ -390,10 +790,12 @@ const App = () => {
 
   socketRef.current.emit('send_message', {
    receiver_id: activeContact.id,
-   content: messageText.trim()
+   content: messageText.trim(),
+   reply_to: replyingTo ? replyingTo.id : null
   });
 
   setMessageText('');
+  setReplyingTo(null); // Clear reply after sending
 
   if (typingTimeoutRef.current) {
    clearTimeout(typingTimeoutRef.current);
@@ -414,20 +816,54 @@ const App = () => {
   });
  };
 
- // Handle message input changes and typing indicators
  const handleMessageInputChange = (e) => {
-  setMessageText(e.target.value);
+  const newValue = e.target.value;
+  setMessageText(newValue);
 
-  if (e.target.value.trim()) {
-   handleTyping(true);
+  if (!activeContact || !socketRef.current) return;
+
+  // Clear any existing timeout
+  if (typingTimeoutRef.current) {
    clearTimeout(typingTimeoutRef.current);
+  }
+
+  const wasTyping = isTyping;
+  const shouldBeTyping = newValue.trim().length > 0;
+
+  // Only emit if the typing state actually changed
+  if (wasTyping !== shouldBeTyping) {
+   setIsTyping(shouldBeTyping);
+   socketRef.current.emit('typing', {
+    receiver_id: activeContact.id,
+    is_typing: shouldBeTyping
+   });
+  }
+
+  // If user is typing, set the stop-typing timeout
+  if (shouldBeTyping) {
    typingTimeoutRef.current = setTimeout(() => {
-    handleTyping(false);
-   }, 1000);
-  } else {
-   handleTyping(false);
+    setIsTyping(false);
+    socketRef.current.emit('typing', {
+     receiver_id: activeContact.id,
+     is_typing: false
+    });
+   }, 3000);
   }
  };
+
+ useEffect(() => {
+  return () => {
+   if (reconnectTimeoutRef.current) {
+    clearTimeout(reconnectTimeoutRef.current);
+   }
+   if (socketRef.current) {
+    socketRef.current.disconnect();
+   }
+   if (typingTimeoutRef.current) {
+    clearTimeout(typingTimeoutRef.current);
+   }
+  };
+ }, []);
 
  // Handle user logout
  const handleLogout = async () => {
@@ -459,10 +895,10 @@ const App = () => {
   }, 200);
  };
 
- // Auto-scroll to bottom when new messages arrive
+ // Auto-scroll to bottom when new messages arrive or contact changes
  useEffect(() => {
-  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
- }, [messages]);
+  messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+ }, [messages, activeContact]);
 
  // Debounced search when query changes
  useEffect(() => {
@@ -530,7 +966,7 @@ const App = () => {
         className="profile-avatar"
         draggable="false"
        />
-       <div className={`status-indicator ${onlineUsers.includes(user?.id) ? 'online' : 'offline'}`}></div>
+       <div className="status-indicator online"></div>
       </div>
       <div className="user-info">
        <span className="username">{user?.username}</span>
@@ -610,7 +1046,7 @@ const App = () => {
      <div className="mobile-header-actions">
       <div className="contact-avatar-container" onClick={() => setShowUserMenu(!showUserMenu)}>
        <img src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"} alt="Profile" draggable="false" className="mobile-avatar" />
-       <div className={`status-indicator ${onlineUsers.includes(user?.id) ? 'online' : 'offline'}`}></div>
+       <div className="status-indicator online"></div>
       </div>
      </div>
      {showUserMenu && (
@@ -690,7 +1126,9 @@ const App = () => {
     )}
 
     <div className="contacts-list">
-     {contacts.length === 0 ? (
+     {contactsLoading ? (
+      <ContactsSkeleton />
+     ) : contacts.length === 0 ? (
       <div className="empty-contacts">
        <p>No contacts yet</p>
        <p>Search for users to start chatting</p>
@@ -715,17 +1153,32 @@ const App = () => {
          <div className="contact-main">
           <span className="contact-name">{contact.username}</span>
           <span className="contact-time">
-           {contact.lastMessageTime ? new Date(contact.lastMessageTime + 'Z').toLocaleTimeString([], {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-           }) : ''}
+           {contact.lastMessageTime ? (() => {
+            const now = new Date();
+            const messageTime = new Date(contact.lastMessageTime + 'Z');
+            const isToday = now.toDateString() === messageTime.toDateString();
+
+            const yesterday = new Date(now);
+            yesterday.setDate(now.getDate() - 1);
+            const isYesterday = yesterday.toDateString() === messageTime.toDateString();
+
+            const timeString = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+
+            if (isToday) {
+             return `Today at ${timeString}`;
+            } else if (isYesterday) {
+             return `Yesterday at ${timeString}`;
+            } else {
+             const days = Math.floor((now - messageTime) / 86400000);
+             return `${days}d ago at ${timeString}`;
+            }
+           })() : ''}
           </span>
          </div>
          <span className={`contact-preview ${contact.unread && activeContact?.id !== contact.id ? 'unread' : ''}`}>
           {contact.lastMessage ?
-           `${contact.lastSenderId === user?.id ? 'You: ' : ''}${contact.lastMessage} · ${contact.lastMessageTime ? formatTimeAgo(contact.lastMessageTime) : ''}`
-           : 'No messages yet'}
+           `${contact.lastSenderId === user?.id ? 'You: ' : ''}${contact.lastMessage.length > 15 ? contact.lastMessage.substring(0, 15) + '...' : contact.lastMessage} · ${contact.lastMessageTime ? formatTimeAgo(contact.lastMessageTime) : ''}`
+           : 'There are no messages yet'}
          </span>
         </div>
        </div>
@@ -737,7 +1190,7 @@ const App = () => {
    <div className="chat-container">
     {activeContact ? (
      <>
-      <div className="chat-header">
+      <div className={`chat-header ${isMobile ? (showChatContent ? 'fade-in' : 'fade-out') : ''}`}>
        {isMobile && (
         <button className="mobile-back-btn" onClick={handleBackToContacts}>
         </button>
@@ -749,7 +1202,10 @@ const App = () => {
        <div className="chat-user-info">
         <span className="chat-username">{activeContact.username}</span>
         <span className="chat-status">
-         {onlineUsers.includes(activeContact.id) ? 'Available Now' : 'Offline Now'}
+         {onlineUsers.includes(activeContact.id)
+          ? 'Available Now'
+          : formatLastSeen(activeContact.last_seen)
+         }
         </span>
        </div>
        <div className="call-buttons">
@@ -769,70 +1225,189 @@ const App = () => {
       </div>
 
       <div className="messages-container">
-       {messages.length === 0 ? (
+       {messages.length === 0 && isMobile ? (
+        <MessagesSkeleton />
+       ) : messages.length === 0 ? (
         <div className="empty-messages">
          <p>Start a conversation with {activeContact.username}</p>
         </div>
        ) : (
-        messages.map(message => (
-         <div
-          key={message.id}
-          className={`message ${message.sender_id === user.id ? 'sent' : 'received'}`}
-         >
-          {message.sender_id !== user.id && (
-           <img
-            src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"}
-            alt={activeContact.username}
-            className="message-avatar"
-            draggable="false"
-           />
-          )}
-          <div className="message-bubble">
-           <div className="message-content">
-            {message.content}
-           </div>
-           <div className="message-time">
-            {new Date(message.timestamp + 'Z').toLocaleTimeString([], {
-             hour: '2-digit',
-             minute: '2-digit'
-            })}
-           </div>
-          </div>
-         </div>
-        ))
-       )}
+          // Only showing the relevant message rendering section that needs to be changed:
 
-       {Array.from(typingUsers).filter(id => id !== user?.id && id === activeContact?.id).length > 0 && (
-        <div className="typing-indicator">
-         <span>{activeContact.username} is typing...</span>
-        </div>
+          messages.map(message => (
+           <div
+            id={`message-${message.id}`}
+            key={message.id}
+            className={`message ${message.sender_id === user.id ? 'sent' : 'received'} ${message.reply_to ? 'reply' : ''}`}
+           >
+            {message.sender_id !== user.id && (
+             <div className="message-avatar-container">
+              <img
+               src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"}
+               alt={activeContact.username}
+               className="message-avatar"
+               draggable="false"
+              />
+              <div className={`status-indicator ${onlineUsers.includes(activeContact.id) ? 'online' : 'offline'}`}></div>
+             </div>
+            )}
+            <div className="message-bubble">
+             {message.original_message && (
+              <div
+               className="reply-inside"
+               onClick={() => scrollToMessage(message.original_message.id)}
+              >
+               <span className="reply-sender-inside">
+                {message.original_message.sender_id === user.id ? 'You' : message.original_message.sender_username}
+               </span>
+               <span className="reply-content-inside">
+                {message.original_message.content.length > 40
+                 ? message.original_message.content.substring(0, 40) + '...'
+                 : message.original_message.content}
+               </span>
+              </div>
+             )}
+
+             {/* Message content based on type */}
+             {message.message_type === 'image' ? (
+              <div className="message-image">
+               <img
+                src={`${API_BASE_URL}${message.file_path}`}
+                alt="Shared image"
+                className="shared-image"
+               />
+              </div>
+             ) : message.message_type === 'file' ? (
+              <div className="message-file" onClick={() => window.open(`${API_BASE_URL}${message.file_path}`, '_blank')}>
+               <div className="file-icon">
+                <i className={getFileIcon(message.file_type)}></i>
+               </div>
+               <div className="file-info">
+                <div className="file-name">{message.file_name}</div>
+                <div className="file-size">{formatFileSize(message.file_size)}</div>
+               </div>
+               <div className="file-download">
+                <i className="fas fa-download"></i>
+               </div>
+              </div>
+             ) : (
+              <div className="message-content">
+               {message.content}
+              </div>
+             )}
+
+             <Reaction
+              messageId={message.id}
+              reactions={messageReactions[message.id] || {}}
+              onAddReaction={handleAddReaction}
+              onRemoveReaction={handleRemoveReaction}
+              currentUserId={user.id}
+              showPopup={showReactionPopup === message.id}
+              onClosePopup={() => setShowReactionPopup(null)}
+             />
+             <div className="message-time">
+              {(() => {
+               const messageTime = new Date(message.timestamp + 'Z');
+               const now = new Date();
+               const diffMs = now - messageTime;
+               const diffMinutes = Math.floor(diffMs / 60000);
+
+               if (diffMinutes < 1) {
+                return 'Just now';
+               } else {
+                return messageTime.toLocaleTimeString([], {
+                 hour: 'numeric',
+                 minute: '2-digit',
+                 hour12: true
+                });
+               }
+              })()}
+             </div>
+            </div>
+            <button
+             className="message-reply-btn"
+             onClick={() => handleReplyToMessage(message)}
+             title="Reply to this message"
+            >
+             <i className="fas fa-reply"></i>
+            </button>
+            <button
+             className="message-reaction-btn"
+             onClick={() => setShowReactionPopup(showReactionPopup === message.id ? null : message.id)}
+             title="React to this message"
+            >
+             <i className="fas fa-smile"></i>
+            </button>
+           </div>
+          ))
        )}
 
        <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={sendMessage} className="message-input-container">
-       <input
-        type="text"
-        value={messageText}
-        onChange={handleMessageInputChange}
-        placeholder="Type a message..."
-        className="message-input"
+      <div
+       className={`message-input-area ${dragOver ? 'drag-over' : ''} ${isMobile ? (showChatContent ? 'fade-in' : 'fade-out') : ''}`}
+       onDragOver={handleDragOver}
+       onDragLeave={handleDragLeave}
+       onDrop={handleDrop}
+      >
+       {typingUsers.has(activeContact?.id) && (
+        <div className="typing-indicator-floating">
+         <span>{activeContact.username} is typing...</span>
+        </div>
+       )}
+       <Reply
+        replyingTo={replyingTo}
+        onCancelReply={handleCancelReply}
+        activeContact={activeContact}
        />
-       <button
-        type="submit"
-        className="send-button"
-        disabled={!messageText.trim()}
-       >
-        Send
-       </button>
-      </form>
+       <form onSubmit={sendMessage} className="message-input-container">
+        <input
+         type="file"
+         ref={fileInputRef}
+         onChange={(e) => handleFileSelect(e.target.files)}
+         style={{ display: 'none' }}
+         multiple
+         accept="*/*"
+        />
+        <button
+         type="button"
+         className="attachment-button"
+         onClick={() => fileInputRef.current?.click()}
+         title="Attach file"
+        >
+         <i className="fas fa-paperclip"></i>
+        </button>
+        <input
+         type="text"
+         value={messageText}
+         onChange={handleMessageInputChange}
+         onPaste={handlePaste}
+         placeholder="Type a message..."
+         className="message-input"
+         autoComplete="off"
+         autoCapitalize="sentences"
+         autoCorrect="on"
+         spellCheck="true"
+         data-form-type="other"
+        />
+        <button
+         type="submit"
+         className="send-button"
+         disabled={!messageText.trim()}
+        >
+         <i className="fas fa-paper-plane"></i>
+        </button>
+       </form>
+      </div>
      </>
-    ) : (
+    ) : !isMobile ? (
      <div className="no-chat-selected">
       <h2>Welcome to uChat</h2>
       <p>Select a contact to start chatting</p>
      </div>
+    ) : (
+     <div style={{ display: 'none' }}></div>
     )}
    </div>
 
@@ -912,7 +1487,7 @@ const App = () => {
       ) : (
        <div className="audio-call-ui">
         <img
-         src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
+         src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
          alt={callState.contact?.username}
          draggable="false"
         />
