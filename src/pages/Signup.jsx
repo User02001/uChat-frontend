@@ -4,7 +4,6 @@ import './Login.css'; // Using the same CSS file for consistent styling
 import { API_BASE_URL } from '../config';
 
 const Signup = () => {
- const lottieRef = useRef(null);
  const navigate = useNavigate();
  const [formData, setFormData] = useState({
   username: '',
@@ -15,27 +14,27 @@ const Signup = () => {
  });
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
+ const [showPassword, setShowPassword] = useState(false); // ADD THIS LINE
+ const [showConfirmPassword, setShowConfirmPassword] = useState(false); // ADD THIS LINE
 
  useEffect(() => {
-  // Load Lottie animation - same approach as Login component
-  const script = document.createElement('script');
-  script.src = '/resources/lottie.js';
-  script.onload = () => {
-   if (window.lottie && lottieRef.current) {
-    window.lottie.loadAnimation({
-     container: lottieRef.current,
-     renderer: 'svg',
-     loop: true,
-     autoplay: true,
-     path: '/resources/data.json'
-    });
-   }
-  };
-  document.head.appendChild(script);
+  // Load Font Awesome
+  const fontAwesomeLink = document.createElement('link');
+  fontAwesomeLink.rel = 'stylesheet';
+  fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+  document.head.appendChild(fontAwesomeLink);
+
+  // Add breathing animation CSS
+  const style = document.createElement('style');
+  document.head.appendChild(style);
 
   return () => {
-   if (document.head.contains(script)) {
-    document.head.removeChild(script);
+   // Cleanup styles
+   if (document.head.contains(style)) {
+    document.head.removeChild(style);
+   }
+   if (document.head.contains(fontAwesomeLink)) {
+    document.head.removeChild(fontAwesomeLink);
    }
   };
  }, []);
@@ -124,11 +123,43 @@ const Signup = () => {
 
  return (
   <div className="login-container">
+   <div className="ball-lights">
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+   </div>
    <div className="login-card">
     <div className="login-header">
-     <div ref={lottieRef} className="logo-animation"></div>
-     <h1>Join uChat</h1>
-     <p>Create your account to start chatting</p>
+     <div className="logo-container" style={{
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '24px'
+     }}>
+      <img
+       src="/resources/main-logo.svg"
+       alt="uChat Logo"
+       className="main-logo"
+       style={{
+        width: '80px',
+        height: '80px',
+        objectFit: 'contain'
+       }}
+       draggable="false"
+      />
+     </div>
+     <h1>
+      <i className="fas fa-user-plus" style={{ marginRight: '12px', color: 'var(--primary-color, #007bff)' }}></i>
+      Join uChat
+     </h1>
+     <p>
+      <i className="fas fa-rocket" style={{ marginRight: '8px', opacity: 0.7 }}></i>
+      Create an account for yourself
+     </p>
     </div>
 
     <div className="login-form">
@@ -140,81 +171,190 @@ const Signup = () => {
        borderRadius: '6px',
        marginBottom: '16px',
        fontSize: '14px',
-       border: '1px solid var(--error-border, #feb2b2)'
+       border: '1px solid var(--error-border, #feb2b2)',
+       display: 'flex',
+       alignItems: 'center',
+       gap: '8px'
       }}>
+       <i className="fas fa-exclamation-circle"></i>
        {error}
       </div>
      )}
 
      <form onSubmit={handleEmailSignup}>
       <div className="input-group">
-       <label htmlFor="username">Full Name</label>
-       <input
-        type="text"
-        id="username"
-        name="username"
-        value={formData.username}
-        onChange={handleInputChange}
-        placeholder="Enter your full name"
-        required
-       />
+       <label htmlFor="username">
+        <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
+        Display Name
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type="text"
+         id="username"
+         name="username"
+         value={formData.username}
+         onChange={handleInputChange}
+         placeholder="Enter the name that you want displayed"
+         required
+         style={{ paddingLeft: '40px' }}
+        />
+        <i className="fas fa-id-card" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+       </div>
       </div>
 
       <div className="input-group">
-       <label htmlFor="email">Email</label>
-       <input
-        type="email"
-        id="email"
-        name="email"
-        value={formData.email}
-        onChange={handleInputChange}
-        placeholder="Enter your email address"
-        required
-       />
+       <label htmlFor="email">
+        <i className="fas fa-envelope" style={{ marginRight: '8px' }}></i>
+        Email
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type="email"
+         id="email"
+         name="email"
+         value={formData.email}
+         onChange={handleInputChange}
+         placeholder="Enter your email address"
+         required
+         style={{ paddingLeft: '40px' }}
+        />
+        <i className="fas fa-at" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+       </div>
       </div>
 
       <div className="input-group">
-       <label htmlFor="handle">Handle</label>
-       <input
-        type="text"
-        id="handle"
-        name="handle"
-        value={formData.handle}
-        onChange={handleInputChange}
-        placeholder="Unique handle that can be anything"
-        required
-       />
+       <label htmlFor="handle">
+        <i className="fas fa-hashtag" style={{ marginRight: '8px' }}></i>
+        Handle
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type="text"
+         id="handle"
+         name="handle"
+         value={formData.handle}
+         onChange={handleInputChange}
+         placeholder="A unique handle that differentiates you"
+         required
+         style={{ paddingLeft: '40px' }}
+        />
+        <i className="fas fa-tag" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+       </div>
       </div>
 
       <div className="input-group">
-       <label htmlFor="password">Password</label>
-       <input
-        type="password"
-        id="password"
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        placeholder="Create a strong password"
-        minLength="8"
-        required
-       />
+       <label htmlFor="password">
+        <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
+        Password
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type={showPassword ? 'text' : 'password'}
+         id="password"
+         name="password"
+         value={formData.password}
+         onChange={handleInputChange}
+         placeholder="Create a strong password"
+         minLength="8"
+         required
+         style={{ paddingLeft: '40px', paddingRight: '40px' }}
+        />
+        <i className="fas fa-key" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+        <button
+         type="button"
+         onClick={() => setShowPassword(!showPassword)}
+         style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-secondary, #666)',
+          fontSize: '14px'
+         }}
+        >
+         <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+        </button>
+       </div>
       </div>
 
       <div className="input-group">
-       <label htmlFor="confirmPassword">Confirm Password</label>
-       <input
-        type="password"
-        id="confirmPassword"
-        name="confirmPassword"
-        value={formData.confirmPassword}
-        onChange={handleInputChange}
-        placeholder="Confirm your password"
-        minLength="8"
-        required
-       />
+       <label htmlFor="confirmPassword">
+        <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
+        Confirm Password
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type={showConfirmPassword ? 'text' : 'password'}
+         id="confirmPassword"
+         name="confirmPassword"
+         value={formData.confirmPassword}
+         onChange={handleInputChange}
+         placeholder="Confirm your password"
+         minLength="8"
+         required
+         style={{ paddingLeft: '40px', paddingRight: '40px' }}
+        />
+        <i className="fas fa-check-circle" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+        <button
+         type="button"
+         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+         style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-secondary, #666)',
+          fontSize: '14px'
+         }}
+        >
+         <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+        </button>
+       </div>
       </div>
 
       <button type="submit" className="login-btn primary" disabled={loading}>
+       <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-user-plus'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Creating Account...' : 'Create Account'}
       </button>
      </form>
@@ -225,23 +365,23 @@ const Signup = () => {
 
      <div className="oauth-buttons">
       <button onClick={handleGoogleSignup} className="oauth-btn google" disabled={loading}>
-       <img
-        src="/resources/google.svg"
-        alt="Google"
-        style={{
-         width: '20px',
-         height: '20px',
-         objectFit: 'contain',
-         flexShrink: 0
-        }}
-       />
-       Google
+       <i className="fab fa-google" style={{
+        marginRight: '8px',
+        fontSize: '18px'
+       }}></i>
+       Sign up with Google
       </button>
      </div>
     </div>
 
     <div className="login-footer">
-     <p>Already have an account? <a href="/login">Login here</a></p>
+     <p>
+      Already have an account?
+      <a href="/login">
+       <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+       Login here
+      </a>
+     </p>
     </div>
    </div>
   </div>

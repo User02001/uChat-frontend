@@ -1200,7 +1200,11 @@ const App = () => {
         <div className={`status-indicator ${onlineUsers.includes(activeContact.id) ? 'online' : 'offline'}`}></div>
        </div>
        <div className="chat-user-info">
-        <span className="chat-username">{activeContact.username}</span>
+        <div className="chat-username-container">
+         <span className="chat-username">{activeContact.username}</span>
+         <span className="chat-aka">aka</span>
+         <span className="chat-handle">@{activeContact.handle}</span>
+        </div>
         <span className="chat-status">
          {onlineUsers.includes(activeContact.id)
           ? 'Available Now'
@@ -1418,20 +1422,31 @@ const App = () => {
    )}
 
    {callState.isIncoming && (
-    <div className="call-overlay">
-     <div className="incoming-call">
-      <img draggable="false" src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"} alt={callState.contact?.username} />
-      <h3>{callState.contact?.username} is calling</h3>
-      <p>{callState.type === 'video' ? 'Video Call' : 'Audio Call'}</p>
-      <div className="call-actions">
+    <div className="incoming-call-notification">
+     <div className="incoming-call-content">
+      <div className="incoming-call-info">
+       <img
+        draggable="false"
+        src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
+        alt={callState.contact?.username}
+        className="incoming-call-avatar"
+       />
+       <div className="incoming-call-text">
+        <h4>{callState.contact?.username}</h4>
+        <p>Incoming {callState.type === 'video' ? 'video' : 'audio'} call</p>
+       </div>
+      </div>
+      <div className="incoming-call-actions">
        <button
-        className="decline-btn"
+        className="decline-btn-small"
         onClick={() => answerCall(false)}
+        title="Decline"
        >
        </button>
        <button
-        className="accept-btn"
+        className="accept-btn-small"
         onClick={() => answerCall(true)}
+        title="Accept"
        >
        </button>
       </div>
@@ -1519,8 +1534,7 @@ const App = () => {
    )}
    <audio
     ref={ringtoneRef}
-    preload="auto"
-    crossOrigin="anonymous"
+    preload="none"
    >
     <source src="/resources/ringtones/default_ringtone.mp3" type="audio/mpeg" />
     <source src="/resources/ringtones/default_ringtone.wav" type="audio/wav" />

@@ -4,8 +4,6 @@ import './Login.css';
 import { API_BASE_URL } from '../config';
 
 const Login = () => {
- const lottieRef = useRef(null);
- const animationRef = useRef(null); // Store animation instance
  const navigate = useNavigate();
  const [formData, setFormData] = useState({
   email: '',
@@ -13,97 +11,26 @@ const Login = () => {
  });
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
- const [animationError, setAnimationError] = useState('');
+ const [showPassword, setShowPassword] = useState(false);
 
  useEffect(() => {
-  let script = null;
+  // Load Font Awesome
+  const fontAwesomeLink = document.createElement('link');
+  fontAwesomeLink.rel = 'stylesheet';
+  fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+  document.head.appendChild(fontAwesomeLink);
 
-  const loadLottie = () => {
-   script = document.createElement('script');
-   script.src = '/resources/lottie.js';
-
-   script.onload = () => {
-
-    if (window.lottie && lottieRef.current) {
-     try {
-      // Destroy existing animation if any
-      if (animationRef.current) {
-       animationRef.current.destroy();
-      }
-
-      // Create new animation with better error handling
-      animationRef.current = window.lottie.loadAnimation({
-       container: lottieRef.current,
-       renderer: 'svg',
-       loop: true,
-       autoplay: true,
-       path: '/resources/data.json',
-       // Add error handling
-       rendererSettings: {
-        preserveAspectRatio: 'xMidYMid meet'
-       }
-      });
-
-      // Listen for animation events
-      animationRef.current.addEventListener('complete', () => {
-       console.log('Animation completed one loop');
-      });
-
-      animationRef.current.addEventListener('loopComplete', () => {
-       console.log('Animation loop completed');
-      });
-
-      animationRef.current.addEventListener('enterFrame', () => {
-       // This will log every frame - comment out if too verbose
-       // console.log('Animation frame');
-      });
-
-      animationRef.current.addEventListener('segmentStart', () => {
-       console.log('Animation segment started');
-      });
-
-      animationRef.current.addEventListener('data_ready', () => {
-       console.log('Animation data loaded and ready');
-      });
-
-      animationRef.current.addEventListener('data_failed', () => {
-       console.error('Animation data failed to load');
-       setAnimationError('Failed to load animation data');
-      });
-
-      animationRef.current.addEventListener('loadError', (error) => {
-       console.error('Animation load error:', error);
-       setAnimationError('Animation load error');
-      });
-
-     } catch (error) {
-      console.error('Error creating Lottie animation:', error);
-      setAnimationError('Failed to create animation');
-     }
-    } else {
-     console.error('Lottie not available or container not found');
-     setAnimationError('Lottie library not loaded');
-    }
-   };
-
-   script.onerror = () => {
-    console.error('Failed to load Lottie script');
-    setAnimationError('Failed to load animation library');
-   };
-
-   document.head.appendChild(script);
-  };
-
-  loadLottie();
+  // Add breathing animation CSS
+  const style = document.createElement('style');
+  document.head.appendChild(style);
 
   return () => {
-   // Cleanup
-   if (animationRef.current) {
-    animationRef.current.destroy();
-    animationRef.current = null;
+   // Cleanup styles
+   if (document.head.contains(style)) {
+    document.head.removeChild(style);
    }
-   if (script && document.head.contains(script)) {
-    document.head.removeChild(script);
+   if (document.head.contains(fontAwesomeLink)) {
+    document.head.removeChild(fontAwesomeLink);
    }
   };
  }, []);
@@ -180,20 +107,43 @@ const Login = () => {
 
  return (
   <div className="login-container">
+   <div className="ball-lights">
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+   </div>
    <div className="login-card">
     <div className="login-header">
-     <div ref={lottieRef} className="logo-animation"></div>
-     {animationError && (
-      <div style={{
-       fontSize: '12px',
-       color: 'var(--error-text)',
-       marginTop: '8px'
-      }}>
-       Debug: {animationError}
-      </div>
-     )}
-     <h1>Welcome to uChat</h1>
-     <p>Login to your existing account to start chatting</p>
+     <div className="logo-container" style={{
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '24px'
+     }}>
+      <img
+       src="/resources/main-logo.svg"
+       alt="uChat Logo"
+       className="main-logo"
+       style={{
+        width: '80px',
+        height: '80px',
+        objectFit: 'contain'
+       }}
+       draggable="false"
+      />
+     </div>
+     <h1>
+      <i className="fas fa-comments" style={{ marginRight: '12px', color: 'var(--primary-color, #007bff)' }}></i>
+      Welcome to uChat
+     </h1>
+     <p>
+      <i className="fas fa-sign-in-alt" style={{ marginRight: '8px', opacity: 0.7 }}></i>
+      Login to your existing account to start chatting
+     </p>
     </div>
 
     <div className="login-form">
@@ -205,36 +155,85 @@ const Login = () => {
        borderRadius: '6px',
        marginBottom: '16px',
        fontSize: '14px',
-       border: '1px solid var(--error-border, #feb2b2)'
+       border: '1px solid var(--error-border, #feb2b2)',
+       display: 'flex',
+       alignItems: 'center',
+       gap: '8px'
       }}>
+       <i className="fas fa-exclamation-circle"></i>
        {error}
       </div>
      )}
 
      <form onSubmit={handleEmailLogin}>
       <div className="input-group">
-       <label htmlFor="email">Email</label>
-       <input
-        type="email"
-        id="email"
-        name="email"
-        value={formData.email}
-        onChange={handleInputChange}
-        placeholder="Enter your email"
-        required
-       />
+       <label htmlFor="email">
+        <i className="fas fa-envelope" style={{ marginRight: '8px' }}></i>
+        Email
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type="email"
+         id="email"
+         name="email"
+         value={formData.email}
+         onChange={handleInputChange}
+         placeholder="Enter your email"
+         required
+         style={{ paddingLeft: '40px' }}
+        />
+        <i className="fas fa-at" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+       </div>
       </div>
       <div className="input-group">
-       <label htmlFor="password">Password</label>
-       <input
-        type="password"
-        id="password"
-        name="password"
-        value={formData.password}
-        onChange={handleInputChange}
-        placeholder="Enter your password"
-        required
-       />
+       <label htmlFor="password">
+        <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
+        Password
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type={showPassword ? 'text' : 'password'}
+         id="password"
+         name="password"
+         value={formData.password}
+         onChange={handleInputChange}
+         placeholder="Enter your password"
+         required
+         style={{ paddingLeft: '40px', paddingRight: '40px' }}
+        />
+        <i className="fas fa-key" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+        <button
+         type="button"
+         onClick={() => setShowPassword(!showPassword)}
+         style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'var(--text-secondary, #666)',
+          fontSize: '14px'
+         }}
+        >
+         <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+        </button>
+       </div>
       </div>
       <button type="submit" className="login-btn primary" disabled={loading}>
        {loading ? 'Logging in...' : 'Login'}
@@ -247,23 +246,23 @@ const Login = () => {
 
      <div className="oauth-buttons">
       <button onClick={handleGoogleLogin} className="oauth-btn google" disabled={loading}>
-       <img
-        src="/resources/google.svg"
-        alt="Google"
-        style={{
-         width: '20px',
-         height: '20px',
-         objectFit: 'contain',
-         flexShrink: 0
-        }}
-       />
-       Google
+       <i className="fab fa-google" style={{
+        marginRight: '8px',
+        fontSize: '18px'
+       }}></i>
+       Continue with Google
       </button>
      </div>
     </div>
 
     <div className="login-footer">
-     <p>Don't have an account? <a href="/signup">Sign up</a></p>
+     <p>
+      Don't have an account?
+      <a href="/signup">
+       <i className="fas fa-user-plus" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+       Sign up
+      </a>
+     </p>
     </div>
    </div>
   </div>

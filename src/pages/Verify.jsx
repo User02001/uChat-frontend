@@ -4,7 +4,6 @@ import './Login.css';
 import { API_BASE_URL } from '../config';
 
 const Verify = () => {
- const lottieRef = useRef(null);
  const navigate = useNavigate();
  const location = useLocation();
  const [verificationCode, setVerificationCode] = useState('');
@@ -22,29 +21,21 @@ const Verify = () => {
    navigate('/signup');
    return;
   }
+ }, [location.state, navigate]);
 
-  // Load Lottie animation
-  const script = document.createElement('script');
-  script.src = '/resources/lottie.js';
-  script.onload = () => {
-   if (window.lottie && lottieRef.current) {
-    window.lottie.loadAnimation({
-     container: lottieRef.current,
-     renderer: 'svg',
-     loop: true,
-     autoplay: true,
-     path: '/resources/data.json'
-    });
-   }
-  };
-  document.head.appendChild(script);
+ useEffect(() => {
+  // Load Font Awesome
+  const fontAwesomeLink = document.createElement('link');
+  fontAwesomeLink.rel = 'stylesheet';
+  fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+  document.head.appendChild(fontAwesomeLink);
 
   return () => {
-   if (document.head.contains(script)) {
-    document.head.removeChild(script);
+   if (document.head.contains(fontAwesomeLink)) {
+    document.head.removeChild(fontAwesomeLink);
    }
   };
- }, [location.state, navigate]);
+ }, []);
 
  useEffect(() => {
   // Set page title and favicon
@@ -153,13 +144,42 @@ const Verify = () => {
 
  return (
   <div className="login-container">
+   <div className="ball-lights">
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+    <div className="ball-light"></div>
+   </div>
    <div className="login-card">
     <div className="login-header">
-     <div ref={lottieRef} className="logo-animation"></div>
+     <div className="logo-container" style={{
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '24px'
+     }}>
+      <img
+       src="/resources/main-logo.svg"
+       alt="uChat Logo"
+       className="main-logo"
+       style={{
+        width: '80px',
+        height: '80px',
+        objectFit: 'contain'
+       }}
+       draggable="false"
+      />
+     </div>
      <h1>Verify Your Email</h1>
-     <p>We've sent a 7-digit code to <strong>{email}</strong> in order to verify that you own this email.</p>
+     <p>We've sent a 7-digit code to <strong>{email}</strong> in order to verify that you actually own this email.</p>
      <p className="helper-text">
-      Check your spam folder if you don't see it in your inbox.
+      Check your spam folder if you don't see the email in your inbox.
+     </p>
+     <p className="helper-text">
+      The email should be from <strong>uchat@ufonic.xyz</strong>, and anything else are FAKE, so don't trust them.
      </p>
     </div>
 
@@ -178,26 +198,37 @@ const Verify = () => {
 
      <form onSubmit={handleVerification}>
       <div className="input-group">
-       <label htmlFor="verificationCode">Verification Code</label>
-       <input
-        type="text"
-        id="verificationCode"
-        name="verificationCode"
-        value={verificationCode}
-        onChange={handleInputChange}
-        placeholder="Enter 7-digit code"
-        maxLength="7"
-        className="verification-input"
-        autoComplete="one-time-code"
-        required
-       />
+       <label htmlFor="verificationCode">
+        <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
+        Verification Code
+       </label>
+       <div style={{ position: 'relative' }}>
+        <input
+         type="text"
+         id="verificationCode"
+         name="verificationCode"
+         value={verificationCode}
+         onChange={handleInputChange}
+         placeholder="Enter 7-digit code"
+         maxLength="7"
+         className="verification-input"
+         autoComplete="one-time-code"
+         required
+         style={{ paddingLeft: '40px' }}
+        />
+        <i className="fas fa-key" style={{
+         position: 'absolute',
+         left: '12px',
+         top: '50%',
+         transform: 'translateY(-50%)',
+         color: 'var(--text-secondary, #666)',
+         fontSize: '14px'
+        }}></i>
+       </div>
       </div>
 
-      <button
-       type="submit"
-       className={`login-btn primary ${loading ? 'loading' : ''}`}
-       disabled={loading}
-      >
+      <button type="submit" className="login-btn primary" disabled={loading}>
+       <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-envelope-open'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Verifying...' : 'Verify Email'}
       </button>
      </form>
@@ -212,6 +243,7 @@ const Verify = () => {
       disabled={loading}
       style={{ marginBottom: '0' }}
      >
+      <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'} style={{ marginRight: '8px' }}></i>
       {loading ? 'Sending...' : 'Resend Code'}
      </button>
     </div>

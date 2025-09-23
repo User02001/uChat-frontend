@@ -2028,3 +2028,187 @@ input:focus-visible {
         border: 1px solid rgba(0, 0, 0, 0.1);
     }
 }
+
+.encryption-indicator {
+    margin-left: 8px;
+    color: #4ade80;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.encryption-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(74, 222, 128, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+.message-image {
+    position: relative;
+}
+
+.message-file {
+    position: relative;
+}
+
+/* Incoming call notification styles */
+.incoming-call-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-secondary);
+    border: 2px solid var(--button-primary);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--shadow);
+    z-index: 1000;
+    min-width: 320px;
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+.incoming-call-content {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.incoming-call-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.incoming-call-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+}
+
+.incoming-call-text h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.incoming-call-text p {
+    margin: 2px 0 0 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.incoming-call-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.decline-btn-small,
+.accept-btn-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Font Awesome 6 Free';
+}
+
+.decline-btn-small {
+    background: #ff4757;
+    color: white;
+}
+
+    .decline-btn-small:hover {
+        background: #ff3742;
+        transform: scale(1.05);
+    }
+
+    .decline-btn-small::before {
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900; /* or the correct weight/style you use */
+        content: "\f095"; /* the phone icon */
+        display: inline-block;
+        transform: rotate(135deg); /* adjust angle until it looks like a hang-up handset */
+    }
+
+.accept-btn-small {
+    background: #2ed573;
+    color: white;
+}
+
+    .accept-btn-small:hover {
+        background: #26d065;
+        transform: scale(1.05);
+    }
+
+    .accept-btn-small::before {
+        content: '\f095';
+    }
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .incoming-call-notification {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        min-width: unset;
+    }
+}
+
+.chat-username-container {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    line-height: 1.2;
+    row-gap: 0;
+}
+
+.chat-aka {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-style: italic;
+}
+
+.chat-handle {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Light mode handle color */
+:root[data-theme="light"] .chat-handle,
+:root:not([data-theme]) .chat-handle {
+    color: #f57c00;
+}
+
+/* Dark mode handle color */
+:root[data-theme="dark"] .chat-handle {
+    color: #ffd54f;
+}

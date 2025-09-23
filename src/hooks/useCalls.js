@@ -14,18 +14,17 @@ const useCalls = (socketRef, setError) => {
  });
 
  const [audioEnabled, setAudioEnabled] = useState(false);
+ const [ringtoneInitialized, setRingtoneInitialized] = useState(false);
  const peerRef = useRef(null);
  const localVideoRef = useRef(null);
  const remoteVideoRef = useRef(null);
  const localStreamRef = useRef(null);
  const ringtoneRef = useRef(null);
 
- // Initialize audio context and enable audio playbook
  const enableAudio = useCallback(async () => {
   if (audioEnabled) return true;
 
   try {
-   // Create and resume audio context
    const AudioContext = window.AudioContext || window.webkitAudioContext;
    if (AudioContext) {
     const audioContext = new AudioContext();
@@ -34,25 +33,21 @@ const useCalls = (socketRef, setError) => {
     }
    }
 
-   // Prime the ringtone audio element
-   if (ringtoneRef.current) {
-    ringtoneRef.current.load();
-    ringtoneRef.current.volume = 0.01; // Very low volume for unlock
+   if (ringtoneRef.current && !ringtoneInitialized) {
+    ringtoneRef.current.volume = 0;
+    ringtoneRef.current.muted = true;
 
-    // Try to play and immediately pause to unlock audio
-    const playPromise = ringtoneRef.current.play();
-    await playPromise;
-    ringtoneRef.current.pause();
-    ringtoneRef.current.currentTime = 0;
-    ringtoneRef.current.volume = 0.7; // Reset to normal volume
-
+    setRingtoneInitialized(true);
     setAudioEnabled(true);
     return true;
    }
+
+   setAudioEnabled(true);
+   return true;
   } catch (err) {
    return false;
   }
- }, [audioEnabled]);
+ }, [audioEnabled, ringtoneInitialized]);
 
  // Add click listeners to enable audio on any user interaction
  useEffect(() => {
@@ -75,36 +70,28 @@ const useCalls = (socketRef, setError) => {
 
  // Play ringtone with fallback strategies
  const playRingtone = useCallback(async () => {
-  if (!ringtoneRef.current) {
+  if (!ringtoneRef.current || !audioEnabled) {
    return;
   }
 
   try {
-   // Stop any currently playing ringtone
    ringtoneRef.current.pause();
    ringtoneRef.current.currentTime = 0;
-
-   // Set loop and volume
+   ringtoneRef.current.muted = false;
    ringtoneRef.current.loop = true;
    ringtoneRef.current.volume = 0.7;
 
-   // Try to play
    const playPromise = ringtoneRef.current.play();
-
    if (playPromise !== undefined) {
     await playPromise;
    }
   } catch (error) {
-   // Show visual notification if audio is blocked
    if (setError) {
     setError('Incoming call (audio blocked by browser)');
     setTimeout(() => setError(''), 3000);
    }
-
-   // Try to enable audio for future calls
-   enableAudio();
   }
- }, [enableAudio, setError]);
+ }, [audioEnabled, setError]);
 
  const testAudio = () => {
   const audio = new Audio('/resources/ringtones/default_ringtone.mp3');
