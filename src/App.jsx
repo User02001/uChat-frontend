@@ -348,6 +348,12 @@ const App = () => {
    maxReconnectionAttempts: maxReconnectAttempts
   });
 
+  window.uChatSocket = socketRef.current;
+
+  socketRef.current.on('connect', () => {
+   window.dispatchEvent(new Event('uChatSocketReady'));
+  });
+
   const socket = socketRef.current;
 
   socket.on('connect', () => {
