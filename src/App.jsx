@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
 import Reply from './components/Reply';
-import { API_BASE_URL, SOCKET_URL, CDN_BASE_URL } from './config';
+import { API_BASE_URL, SOCKET_URL } from './config';
 import useCalls from './hooks/useCalls';
 import MessagesSkeleton from './components/MessagesSkeleton';
 import ContactsSkeleton from './components/ContactsSkeleton';
@@ -961,7 +961,7 @@ const App = () => {
      <div className="user-profile">
       <div className="contact-avatar-container">
        <img
-        src={user?.avatar_url ? `${CDN_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
+        src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"}
         alt="Profile"
         className="profile-avatar"
         draggable="false"
@@ -1018,7 +1018,7 @@ const App = () => {
         {searchResults.map(result => (
          <div key={result.id} className="search-result">
           <img
-           src={result.avatar_url ? `${CDN_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"}
+           src={result.avatar_url ? `${API_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"}
            alt={result.username}
            className="search-avatar"
           />
@@ -1045,7 +1045,7 @@ const App = () => {
      </div>
      <div className="mobile-header-actions">
       <div className="contact-avatar-container" onClick={() => setShowUserMenu(!showUserMenu)}>
-       <img src={user?.avatar_url ? `${CDN_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"} alt="Profile" draggable="false" className="mobile-avatar" />
+       <img src={user?.avatar_url ? `${API_BASE_URL}${user.avatar_url}` : "/resources/default_avatar.png"} alt="Profile" draggable="false" className="mobile-avatar" />
        <div className="status-indicator online"></div>
       </div>
      </div>
@@ -1098,7 +1098,7 @@ const App = () => {
         <div className="search-results">
          {searchResults.map(result => (
           <div key={result.id} className="search-result">
-           <img draggable="false" src={result.avatar_url ? `${CDN_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"} alt={result.username} className="search-avatar" />
+           <img draggable="false" src={result.avatar_url ? `${API_BASE_URL}${result.avatar_url}` : "/resources/default_avatar.png"} alt={result.username} className="search-avatar" />
            <div className="search-user-info">
             <span className="search-username">{result.username}</span>
             <span className="search-handle">@{result.handle}</span>
@@ -1142,7 +1142,7 @@ const App = () => {
        >
         <div className="contact-avatar-container">
          <img
-          src={contact.avatar_url ? `${CDN_BASE_URL}${contact.avatar_url}` : "/resources/default_avatar.png"}
+          src={contact.avatar_url ? `${API_BASE_URL}${contact.avatar_url}` : "/resources/default_avatar.png"}
           alt={contact.username}
           className="contact-avatar"
           draggable="false"
@@ -1196,7 +1196,7 @@ const App = () => {
         </button>
        )}
        <div className="contact-avatar-container">
-        <img draggable="false" src={activeContact.avatar_url ? `${CDN_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"} alt={activeContact.username} className="chat-avatar" />
+        <img draggable="false" src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"} alt={activeContact.username} className="chat-avatar" />
         <div className={`status-indicator ${onlineUsers.includes(activeContact.id) ? 'online' : 'offline'}`}></div>
        </div>
        <div className="chat-user-info">
@@ -1247,7 +1247,7 @@ const App = () => {
             {message.sender_id !== user.id && (
              <div className="message-avatar-container">
               <img
-               src={activeContact.avatar_url ? `${CDN_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"}
+               src={activeContact.avatar_url ? `${API_BASE_URL}${activeContact.avatar_url}` : "/resources/default_avatar.png"}
                alt={activeContact.username}
                className="message-avatar"
                draggable="false"
@@ -1276,13 +1276,13 @@ const App = () => {
              {message.message_type === 'image' ? (
               <div className="message-image">
                <img
-                src={`${CDN_BASE_URL}${message.file_path}`}
+                src={`${API_BASE_URL}${message.file_path}`}
                 alt="Shared image"
                 className="shared-image"
                />
               </div>
              ) : message.message_type === 'file' ? (
-               <div className="message-file" onClick={() => window.open(`${CDN_BASE_URL}${message.file_path}`, '_blank')}>
+              <div className="message-file" onClick={() => window.open(`${API_BASE_URL}${message.file_path}`, '_blank')}>
                <div className="file-icon">
                 <i className={getFileIcon(message.file_type)}></i>
                </div>
@@ -1427,7 +1427,7 @@ const App = () => {
       <div className="incoming-call-info">
        <img
         draggable="false"
-        src={callState.contact?.avatar_url ? `${CDN_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
+        src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
         alt={callState.contact?.username}
         className="incoming-call-avatar"
        />
@@ -1502,7 +1502,7 @@ const App = () => {
       ) : (
        <div className="audio-call-ui">
         <img
-         src={callState.contact?.avatar_url ? `${CDN_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
+         src={callState.contact?.avatar_url ? `${API_BASE_URL}${callState.contact.avatar_url}` : "/resources/default_avatar.png"}
          alt={callState.contact?.username}
          draggable="false"
         />
