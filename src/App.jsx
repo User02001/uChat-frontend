@@ -398,12 +398,31 @@ const App = () => {
    console.log('New message received:', data);
    const message = data.message;
    setMessages(prev => [...prev, message]);
+
+   // Remove typing state
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     newSet.delete(message.sender_id);
     return newSet;
    });
+
+   // Send Android notification if running inside WebView
+   if (window.AndroidNotification && message.content && message.sender_id) {
+    const notificationData = {
+     senderId: message.sender_id,
+     senderName: message.sender_username || message.sender_name || 'Unknown User',
+     content: message.content,
+     messageType: message.message_type || 'text'
+    };
+    try {
+     window.AndroidNotification.showNotification(JSON.stringify(notificationData));
+     console.log('UChat: Notification sent to Android:', notificationData);
+    } catch (e) {
+     console.log('UChat: Failed to send notification:', e);
+    }
+   }
   });
+
 
   socket.on('contact_updated', (data) => {
    setContacts(prev => prev.map(contact =>
