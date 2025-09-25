@@ -8,6 +8,9 @@ const Profile = ({ onBack }) => {
  const [user, setUser] = useState(null);
  const [loading, setLoading] = useState(true);
  const [isEditing, setIsEditing] = useState(false);
+ const [showDeleteModal, setShowDeleteModal] = useState(false);
+ const [deleteConfirmation, setDeleteConfirmation] = useState('');
+ const [isDeleting, setIsDeleting] = useState(false);
  const [profileData, setProfileData] = useState({
   username: '',
   handle: '',
@@ -83,6 +86,14 @@ const Profile = ({ onBack }) => {
   setIsEditing(false);
  };
 
+ const formatDate = (isoString) => {
+  const date = new Date(isoString);
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`; // MM/DD/YYYY
+ };
+
  const handleCancel = () => {
   setProfileData({ ...originalData });
   setIsEditing(false);
@@ -151,6 +162,39 @@ const Profile = ({ onBack }) => {
   }
  };
 
+ const handleDeleteAccount = async () => {
+  if (deleteConfirmation !== 'DELETE THIS ACCOUNT') {
+   alert('Please type DELETE THIS ACCOUNT to confirm account deletion');
+   return;
+  }
+
+  setIsDeleting(true);
+
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/delete-account`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+     'Content-Type': 'application/json'
+    }
+   });
+
+   if (response.ok) {
+    alert('Your account has been permanently deleted.');
+    navigate('/login', { replace: true });
+   } else {
+    const error = await response.json();
+    alert(error.error || 'Failed to delete account');
+   }
+  } catch (error) {
+   console.error('Delete account error:', error);
+   alert('Failed to delete account');
+  } finally {
+   setIsDeleting(false);
+   setShowDeleteModal(false);
+  }
+ };
+
  const sidebarItems = [
   { icon: 'fas fa-user', label: 'Profile', active: true },
   { icon: 'fas fa-comment', label: 'Messages' },
@@ -158,6 +202,7 @@ const Profile = ({ onBack }) => {
   { icon: 'fas fa-bell', label: 'Notifications' },
   { icon: 'fas fa-cog', label: 'Settings' },
   { icon: 'fas fa-sign-out-alt', label: 'Logout' },
+  { icon: 'fas fa-trash', label: 'Delete Account', danger: true },
  ];
 
  if (loading) {
@@ -179,7 +224,7 @@ const Profile = ({ onBack }) => {
       <img draggable="false" src="/resources/main-logo.svg" alt="uChat Logo" className="sidebar-logo" />
       <h2>uChat</h2>
      </div>
-     <p>:D</p>
+     <p>:D Welcome to uChat!!</p>
     </div>
 
     {/* Navigation */}
@@ -188,8 +233,12 @@ const Profile = ({ onBack }) => {
       {sidebarItems.map((item, index) => (
        <li key={index}>
         <div
-         className={`sidebar-nav-item ${item.active ? 'active' : ''}`}
-         onClick={item.label === 'Logout' ? handleLogout : undefined}
+         className={`sidebar-nav-item ${item.active ? 'active' : ''} ${item.danger ? 'danger' : ''}`}
+         onClick={
+          item.label === 'Logout' ? handleLogout :
+           item.label === 'Delete Account' ? () => setShowDeleteModal(true) :
+            undefined
+         }
          style={item.label === 'Logout' ? { cursor: 'pointer' } : {}}
         >
          <i className={item.icon}></i>
@@ -269,7 +318,7 @@ const Profile = ({ onBack }) => {
          <p>Upload a new profile picture. JPG, PNG or GIF (max 5MB)</p>
          <div className="online-status">
           <div className="status-indicator"></div>
-          <span className="status-text">Online</span>
+          <span className="status-text">Online Now</span>
          </div>
         </div>
        </div>
@@ -338,11 +387,11 @@ const Profile = ({ onBack }) => {
          <label>Member Since (MM/DD/YYYY)</label>
          {isEditing ? (
           <div className="field-display">
-           {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+           {user?.created_at ? formatDate(user.created_at) : 'N/A'}
           </div>
          ) : (
           <div className="field-display">
-           {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+            {user?.created_at ? formatDate(user.created_at) : 'N/A'}
           </div>
          )}
         </div>
@@ -384,6 +433,81 @@ const Profile = ({ onBack }) => {
       </div>
      </div>
     </div>
+    {/* Delete Account Modal */}
+    {showDeleteModal && (
+     <div className="modal-overlay">
+      <div className="delete-modal">
+       <div className="modal-header">
+        <h3>Delete Account</h3>
+        <button
+         className="modal-close"
+         onClick={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmation('');
+         }}
+        >
+         <i className="fas fa-times"></i>
+        </button>
+       </div>
+
+       <div className="modal-content">
+        <div className="warning-section">
+         <i className="fas fa-exclamation-triangle warning-icon"></i>
+         <h4>WARNING! YOU ARE ABOUT TO DELETE YOUR ACCOUNT. This action cannot be undone!</h4>
+         <p>Deleting your account will permanently remove:</p>
+         <ul>
+          <li>Your profile and personal information</li>
+          <li>All your messages and conversations</li>
+          <li>Your contacts and connections</li>
+          <li>Your uploaded files and images</li>
+          <li>All account data and history</li>
+         </ul>
+        </div>
+
+        <div className="confirmation-section">
+         <label>Type <strong>DELETE THIS ACCOUNT</strong> to confirm:</label>
+         <input
+          type="text"
+          value={deleteConfirmation}
+          onChange={(e) => setDeleteConfirmation(e.target.value)}
+          placeholder="Type DELETE THIS ACCOUNT here"
+          className="delete-confirmation-input"
+         />
+        </div>
+       </div>
+
+       <div className="modal-actions">
+        <button
+         onClick={() => {
+          setShowDeleteModal(false);
+          setDeleteConfirmation('');
+         }}
+         className="cancel-delete-btn"
+         disabled={isDeleting}
+        >
+         Cancel
+        </button>
+        <button
+         onClick={handleDeleteAccount}
+         disabled={deleteConfirmation !== 'DELETE THIS ACCOUNT' || isDeleting}
+         className="confirm-delete-btn"
+        >
+         {isDeleting ? (
+          <>
+           <i className="fas fa-spinner fa-spin"></i>
+           Deleting...
+          </>
+         ) : (
+          <>
+           <i className="fas fa-trash"></i>
+           Delete Account
+          </>
+         )}
+        </button>
+       </div>
+      </div>
+     </div>
+    )}
    </div>
   </div>
  );

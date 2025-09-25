@@ -2212,3 +2212,89 @@ input:focus-visible {
 :root[data-theme="dark"] .chat-handle {
     color: #ffd54f;
 }
+
+/* Global custom scrollbar for all elements (WebKit browsers) */
+*::-webkit-scrollbar {
+    width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--text-color);
+        opacity: 0.8;
+    }
+
+/* Global scrollbar styling for Firefox */
+html, body, * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-muted) var(--bg-secondary);
+}
+
+/* Message hover delete button */
+.message-delete-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #141414;
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 5;
+}
+
+/* Position relative to bubble */
+.message.sent .message-delete-btn {
+    left: -117px; /* sits evenly after reaction */
+}
+
+.message.received .message-delete-btn {
+    right: -84px;
+}
+
+/* Show on hover */
+.message:hover .message-delete-btn {
+    opacity: 1;
+}
+
+/* Hover/active states */
+.message-delete-btn:hover {
+    background: var(--error-bg);
+    color: var(--error-text);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.message-delete-btn:active {
+    transform: translateY(-50%) scale(0.9);
+}
+
+.deleted-message {
+    font-style: italic;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.4;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    opacity: 0.9;
+}

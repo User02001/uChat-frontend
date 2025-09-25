@@ -575,3 +575,241 @@
     .sidebar-nav-item.active {
         text-decoration: none; /* prevent underline when active */
     }
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    animation: fadeInOverlay 0.3s ease-out forwards;
+}
+
+[data-theme="dark"] .modal-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInModal {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.delete-modal {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 80px var(--shadow);
+    position: relative;
+    animation: slideInModal 0.3s ease-out forwards;
+}
+
+    /* Custom scrollbar for dark mode */
+    .delete-modal::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .delete-modal::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 4px;
+    }
+
+    .delete-modal::-webkit-scrollbar-thumb {
+        background: var(--text-muted);
+        border-radius: 4px;
+        opacity: 0.6;
+    }
+
+        .delete-modal::-webkit-scrollbar-thumb:hover {
+            background: var(--text-color);
+            opacity: 0.8;
+        }
+
+/* For Firefox */
+.delete-modal {
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-muted) var(--bg-secondary);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+    .modal-header h3 {
+        margin: 0;
+        color: #ff4757;
+        font-size: 1.5rem;
+    }
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+    .modal-close:hover {
+        background: var(--hover-color);
+        color: var(--text-color);
+    }
+
+.modal-content {
+    padding: 20px;
+}
+
+.warning-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.warning-icon {
+    font-size: 3rem;
+    color: #ff4757;
+    margin-bottom: 15px;
+}
+
+.warning-section h4 {
+    color: #ff4757;
+    margin: 0 0 15px 0;
+    font-size: 1.2rem;
+}
+
+.warning-section p {
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.warning-section ul {
+    text-align: left;
+    color: var(--text-muted);
+    margin: 0;
+    padding-left: 20px;
+}
+
+.warning-section li {
+    margin-bottom: 8px;
+}
+
+.confirmation-section {
+    margin-bottom: 20px;
+}
+
+    .confirmation-section label {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+.delete-confirmation-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--text-color);
+    transition: border-color 0.2s ease;
+}
+
+    .delete-confirmation-input:focus {
+        outline: none;
+        border-color: #ff4757;
+    }
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.cancel-delete-btn,
+.confirm-delete-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.cancel-delete-btn {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+    .cancel-delete-btn:hover:not(:disabled) {
+        background: var(--hover-color);
+    }
+
+.confirm-delete-btn {
+    background: #ff4757;
+    color: white;
+}
+
+    .confirm-delete-btn:hover:not(:disabled) {
+        background: #ff3838;
+    }
+
+    .confirm-delete-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+/* Danger sidebar item */
+.sidebar-nav-item.danger {
+    color: #ff4757 !important;
+}
+
+    .sidebar-nav-item.danger:hover {
+        background: rgba(255, 71, 87, 0.1) !important;
+    }
+
+    .sidebar-nav-item.danger i {
+        color: #ff4757 !important;
+    }

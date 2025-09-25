@@ -44,6 +44,7 @@ const App = () => {
  const maxReconnectAttempts = 10;
  const fileInputRef = useRef(null);
  const [dragOver, setDragOver] = useState(false);
+ const [deleteConfirm, setDeleteConfirm] = useState(null);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -348,12 +349,6 @@ const App = () => {
    maxReconnectionAttempts: maxReconnectAttempts
   });
 
-  window.uChatSocket = socketRef.current;
-
-  socketRef.current.on('connect', () => {
-   window.dispatchEvent(new Event('uChatSocketReady'));
-  });
-
   const socket = socketRef.current;
 
   socket.on('connect', () => {
@@ -398,31 +393,21 @@ const App = () => {
    console.log('New message received:', data);
    const message = data.message;
    setMessages(prev => [...prev, message]);
-
-   // Remove typing state
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     newSet.delete(message.sender_id);
     return newSet;
    });
-
-   // Send Android notification if running inside WebView
-   if (window.AndroidNotification && message.content && message.sender_id) {
-    const notificationData = {
-     senderId: message.sender_id,
-     senderName: message.sender_username || message.sender_name || 'Unknown User',
-     content: message.content,
-     messageType: message.message_type || 'text'
-    };
-    try {
-     window.AndroidNotification.showNotification(JSON.stringify(notificationData));
-     console.log('UChat: Notification sent to Android:', notificationData);
-    } catch (e) {
-     console.log('UChat: Failed to send notification:', e);
-    }
-   }
   });
 
+  socket.on('message_deleted', (data) => {
+   // mark message deleted in local state (UI updates instantly; server also broadcasts)
+   setMessages(prev =>
+    prev.map(m =>
+     m.id === data.message_id ? { ...m, deleted: true, content: null } : m
+    )
+   );
+  });
 
   socket.on('contact_updated', (data) => {
    setContacts(prev => prev.map(contact =>
@@ -1290,34 +1275,36 @@ const App = () => {
                 {message.original_message.sender_id === user.id ? 'You' : message.original_message.sender_username}
                </span>
                <span className="reply-content-inside">
-                {message.original_message.content.length > 40
-                 ? message.original_message.content.substring(0, 40) + '...'
-                 : message.original_message.content}
+                {(() => {
+                 const orig = message.original_message?.content || '';
+                 return orig.length > 40 ? orig.substring(0, 40) + '...' : orig;
+                })()}
                </span>
               </div>
              )}
 
              {/* Message content based on type */}
-             {message.message_type === 'image' ? (
+             {/* Deleted-aware message rendering */}
+             {message.deleted ? (
+              <div className="deleted-message">
+               <em>
+                {message.sender_id === user.id
+                 ? "You have DELETED this message."
+                 : "This message has been DELETED."}
+               </em>
+              </div>
+             ) : message.message_type === 'image' ? (
               <div className="message-image">
-               <img
-                src={`${API_BASE_URL}${message.file_path}`}
-                alt="Shared image"
-                className="shared-image"
-               />
+               <img src={`${API_BASE_URL}${message.file_path}`} alt="Shared image" className="shared-image" />
               </div>
              ) : message.message_type === 'file' ? (
               <div className="message-file" onClick={() => window.open(`${API_BASE_URL}${message.file_path}`, '_blank')}>
-               <div className="file-icon">
-                <i className={getFileIcon(message.file_type)}></i>
-               </div>
+               <div className="file-icon"><i className={getFileIcon(message.file_type)}></i></div>
                <div className="file-info">
                 <div className="file-name">{message.file_name}</div>
                 <div className="file-size">{formatFileSize(message.file_size)}</div>
                </div>
-               <div className="file-download">
-                <i className="fas fa-download"></i>
-               </div>
+               <div className="file-download"><i className="fas fa-download"></i></div>
               </div>
              ) : (
               <div className="message-content">
@@ -1367,11 +1354,56 @@ const App = () => {
             >
              <i className="fas fa-smile"></i>
             </button>
+            {message.sender_id === user.id && !message.deleted && (
+             <button
+              className="message-delete-btn"
+              onClick={() => setDeleteConfirm(message.id)}
+              title="Delete message"
+             >
+              <i className="fas fa-trash"></i>
+             </button>
+            )}
            </div>
           ))
        )}
 
        <div ref={messagesEndRef} />
+       {deleteConfirm && (
+        <div className="delete-modal">
+         <div className="delete-modal-backdrop" onClick={() => setDeleteConfirm(null)} />
+         <div className="delete-modal-content">
+          <p>Are you sure you want to delete this message?</p>
+          <div className="modal-actions">
+           <button onClick={() => setDeleteConfirm(null)}>Cancel</button>
+           <button
+            onClick={async () => {
+             try {
+              const res = await fetch(`${API_BASE_URL}/api/messages/${deleteConfirm}/delete`, {
+               method: 'POST',
+               credentials: 'include'
+              });
+
+              if (res.ok) {
+               // immediate local optimistic update; server will also broadcast
+               setMessages(prev => prev.map(m => m.id === deleteConfirm ? { ...m, deleted: true, content: null } : m));
+              } else {
+               const err = await res.json();
+               setError(err.error || 'Delete failed');
+              }
+             } catch (e) {
+              setError('Delete failed');
+             } finally {
+              setDeleteConfirm(null);
+             }
+            }}
+           >
+            Delete
+           </button>
+          </div>
+         </div>
+        </div>
+       )}
+
       </div>
 
       <div
