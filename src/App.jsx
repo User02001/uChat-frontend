@@ -63,6 +63,14 @@ const App = () => {
   enableAudio
  } = useCalls(socketRef, setError);
 
+ useEffect(() => {
+  if (user && 'Notification' in window && Notification.permission === 'default') {
+   Notification.requestPermission().catch(err => {
+    console.log('Notification permission error:', err);
+   });
+  }
+ }, [user]);
+
  // Check if device is mobile on window resize
  useEffect(() => {
   const checkMobile = () => {
@@ -231,6 +239,45 @@ const App = () => {
   return null;
  };
 
+ // Show browser notification for new messages
+ const showNotification = (senderName, messageContent) => {
+  if (
+   'Notification' in window &&
+   Notification.permission === 'granted' &&
+   document.visibilityState === 'hidden' &&
+   !isMobile
+  ) {
+   const notification = new Notification(`${senderName} texted:`, {
+    body: messageContent,
+    icon: 'resources/message_received.png',
+    badge: 'resources/message_received.png',
+    tag: `uchat-${Date.now()}-${senderName}`, // More unique tag
+    requireInteraction: true, // This makes it stick longer
+    silent: false,
+    renotify: true // Forces it to show even if similar notification exists
+   });
+
+   setTimeout(() => notification.close(), 5000);
+
+   notification.onclick = () => {
+    window.focus();
+    notification.close();
+   };
+  }
+ };
+
+ const getNotificationContent = (message) => {
+  if (message.file_url) {
+   return `Sent a file: ${message.file_name || 'attachment'}`;
+  }
+  if (message.content) {
+   return message.content.length > 100
+    ? message.content.substring(0, 100) + '...'
+    : message.content;
+  }
+  return 'Sent a message';
+ };
+
  // Format timestamp to human readable format
  const formatTimeAgo = (timestamp) => {
   const now = new Date();
@@ -352,7 +399,6 @@ const App = () => {
   const socket = socketRef.current;
 
   socket.on('connect', () => {
-   console.log('Socket connected');
    setSocketConnected(true);
    setReconnectAttempts(0);
 
@@ -390,14 +436,24 @@ const App = () => {
   });
 
   socket.on('new_message', (data) => {
-   console.log('New message received:', data);
    const message = data.message;
+
    setMessages(prev => [...prev, message]);
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     newSet.delete(message.sender_id);
     return newSet;
    });
+
+   // Show notification if message is from someone else
+   if (message.sender_id !== user?.id) {
+    // Try to get sender name from message data first, then fall back to contacts
+    const senderName = message.sender_username ||
+     message.username ||
+     contacts.find(contact => contact.id === message.sender_id)?.username ||
+     'New Message';
+    showNotification(senderName, getNotificationContent(message));
+   }
   });
 
   socket.on('message_deleted', (data) => {
