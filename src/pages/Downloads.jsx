@@ -61,7 +61,7 @@ const Downloads = () => {
       "Secure authentication with session management"
      ],
      downloads: {
-      windows: "/downloads/uChat-Setup-1.0.0.exe"
+      windows: "resources/downloads/uChat-Setup-1.0.0.exe"
      },
      file_sizes: {
       windows: "45.2 MB"
@@ -136,8 +136,8 @@ const Downloads = () => {
       <div className="download-card">
        <div className="platform-info">
         <div className="platform-icon">
-         <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M3,12V6.75L9,5.43V11.91L3,12M20,3V11.75L10,11.9V5.21L20,3M3,13L9,13.09V19.9L3,18.75V13M20,13.25V22L10,20.09V13.1L20,13.25Z" />
+         <svg width="25" height="25" viewBox="0 0 4875 4875" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#FFFFFF" d="M0 0h2311v2310H0zm2564 0h2311v2310H2564zM0 2564h2311v2311H0zm2564 0h2311v2311H2564" />
          </svg>
         </div>
         <div className="platform-details">

@@ -8,6 +8,7 @@ import useCalls from './hooks/useCalls';
 import MessagesSkeleton from './components/MessagesSkeleton';
 import ContactsSkeleton from './components/ContactsSkeleton';
 import Reaction from './components/Reaction';
+import './pages/downloads-recommend.css'
 
 const App = () => {
  const navigate = useNavigate();
@@ -45,6 +46,8 @@ const App = () => {
  const fileInputRef = useRef(null);
  const [dragOver, setDragOver] = useState(false);
  const [deleteConfirm, setDeleteConfirm] = useState(null);
+ const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
+ const [sessionDismissed, setSessionDismissed] = useState(false);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -99,6 +102,57 @@ const App = () => {
   document.addEventListener('click', handleClickOutside);
   return () => document.removeEventListener('click', handleClickOutside);
  }, [showUserMenu, showSearch, showReactionPopup]);
+
+ // Add this useEffect to detect Windows and manage refresh counter
+ useEffect(() => {
+  const detectWindowsAndManageDisplay = () => {
+   const userAgent = navigator.userAgent;
+   const isWindows = userAgent.includes('Windows');
+
+   // Check if user already has the app (permanent dismissal)
+   const userHasApp = localStorage.getItem('uchat-user-has-desktop-app');
+
+   if (!isWindows || userHasApp === 'true') {
+    return; // Don't show if not Windows or user already has app
+   }
+
+   // Get current refresh count and last reset time
+   const refreshData = JSON.parse(localStorage.getItem('uchat-refresh-tracker') || '{"count": 0, "lastReset": 0}');
+   const now = Date.now();
+   const oneDayMs = 600000; // 5 mins in milliseconds
+
+   // Reset counter if it's been more than 5 hours since last reset
+   if (now - refreshData.lastReset > oneDayMs) {
+    refreshData.count = 0;
+    refreshData.lastReset = now;
+   }
+
+   // Increment refresh count
+   refreshData.count += 1;
+   localStorage.setItem('uchat-refresh-tracker', JSON.stringify(refreshData));
+
+   // Show recommendation every 5 refreshes (and not dismissed in this session)
+   if (refreshData.count % 3 === 0 && !sessionDismissed) {
+    setTimeout(() => {
+     setShowDownloadRecommendation(true);
+    }, 3000);
+   }
+  };
+
+  detectWindowsAndManageDisplay();
+ }, [sessionDismissed]);
+
+ // Add this function to handle dismissing the recommendation (session only)
+ const dismissDownloadRecommendation = () => {
+  setShowDownloadRecommendation(false);
+  setSessionDismissed(true); // Only dismiss for this session
+ };
+
+ // Add this function to handle "I already have it" checkbox
+ const handleAlreadyHaveApp = () => {
+  setShowDownloadRecommendation(false);
+  localStorage.setItem('uchat-user-has-desktop-app', 'true');
+ };
 
  // Initialize authentication check on component mount
  useEffect(() => {
@@ -1686,6 +1740,47 @@ const App = () => {
        <button className="end-call-btn" onClick={endCall}></button>
       </div>
       
+     </div>
+    </div>
+   )}
+   {showDownloadRecommendation && (
+    <div className="download-recommendation-notification">
+     <div className="download-recommendation-content">
+      <div className="download-recommendation-info">
+       <div className="download-icon">
+        <i className="fas fa-download"></i>
+       </div>
+       <div className="download-recommendation-text">
+        <h4>Better uChat Experience</h4>
+        <p>Download our desktop app for Windows for improved performance and features</p>
+       </div>
+      </div>
+      <div className="download-recommendation-actions">
+       <button
+        className="dismiss-btn-small"
+        onClick={dismissDownloadRecommendation}
+        title="Dismiss"
+       >
+        <i className="fas fa-times"></i>
+       </button>
+       <button
+        className="download-btn-small"
+        onClick={() => window.open('/downloads', '_blank')}
+        title="Download"
+       >
+        <i className="fas fa-download"></i>
+       </button>
+      </div>
+     </div>
+     <div className="download-recommendation-footer">
+      <label className="already-have-checkbox">
+       <input
+        type="checkbox"
+        onChange={handleAlreadyHaveApp}
+       />
+       <span className="checkmark"></span>
+       I already have the desktop app
+      </label>
      </div>
     </div>
    )}
