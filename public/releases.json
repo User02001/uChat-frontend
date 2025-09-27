@@ -1,9 +1,9 @@
 {
-    "latest": "1.0.3",
+    "latest": "1.0.5",
     "releases": [
         {
-            "version": "1.0.3",
-            "release_date": "2025-09-27",
+            "version": "1.0.5",
+            "release_date": "2025-09-28",
             "featured": true,
             "changelog": [
                 "Initial release of uChat desktop application",
@@ -11,14 +11,14 @@
                 "Custom notification system with a ringtone",
                 "Compact login mode and full chat interface",
                 "Automatic dark and light mode",
-                "Automatic updating when instructed",
+                "Automatic updating when available",
                 "Auto start when the device has restarted",
                 "There are no downloads for macOS and Linux yet because they are too complex to setup lol",
                 "Same with Android and iOS except the app is being uploaded to APKPure so you have to wait but iOS is never happening prob :(",
                 "But also thanks for downloading anyways ;D"
             ],
             "downloads": {
-                "windows": "resources/downloads/uChat-Setup-1.0.3.exe"
+                "windows": "resources/downloads/uChat-Setup-1.0.5.exe"
             },
             "file_sizes": {
                 "windows": "~ 94.8 MB"
