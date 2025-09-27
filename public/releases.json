@@ -3,27 +3,26 @@
     "releases": [
         {
             "version": "1.0.0",
-            "release_date": "2025-01-15",
+            "release_date": "2025-09-27",
             "featured": true,
             "changelog": [
                 "Initial release of uChat desktop application",
                 "Real-time messaging with Socket.IO integration",
-                "Custom notification system with avatar support",
-                "System tray functionality for background operation",
-                "Dual window modes: compact login and full chat interface",
-                "Cross-platform support for Windows, macOS, and Linux",
-                "Dark and light theme with system preference detection",
-                "Secure authentication with session management"
+                "Custom notification system with a ringtone",
+                "Compact login mode and full chat interface",
+                "Automatic dark and light mode",
+                "There are no downloads for macOS and Linux yet because they are too complex to setup lol",
+                "Same with Android and iOS except the app is being uploaded to APKPure so you have to wait but iOS is never happening prob :(",
+                "But also thanks for downloading anyways ;D"
             ],
             "downloads": {
-                "windows": "/resources/downloads/uChat-Setup-1.0.0.exe",
-                "mac": "/resources/downloads/uChat-1.0.0.dmg",
-                "linux": "/resources/downloads/uChat-1.0.0.AppImage"
+                "windows": "/downloads/uChat-Setup-1.0.0.exe"
+            },
+            "file_sizes": {
+                "windows": "93.2 MB"
             },
             "requirements": {
-                "windows": "Windows 10 or later",
-                "mac": "macOS 10.15 or later",
-                "linux": "Ubuntu 18.04+ or equivalent"
+                "windows": "Windows 10 or later"
             }
         }
     ]
