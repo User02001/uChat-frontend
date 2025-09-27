@@ -391,6 +391,43 @@ const App = () => {
 
   socket.on('new_message', (data) => {
    const message = data.message;
+
+   // COMPREHENSIVE DEBUG OUTPUT - ALL AT ONCE
+   console.log('===========================================');
+   console.log('=== COMPLETE MESSAGE DEBUG SESSION ===');
+   console.log('===========================================');
+   console.log('1. RAW DATA FROM SOCKET:');
+   console.log('   Full data object:', data);
+   console.log('   Message object:', message);
+   console.log('   Message keys:', Object.keys(message));
+   console.log('   Message values:', Object.values(message));
+   console.log('');
+
+   console.log('2. MESSAGE PROPERTIES:');
+   console.log('   message.id:', message.id);
+   console.log('   message.sender_id:', message.sender_id, '(type:', typeof message.sender_id, ')');
+   console.log('   message.sender_username:', message.sender_username);
+   console.log('   message.username:', message.username);
+   console.log('   message.sender_avatar:', message.sender_avatar);
+   console.log('   message.avatar_url:', message.avatar_url);
+   console.log('   message.sender_handle:', message.sender_handle);
+   console.log('');
+
+   console.log('3. APP STATE:');
+   console.log('   Current user:', user);
+   console.log('   User ID:', user?.id, '(type:', typeof user?.id, ')');
+   console.log('   Contacts array length:', contacts.length);
+   console.log('   Contacts array:', contacts);
+   if (contacts.length > 0) {
+    console.log('   First contact structure:', contacts[0]);
+    console.log('   First contact keys:', Object.keys(contacts[0]));
+    console.log('   All contact IDs and types:');
+    contacts.forEach((contact, index) => {
+     console.log(`     Contact ${index}: ID=${contact.id} (${typeof contact.id}), username=${contact.username}, avatar=${contact.avatar_url || contact.avatar || 'none'}`);
+    });
+   }
+   console.log('');
+
    setMessages(prev => [...prev, message]);
    setTypingUsers(prev => {
     const newSet = new Set(prev);
@@ -400,25 +437,29 @@ const App = () => {
 
    // Show notification if message is from someone else
    if (message.sender_id !== user?.id) {
-    console.log('=== SENDING NOTIFICATION DATA ===');
-    console.log('Message sender_id:', message.sender_id, typeof message.sender_id);
-    console.log('Contacts array length:', contacts.length);
+    console.log('4. NOTIFICATION PROCESSING:');
+    console.log('   Message is from someone else, processing notification...');
 
-    // Try to find contact, but have fallbacks
+    // Find the contact to get their avatar
     const senderContact = contacts.find(contact => contact.id === message.sender_id);
+    console.log('   Contact lookup result:', senderContact);
+
     const senderName = message.sender_username ||
      message.username ||
      senderContact?.username ||
      'New Message';
+    console.log('   Resolved sender name:', senderName);
 
-    // Use multiple fallback sources for avatar
-    const senderAvatarUrl = senderContact?.avatar_url ||
-     message.sender_avatar ||
-     message.avatar_url ||
-     null;
+    // Try multiple avatar sources
+    const avatarFromContact = senderContact?.avatar_url || senderContact?.avatar;
+    const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
+    const senderAvatarUrl = avatarFromContact || avatarFromMessage || null;
 
-    console.log('Sender contact:', senderContact);
-    console.log('Final avatar URL:', senderAvatarUrl);
+    console.log('   Avatar sources:');
+    console.log('     From contact:', avatarFromContact);
+    console.log('     From message:', avatarFromMessage);
+    console.log('     Final avatar URL:', senderAvatarUrl);
+    console.log('');
 
     // Send to Electron instead of web notification
     if (window.require) {
@@ -437,6 +478,12 @@ const App = () => {
        timestamp: message.timestamp,
        message_type: message.message_type
       };
+
+      console.log('5. SENDING TO ELECTRON:');
+      console.log('   Clean message object:', cleanMessage);
+      console.log('   Avatar in clean message:', cleanMessage.sender_avatar);
+      console.log('===========================================');
+
       ipcRenderer.send('web-notification', {
        type: 'new_message',
        data: {
@@ -444,9 +491,12 @@ const App = () => {
        }
       });
      } catch (e) {
-      console.log('Electron IPC not available');
+      console.log('Electron IPC not available:', e);
      }
     }
+   } else {
+    console.log('4. NOTIFICATION SKIPPED: Message is from current user');
+    console.log('===========================================');
    }
   });
 
