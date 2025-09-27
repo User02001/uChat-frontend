@@ -495,8 +495,9 @@ const App = () => {
     return newSet;
    });
 
-   // Show notification if message is from someone else
-   if (message.sender_id !== user?.id) {
+   // Show notification if message is from someone else AND not from currently active contact
+   if (message.sender_id !== user?.id &&
+    (!activeContact || message.sender_id !== activeContact.id)) {
     console.log('4. NOTIFICATION PROCESSING:');
     console.log('   Message is from someone else, processing notification...');
 
