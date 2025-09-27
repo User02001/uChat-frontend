@@ -406,13 +406,22 @@ const App = () => {
      'New Message';
 
     // Send to Electron instead of web notification
-    if (window.electronAPI) {
-     window.electronAPI.sendNotification({
-      type: 'new_message',
-      senderName: senderName,
-      messageContent: getNotificationContent(message),
-      senderAvatar: null
-     });
+    if (window.require) {
+     try {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('web-notification', {
+       type: 'new_message',
+       data: {
+        message: {
+         ...message,
+         sender_username: senderName
+        }
+       }
+      });
+     } catch (e) {
+      // Fallback - do nothing since we disabled web notifications
+      console.log('Electron IPC not available');
+     }
     }
    }
   });
