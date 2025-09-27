@@ -494,32 +494,30 @@ const App = () => {
     console.log('4. NOTIFICATION PROCESSING:');
     console.log('   Message is from someone else, processing notification...');
 
-    // Find the contact to get their avatar
-    const senderContact = contacts.find(contact => contact.id === message.sender_id);
-    console.log('   Contact lookup result:', senderContact);
-
+    // FIXED: Don't require contact to be in contacts list
     const senderName = message.sender_username ||
      message.username ||
-     senderContact?.username ||
-     'New Message';
+     'Unknown User';  // ← Remove dependency on senderContact
     console.log('   Resolved sender name:', senderName);
 
-    // Try multiple avatar sources
-    const avatarFromContact = senderContact?.avatar_url || senderContact?.avatar;
+    // Try avatar from message first, then contact as backup
     const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
-    const senderAvatarUrl = avatarFromContact || avatarFromMessage || null;
+    let senderAvatarUrl = avatarFromMessage;
+
+    // Only try contact lookup as backup if message has no avatar
+    if (!senderAvatarUrl) {
+     const senderContact = contacts.find(contact => contact.id === message.sender_id);
+     senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
+    }
 
     console.log('   Avatar sources:');
-    console.log('     From contact:', avatarFromContact);
     console.log('     From message:', avatarFromMessage);
     console.log('     Final avatar URL:', senderAvatarUrl);
-    console.log('');
 
-    // Send to Electron instead of web notification
+    // Send to Electron - this should work for ANY sender
     if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
-      // Create a clean, serializable message object
       const cleanMessage = {
        id: message.id,
        sender_id: message.sender_id,
@@ -536,7 +534,6 @@ const App = () => {
       console.log('5. SENDING TO ELECTRON:');
       console.log('   Clean message object:', cleanMessage);
       console.log('   Avatar in clean message:', cleanMessage.sender_avatar);
-      console.log('===========================================');
 
       ipcRenderer.send('web-notification', {
        type: 'new_message',
