@@ -144,16 +144,7 @@ const Verify = () => {
 
  return (
   <div className="login-container">
-   <div className="ball-lights">
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-   </div>
+   <div className="aura-background"></div>
    <div className="login-card">
     <div className="login-header">
      <div className="logo-container" style={{

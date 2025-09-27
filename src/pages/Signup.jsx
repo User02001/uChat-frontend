@@ -123,16 +123,7 @@ const Signup = () => {
 
  return (
   <div className="login-container">
-   <div className="ball-lights">
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-    <div className="ball-light"></div>
-   </div>
+   <div className="aura-background"></div>
    <div className="login-card">
     <div className="login-header">
      <div className="logo-container" style={{
@@ -158,7 +149,7 @@ const Signup = () => {
      </h1>
      <p>
       <i className="fas fa-rocket" style={{ marginRight: '8px', opacity: 0.7 }}></i>
-      Create an account for yourself
+      Create an account for yourself ;D
      </p>
     </div>
 
@@ -365,11 +356,14 @@ const Signup = () => {
 
      <div className="oauth-buttons">
       <button onClick={handleGoogleSignup} className="oauth-btn google" disabled={loading}>
-       <i className="fab fa-google" style={{
-        marginRight: '8px',
-        fontSize: '18px'
-       }}></i>
-       Sign up with Google
+       <img
+        src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
+        alt="Google"
+        width="18"
+        height="18"
+        style={{ marginRight: '0px' }}
+       />
+       Google
       </button>
      </div>
     </div>

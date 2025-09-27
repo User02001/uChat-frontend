@@ -336,394 +336,37 @@ body, html {
     }
 }
 
-/* Ball lights background animation - MASSIVE VERSION */
-.ball-lights {
+/* Yellow aura background animation - ULTRA OPTIMIZED */
+.aura-background {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 35%;
+    left: 25%;
+    width: 800px;
+    height: 800px;
+    transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: 1;
-    overflow: hidden;
-}
-
-.ball-light {
-    position: absolute;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 193, 7, 0.5) 30%, rgba(255, 165, 0, 0.3) 50%, transparent 70%);
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 215, 0, 1) 0%, rgba(255, 193, 7, 0.95) 15%, rgba(255, 165, 0, 0.8) 35%, rgba(255, 140, 0, 0.4) 60%, rgba(255, 215, 0, 0.1) 85%, transparent 100%);
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.9), 0 0 30px rgba(255, 193, 7, 0.7), 0 0 45px rgba(255, 165, 0, 0.5), 0 0 60px rgba(255, 140, 0, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.3);
-    animation: star-float 8s ease-in-out infinite;
-    filter: blur(0.5px);
+    filter: blur(60px);
+    animation: aura-breathe 4s ease-in-out infinite;
+    will-change: opacity;
+    transform-origin: center;
+    backface-visibility: hidden;
+    perspective: 1000px;
 }
 
-[data-theme="dark"] .ball-light {
-    background: radial-gradient(circle, rgba(255, 235, 59, 1) 0%, rgba(255, 215, 0, 0.95) 15%, rgba(255, 193, 7, 0.8) 35%, rgba(255, 165, 0, 0.4) 60%, rgba(255, 235, 59, 0.1) 85%, transparent 100%);
-    box-shadow: 0 0 20px rgba(255, 235, 59, 0.9), 0 0 40px rgba(255, 215, 0, 0.7), 0 0 60px rgba(255, 193, 7, 0.5), 0 0 80px rgba(255, 165, 0, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.2);
-}
-
-.ball-light:nth-child(1) {
-    width: 40px;
-    height: 40px;
-    top: 10%;
-    left: 15%;
-    animation: gas-particle-1 6s linear infinite;
-}
-
-.ball-light:nth-child(2) {
-    width: 60px;
-    height: 60px;
-    top: 20%;
-    left: 80%;
-    animation: gas-particle-2 8s linear infinite;
-}
-
-.ball-light:nth-child(3) {
-    width: 35px;
-    height: 35px;
-    top: 70%;
-    left: 10%;
-    animation: gas-particle-3 7s linear infinite;
-}
-
-.ball-light:nth-child(4) {
-    width: 55px;
-    height: 55px;
-    top: 60%;
-    left: 85%;
-    animation: gas-particle-4 9s linear infinite;
-}
-
-.ball-light:nth-child(5) {
-    width: 45px;
-    height: 45px;
-    top: 40%;
-    left: 50%;
-    animation: gas-particle-5 5s linear infinite;
-}
-
-.ball-light:nth-child(6) {
-    width: 50px;
-    height: 50px;
-    top: 80%;
-    left: 60%;
-    animation: gas-particle-6 7.5s linear infinite;
-}
-
-.ball-light:nth-child(7) {
-    width: 38px;
-    height: 38px;
-    top: 30%;
-    left: 25%;
-    animation: gas-particle-7 6.5s linear infinite;
-}
-
-.ball-light:nth-child(8) {
-    width: 42px;
-    height: 42px;
-    top: 90%;
-    left: 40%;
-    animation: gas-particle-8 8.5s linear infinite;
-}
-
-@keyframes gas-particle-1 {
+@keyframes aura-breathe {
     0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
-    }
-
-    15% {
-        transform: translate(200px, -100px) scale(1.1);
-        opacity: 1;
-    }
-
-    30% {
-        transform: translate(-150px, 150px) scale(0.9);
-        opacity: 0.7;
-    }
-
-    45% {
-        transform: translate(300px, 80px) scale(1.05);
-        opacity: 0.9;
-    }
-
-    60% {
-        transform: translate(-200px, -120px) scale(0.95);
-        opacity: 0.8;
-    }
-
-    75% {
-        transform: translate(100px, 200px) scale(1.08);
-        opacity: 1;
-    }
-
-    90% {
-        transform: translate(-100px, -50px) scale(0.92);
-        opacity: 0.85;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
-    }
-}
-
-@keyframes gas-particle-2 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.9;
-    }
-
-    12% {
-        transform: translate(-180px, 120px) scale(0.85);
-        opacity: 0.7;
-    }
-
-    28% {
-        transform: translate(250px, -80px) scale(1.15);
-        opacity: 1;
-    }
-
-    42% {
-        transform: translate(-120px, -150px) scale(0.95);
-        opacity: 0.8;
-    }
-
-    58% {
-        transform: translate(180px, 180px) scale(1.05);
-        opacity: 0.9;
-    }
-
-    72% {
-        transform: translate(-250px, 50px) scale(0.9);
-        opacity: 0.75;
-    }
-
-    88% {
-        transform: translate(80px, -100px) scale(1.1);
-        opacity: 0.95;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.9;
-    }
-}
-
-@keyframes gas-particle-3 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.7;
-    }
-
-    18% {
-        transform: translate(160px, 90px) scale(1.2);
-        opacity: 1;
-    }
-
-    35% {
-        transform: translate(-220px, -60px) scale(0.8);
         opacity: 0.6;
     }
 
-    52% {
-        transform: translate(280px, -140px) scale(1.1);
-        opacity: 0.9;
-    }
-
-    68% {
-        transform: translate(-80px, 160px) scale(0.95);
-        opacity: 0.8;
-    }
-
-    82% {
-        transform: translate(120px, -90px) scale(1.05);
-        opacity: 0.85;
-    }
-
-    96% {
-        transform: translate(-60px, 40px) scale(0.9);
-        opacity: 0.75;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.7;
-    }
-}
-
-@keyframes gas-particle-4 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
-    }
-
-    20% {
-        transform: translate(-140px, -110px) scale(0.9);
-        opacity: 0.9;
-    }
-
-    38% {
-        transform: translate(190px, 130px) scale(1.12);
-        opacity: 1;
-    }
-
-    55% {
-        transform: translate(-160px, 70px) scale(0.88);
-        opacity: 0.7;
-    }
-
-    70% {
-        transform: translate(240px, -90px) scale(1.08);
-        opacity: 0.95;
-    }
-
-    85% {
-        transform: translate(-90px, -140px) scale(0.92);
-        opacity: 0.8;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
-    }
-}
-
-@keyframes gas-particle-5 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.85;
-    }
-
-    25% {
-        transform: translate(110px, -130px) scale(1.15);
-        opacity: 1;
-    }
-
     50% {
-        transform: translate(-180px, 100px) scale(0.85);
-        opacity: 0.65;
-    }
-
-    75% {
-        transform: translate(210px, 160px) scale(1.05);
-        opacity: 0.9;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.85;
-    }
-}
-
-@keyframes gas-particle-6 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.75;
-    }
-
-    16% {
-        transform: translate(-200px, 80px) scale(0.95);
-        opacity: 0.8;
-    }
-
-    33% {
-        transform: translate(150px, -120px) scale(1.1);
         opacity: 1;
     }
 
-    50% {
-        transform: translate(-100px, -80px) scale(0.9);
-        opacity: 0.7;
-    }
-
-    66% {
-        transform: translate(180px, 140px) scale(1.05);
-        opacity: 0.9;
-    }
-
-    83% {
-        transform: translate(-130px, 60px) scale(0.92);
-        opacity: 0.8;
-    }
-
     100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.75;
-    }
-}
-
-@keyframes gas-particle-7 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.9;
-    }
-
-    14% {
-        transform: translate(170px, 110px) scale(1.08);
-        opacity: 0.95;
-    }
-
-    29% {
-        transform: translate(-140px, -90px) scale(0.88);
-        opacity: 0.75;
-    }
-
-    43% {
-        transform: translate(220px, -70px) scale(1.12);
-        opacity: 1;
-    }
-
-    57% {
-        transform: translate(-180px, 130px) scale(0.92);
-        opacity: 0.8;
-    }
-
-    71% {
-        transform: translate(90px, -110px) scale(1.05);
-        opacity: 0.85;
-    }
-
-    86% {
-        transform: translate(-60px, 80px) scale(0.95);
-        opacity: 0.9;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.9;
-    }
-}
-
-@keyframes gas-particle-8 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
-    }
-
-    22% {
-        transform: translate(-160px, -100px) scale(0.9);
-        opacity: 0.7;
-    }
-
-    44% {
-        transform: translate(200px, 90px) scale(1.1);
-        opacity: 1;
-    }
-
-    66% {
-        transform: translate(-120px, 140px) scale(0.95);
-        opacity: 0.85;
-    }
-
-    88% {
-        transform: translate(140px, -120px) scale(1.05);
-        opacity: 0.9;
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.8;
+        opacity: 0.6;
     }
 }
 
@@ -738,3 +381,31 @@ body, html {
     margin-top: -40px; /* 👈 pulls the logo upward, reduces top gap */
     margin-bottom: 16px; /* 👈 slightly less space below */
 }
+
+/* Input autofill styling - clean glow without glitches */
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:hover,
+.input-group input:-webkit-autofill:focus,
+.input-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--bg-secondary) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    border: 1px solid rgba(255, 193, 7, 0.5) !important;
+    transition: all 0.3s ease !important;
+}
+
+    .input-group input:-webkit-autofill:focus {
+        border-color: var(--border-focus) !important;
+        -webkit-box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1), 0 0 0 1000px var(--bg-secondary) inset !important;
+    }
+
+/* Firefox autofill */
+.input-group input:-moz-autofill {
+    background-color: var(--bg-secondary) !important;
+    border: 1px solid rgba(255, 193, 7, 0.5) !important;
+    color: var(--text-primary) !important;
+}
+
+    .input-group input:-moz-autofill:focus {
+        border-color: var(--border-focus) !important;
+        box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1) !important;
+    }
