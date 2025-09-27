@@ -334,6 +334,7 @@ const App = () => {
 
  const initializeSocket = () => {
   if (socketRef.current) {
+   socketRef.current.removeAllListeners();
    socketRef.current.disconnect();
   }
 
