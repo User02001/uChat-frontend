@@ -447,11 +447,7 @@ const App = () => {
    const message = data.message;
 
    // Only add to messages if it belongs to the currently active chat
-   if (activeContact &&
-    ((message.sender_id === activeContact.id && message.receiver_id === user.id) ||
-     (message.sender_id === user.id && message.receiver_id === activeContact.id))) {
-    setMessages(prev => [...prev, message]);
-   }
+   setMessages(prev => [...prev, message]);
 
    // COMPREHENSIVE DEBUG OUTPUT - ALL AT ONCE
    console.log('===========================================');
