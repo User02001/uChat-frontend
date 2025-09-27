@@ -386,6 +386,69 @@ const App = () => {
   return iconMap[fileType?.toLowerCase()] || iconMap.default;
  };
 
+ // Create the message handler with proper dependencies
+ const handleNewMessage = useCallback((data) => {
+  const message = data.message;
+
+  console.log('=== FILTERING DEBUG START ===');
+  console.log('CURRENT activeContact:', activeContact);
+  console.log('CURRENT user:', user);
+
+  // Only add to messages if it belongs to the currently active chat
+  if (activeContact && user &&
+   ((message.sender_id === activeContact.id && message.receiver_id === user.id) ||
+    (message.sender_id === user.id && message.receiver_id === activeContact.id))) {
+   console.log('✅ MESSAGE ADDED TO CHAT');
+   setMessages(prev => [...prev, message]);
+  } else {
+   console.log('❌ MESSAGE REJECTED - wrong chat or missing state');
+  }
+
+  setTypingUsers(prev => {
+   const newSet = new Set(prev);
+   newSet.delete(message.sender_id);
+   return newSet;
+  });
+
+  // Show notification if message is from someone else AND not from currently active contact
+  if (message.sender_id !== user?.id &&
+   (!activeContact || message.sender_id !== activeContact.id)) {
+   const senderName = message.sender_username || message.username || 'Unknown User';
+   const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
+   let senderAvatarUrl = avatarFromMessage;
+
+   if (!senderAvatarUrl) {
+    const senderContact = contacts.find(contact => contact.id === message.sender_id);
+    senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
+   }
+
+   if (window.require) {
+    try {
+     const { ipcRenderer } = window.require('electron');
+     const cleanMessage = {
+      id: message.id,
+      sender_id: message.sender_id,
+      receiver_id: message.receiver_id,
+      content: message.content,
+      sender_username: senderName,
+      sender_avatar: senderAvatarUrl,
+      file_url: message.file_url,
+      file_name: message.file_name,
+      timestamp: message.timestamp,
+      message_type: message.message_type
+     };
+
+     ipcRenderer.send('web-notification', {
+      type: 'new_message',
+      data: { message: cleanMessage }
+     });
+    } catch (e) {
+     console.log('Electron IPC not available:', e);
+    }
+   }
+  }
+ }, [activeContact, user, contacts]); // These dependencies will recreate the handler when they change
+
  const initializeSocket = () => {
   if (socketRef.current) {
    socketRef.current.removeAllListeners();
@@ -443,117 +506,7 @@ const App = () => {
    });
   });
 
-  socket.on('new_message', (data) => {
-   const message = data.message;
-
-   console.log('=== FILTERING DEBUG START ===');
-   console.log('TIMING CHECK - Handler execution time:', new Date().toISOString());
-
-   // Capture current state values
-   console.log('STATE VALUES AT FILTER TIME:');
-   console.log('  activeContact:', activeContact);
-   console.log('  activeContact?.id:', activeContact?.id, '(type:', typeof activeContact?.id, ')');
-   console.log('  user:', user);
-   console.log('  user?.id:', user?.id, '(type:', typeof user?.id, ')');
-
-   console.log('MESSAGE DATA:');
-   console.log('  message.sender_id:', message.sender_id, '(type:', typeof message.sender_id, ')');
-   console.log('  message.receiver_id:', message.receiver_id, '(type:', typeof message.receiver_id, ')');
-
-   console.log('CONDITION CHECKS:');
-   console.log('  activeContact exists:', !!activeContact);
-   console.log('  user exists:', !!user);
-
-   if (activeContact && user) {
-    const condition1 = message.sender_id === activeContact.id && message.receiver_id === user.id;
-    const condition2 = message.sender_id === user.id && message.receiver_id === activeContact.id;
-
-    console.log('  RECEIVING condition (sender=contact, receiver=user):', condition1);
-    console.log('    message.sender_id === activeContact.id:', message.sender_id, '===', activeContact.id, '=', message.sender_id === activeContact.id);
-    console.log('    message.receiver_id === user.id:', message.receiver_id, '===', user.id, '=', message.receiver_id === user.id);
-
-    console.log('  SENDING condition (sender=user, receiver=contact):', condition2);
-    console.log('    message.sender_id === user.id:', message.sender_id, '===', user.id, '=', message.sender_id === user.id);
-    console.log('    message.receiver_id === activeContact.id:', message.receiver_id, '===', activeContact.id, '=', message.receiver_id === activeContact.id);
-
-    const overallCondition = condition1 || condition2;
-    console.log('  OVERALL CONDITION (should add message):', overallCondition);
-
-    // TYPE COERCION TEST
-    const condition1_coerced = Number(message.sender_id) === Number(activeContact.id) && Number(message.receiver_id) === Number(user.id);
-    const condition2_coerced = Number(message.sender_id) === Number(user.id) && Number(message.receiver_id) === Number(activeContact.id);
-    const overallCondition_coerced = condition1_coerced || condition2_coerced;
-    console.log('  WITH TYPE COERCION:', overallCondition_coerced);
-
-    if (overallCondition) {
-     console.log('  ✅ MESSAGE WILL BE ADDED TO CHAT');
-     setMessages(prev => [...prev, message]);
-    } else {
-     console.log('  ❌ MESSAGE REJECTED - DOES NOT BELONG TO ACTIVE CHAT');
-     console.log('  🔄 TESTING WITH TYPE COERCION...');
-     if (overallCondition_coerced) {
-      console.log('  ✅ TYPE COERCION WORKED - ADDING MESSAGE');
-      setMessages(prev => [...prev, message]);
-     } else {
-      console.log('  ❌ EVEN TYPE COERCION FAILED');
-     }
-    }
-   } else {
-    console.log('  ❌ MISSING STATE - activeContact or user is null/undefined');
-    console.log('  📝 Adding message anyway for debugging...');
-    setMessages(prev => [...prev, message]);
-   }
-
-   console.log('=== FILTERING DEBUG END ===');
-
-   setTypingUsers(prev => {
-    const newSet = new Set(prev);
-    newSet.delete(message.sender_id);
-    return newSet;
-   });
-
-   // Show notification if message is from someone else AND not from currently active contact
-   if (message.sender_id !== user?.id &&
-    (!activeContact || message.sender_id !== activeContact.id)) {
-    console.log('NOTIFICATION: Processing notification for message from', message.sender_id);
-
-    const senderName = message.sender_username || message.username || 'Unknown User';
-    const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
-    let senderAvatarUrl = avatarFromMessage;
-
-    if (!senderAvatarUrl) {
-     const senderContact = contacts.find(contact => contact.id === message.sender_id);
-     senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
-    }
-
-    if (window.require) {
-     try {
-      const { ipcRenderer } = window.require('electron');
-      const cleanMessage = {
-       id: message.id,
-       sender_id: message.sender_id,
-       receiver_id: message.receiver_id,
-       content: message.content,
-       sender_username: senderName,
-       sender_avatar: senderAvatarUrl,
-       file_url: message.file_url,
-       file_name: message.file_name,
-       timestamp: message.timestamp,
-       message_type: message.message_type
-      };
-
-      ipcRenderer.send('web-notification', {
-       type: 'new_message',
-       data: { message: cleanMessage }
-      });
-     } catch (e) {
-      console.log('Electron IPC not available:', e);
-     }
-    }
-   } else {
-    console.log('NOTIFICATION: Skipped - message from current user or active contact');
-   }
-  });
+  socket.on('new_message', handleNewMessage);
 
   socket.on('message_deleted', (data) => {
    // mark message deleted in local state (UI updates instantly; server also broadcasts)
