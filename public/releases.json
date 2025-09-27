@@ -2,7 +2,7 @@
     "latest": "1.0.0",
     "releases": [
         {
-            "version": "1.0.0",
+            "version": "1.0.1",
             "release_date": "2025-09-27",
             "featured": true,
             "changelog": [
@@ -16,10 +16,10 @@
                 "But also thanks for downloading anyways ;D"
             ],
             "downloads": {
-                "windows": "resources/downloads/uChat-Setup-1.0.0.exe"
+                "windows": "resources/downloads/uChat-Setup-1.0.1.exe"
             },
             "file_sizes": {
-                "windows": "93.2 MB"
+                "windows": "97.2 MB"
             },
             "requirements": {
                 "windows": "Windows 10 or later"
