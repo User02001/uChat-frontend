@@ -488,59 +488,40 @@ const App = () => {
    });
 
    // Notification logic
-   if (message.sender_id !== currentUser?.id) {
-    // Check if we're in Electron and get window state
-    let shouldShowNotification = true;
+   if (message.sender_id !== currentUser?.id &&
+    (!currentActiveContact || message.sender_id !== currentActiveContact.id)) {
+    const senderName = message.sender_username || message.username || 'Unknown User';
+    const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
+    let senderAvatarUrl = avatarFromMessage;
+
+    if (!senderAvatarUrl) {
+     const currentContacts = contactsRef.current;
+     const senderContact = currentContacts.find(contact => contact.id === message.sender_id);
+     senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
+    }
 
     if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
-      // Send sync message to check if notification should be shown
-      shouldShowNotification = ipcRenderer.sendSync('should-show-notification');
+      ipcRenderer.send('web-notification', {
+       type: 'new_message',
+       data: {
+        message: {
+         id: message.id,
+         sender_id: message.sender_id,
+         receiver_id: message.receiver_id,
+         content: message.content,
+         sender_username: senderName,
+         sender_avatar: senderAvatarUrl,
+         file_url: message.file_url,
+         file_name: message.file_name,
+         timestamp: message.timestamp,
+         message_type: message.message_type
+        }
+       }
+      });
      } catch (e) {
       console.log('Electron IPC not available:', e);
-      // Fallback: only show if not the active contact (web behavior)
-      shouldShowNotification = !currentActiveContact || message.sender_id !== currentActiveContact.id;
-     }
-    } else {
-     // Web browser: use original logic
-     shouldShowNotification = !currentActiveContact || message.sender_id !== currentActiveContact.id;
-    }
-
-    if (shouldShowNotification) {
-     const senderName = message.sender_username || message.username || 'Unknown User';
-     const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
-     let senderAvatarUrl = avatarFromMessage;
-
-     if (!senderAvatarUrl) {
-      const currentContacts = contactsRef.current;
-      const senderContact = currentContacts.find(contact => contact.id === message.sender_id);
-      senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
-     }
-
-     if (window.require) {
-      try {
-       const { ipcRenderer } = window.require('electron');
-       ipcRenderer.send('web-notification', {
-        type: 'new_message',
-        data: {
-         message: {
-          id: message.id,
-          sender_id: message.sender_id,
-          receiver_id: message.receiver_id,
-          content: message.content,
-          sender_username: senderName,
-          sender_avatar: senderAvatarUrl,
-          file_url: message.file_url,
-          file_name: message.file_name,
-          timestamp: message.timestamp,
-          message_type: message.message_type
-         }
-        }
-       });
-      } catch (e) {
-       console.log('Electron IPC not available:', e);
-      }
      }
     }
    }
