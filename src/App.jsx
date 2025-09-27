@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Sidebar from './components/Sidebar';
@@ -52,6 +52,10 @@ const App = () => {
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
 
+ const activeContactRef = useRef(null);
+ const userRef = useRef(null);
+ const contactsRef = useRef([]);
+
  // NOW call useCalls after setError exists
  const {
   callState,
@@ -65,6 +69,19 @@ const App = () => {
   audioEnabled,
   enableAudio
  } = useCalls(socketRef, setError);
+
+ // Keep refs in sync with state
+ useEffect(() => {
+  activeContactRef.current = activeContact;
+ }, [activeContact]);
+
+ useEffect(() => {
+  userRef.current = user;
+ }, [user]);
+
+ useEffect(() => {
+  contactsRef.current = contacts;
+ }, [contacts]);
 
  // Check if device is mobile on window resize
  useEffect(() => {
@@ -386,69 +403,6 @@ const App = () => {
   return iconMap[fileType?.toLowerCase()] || iconMap.default;
  };
 
- // Create the message handler with proper dependencies
- const handleNewMessage = useCallback((data) => {
-  const message = data.message;
-
-  console.log('=== FILTERING DEBUG START ===');
-  console.log('CURRENT activeContact:', activeContact);
-  console.log('CURRENT user:', user);
-
-  // Only add to messages if it belongs to the currently active chat
-  if (activeContact && user &&
-   ((message.sender_id === activeContact.id && message.receiver_id === user.id) ||
-    (message.sender_id === user.id && message.receiver_id === activeContact.id))) {
-   console.log('✅ MESSAGE ADDED TO CHAT');
-   setMessages(prev => [...prev, message]);
-  } else {
-   console.log('❌ MESSAGE REJECTED - wrong chat or missing state');
-  }
-
-  setTypingUsers(prev => {
-   const newSet = new Set(prev);
-   newSet.delete(message.sender_id);
-   return newSet;
-  });
-
-  // Show notification if message is from someone else AND not from currently active contact
-  if (message.sender_id !== user?.id &&
-   (!activeContact || message.sender_id !== activeContact.id)) {
-   const senderName = message.sender_username || message.username || 'Unknown User';
-   const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
-   let senderAvatarUrl = avatarFromMessage;
-
-   if (!senderAvatarUrl) {
-    const senderContact = contacts.find(contact => contact.id === message.sender_id);
-    senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
-   }
-
-   if (window.require) {
-    try {
-     const { ipcRenderer } = window.require('electron');
-     const cleanMessage = {
-      id: message.id,
-      sender_id: message.sender_id,
-      receiver_id: message.receiver_id,
-      content: message.content,
-      sender_username: senderName,
-      sender_avatar: senderAvatarUrl,
-      file_url: message.file_url,
-      file_name: message.file_name,
-      timestamp: message.timestamp,
-      message_type: message.message_type
-     };
-
-     ipcRenderer.send('web-notification', {
-      type: 'new_message',
-      data: { message: cleanMessage }
-     });
-    } catch (e) {
-     console.log('Electron IPC not available:', e);
-    }
-   }
-  }
- }, [activeContact, user, contacts]); // These dependencies will recreate the handler when they change
-
  const initializeSocket = () => {
   if (socketRef.current) {
    socketRef.current.removeAllListeners();
@@ -506,7 +460,72 @@ const App = () => {
    });
   });
 
-  socket.on('new_message', handleNewMessage);
+  socket.on('new_message', (data) => {
+   const message = data.message;
+
+   // Get current values from refs (these are always up to date)
+   const currentActiveContact = activeContactRef.current;
+   const currentUser = userRef.current;
+   const currentContacts = contactsRef.current;
+
+   console.log('Current activeContact:', currentActiveContact);
+   console.log('Current user:', currentUser);
+
+   // Only add to messages if it belongs to the currently active chat
+   if (currentActiveContact && currentUser &&
+    ((message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
+     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))) {
+    console.log('✅ MESSAGE ADDED TO CHAT');
+    setMessages(prev => [...prev, message]);
+   } else {
+    console.log('❌ MESSAGE REJECTED');
+   }
+
+   setTypingUsers(prev => {
+    const newSet = new Set(prev);
+    newSet.delete(message.sender_id);
+    return newSet;
+   });
+
+   // Notification logic
+   if (message.sender_id !== currentUser?.id &&
+    (!currentActiveContact || message.sender_id !== currentActiveContact.id)) {
+    const senderName = message.sender_username || message.username || 'Unknown User';
+    const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
+    let senderAvatarUrl = avatarFromMessage;
+
+    if (!senderAvatarUrl) {
+     const currentContacts = contactsRef.current;
+     const senderContact = currentContacts.find(contact => contact.id === message.sender_id);
+     senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
+    }
+
+    if (window.require) {
+     try {
+      const { ipcRenderer } = window.require('electron');
+      ipcRenderer.send('web-notification', {
+       type: 'new_message',
+       data: {
+        message: {
+         id: message.id,
+         sender_id: message.sender_id,
+         receiver_id: message.receiver_id,
+         content: message.content,
+         sender_username: senderName,
+         sender_avatar: senderAvatarUrl,
+         file_url: message.file_url,
+         file_name: message.file_name,
+         timestamp: message.timestamp,
+         message_type: message.message_type
+        }
+       }
+      });
+     } catch (e) {
+      console.log('Electron IPC not available:', e);
+     }
+    }
+   }
+  });
 
   socket.on('message_deleted', (data) => {
    // mark message deleted in local state (UI updates instantly; server also broadcasts)
@@ -531,15 +550,27 @@ const App = () => {
   });
 
   socket.on('typing_status', (data) => {
-   setTypingUsers(prev => {
-    const newSet = new Set(prev);
-    if (data.is_typing) {
-     newSet.add(data.user_id);
-    } else {
-     newSet.delete(data.user_id);
-    }
-    return newSet;
-   });
+   console.log('TYPING STATUS RECEIVED:', data.user_id, 'is_typing:', data.is_typing);
+
+   const currentActiveContact = activeContactRef.current;
+   console.log('Current active contact ID:', currentActiveContact?.id);
+
+   if (currentActiveContact && data.user_id === currentActiveContact.id) {
+    console.log('✅ TYPING STATUS ACCEPTED for active contact');
+    setTypingUsers(prev => {
+     const newSet = new Set(prev);
+     if (data.is_typing) {
+      newSet.add(data.user_id);
+      console.log('Added to typing users:', data.user_id, 'Set now contains:', Array.from(newSet));
+     } else {
+      newSet.delete(data.user_id);
+      console.log('Removed from typing users:', data.user_id, 'Set now contains:', Array.from(newSet));
+     }
+     return newSet;
+    });
+   } else {
+    console.log('❌ TYPING STATUS REJECTED - wrong contact or no active contact');
+   }
   });
 
   socket.on('reaction_added', (data) => {
@@ -956,6 +987,8 @@ const App = () => {
     is_typing: shouldBeTyping
    });
   }
+
+  console.log('TYPING STATE CHANGE:', 'was typing:', wasTyping, 'should be typing:', shouldBeTyping);
 
   // If user is typing, set the stop-typing timeout
   if (shouldBeTyping) {
