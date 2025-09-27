@@ -391,7 +391,6 @@ const App = () => {
 
   socket.on('new_message', (data) => {
    const message = data.message;
-
    setMessages(prev => [...prev, message]);
    setTypingUsers(prev => {
     const newSet = new Set(prev);
@@ -401,16 +400,20 @@ const App = () => {
 
    // Show notification if message is from someone else
    if (message.sender_id !== user?.id) {
+    // Find the contact to get their avatar
+    const senderContact = contacts.find(contact => contact.id === message.sender_id);
     const senderName = message.sender_username ||
      message.username ||
-     contacts.find(contact => contact.id === message.sender_id)?.username ||
+     senderContact?.username ||
      'New Message';
+
+    // Get avatar from contact, not from message
+    const senderAvatarUrl = senderContact?.avatar_url || null;
 
     // Send to Electron instead of web notification
     if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
-
       // Create a clean, serializable message object
       const cleanMessage = {
        id: message.id,
@@ -418,13 +421,12 @@ const App = () => {
        receiver_id: message.receiver_id,
        content: message.content,
        sender_username: senderName,
-       sender_avatar: message.sender_avatar,
+       sender_avatar: senderAvatarUrl,
        file_url: message.file_url,
        file_name: message.file_name,
        timestamp: message.timestamp,
        message_type: message.message_type
       };
-
       ipcRenderer.send('web-notification', {
        type: 'new_message',
        data: {
@@ -432,7 +434,6 @@ const App = () => {
        }
       });
      } catch (e) {
-      // Fallback - do nothing since we disabled web notifications
       console.log('Electron IPC not available');
      }
     }
