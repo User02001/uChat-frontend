@@ -411,12 +411,9 @@ const App = () => {
       const { ipcRenderer } = window.require('electron');
       ipcRenderer.send('web-notification', {
        type: 'new_message',
-       data: {
-        message: {
-         ...message,
-         sender_username: senderName
-        }
-       }
+       senderName: senderName,
+       messageContent: getNotificationContent(message),
+       senderAvatar: null
       });
      } catch (e) {
       // Fallback - do nothing since we disabled web notifications
