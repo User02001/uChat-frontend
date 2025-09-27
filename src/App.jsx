@@ -446,6 +446,13 @@ const App = () => {
   socket.on('new_message', (data) => {
    const message = data.message;
 
+   // Only add to messages if it belongs to the currently active chat
+   if (activeContact &&
+    ((message.sender_id === activeContact.id && message.receiver_id === user.id) ||
+     (message.sender_id === user.id && message.receiver_id === activeContact.id))) {
+    setMessages(prev => [...prev, message]);
+   }
+
    // COMPREHENSIVE DEBUG OUTPUT - ALL AT ONCE
    console.log('===========================================');
    console.log('=== COMPLETE MESSAGE DEBUG SESSION ===');
@@ -482,7 +489,6 @@ const App = () => {
    }
    console.log('');
 
-   setMessages(prev => [...prev, message]);
    setTypingUsers(prev => {
     const newSet = new Set(prev);
     newSet.delete(message.sender_id);
