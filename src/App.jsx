@@ -402,6 +402,10 @@ const App = () => {
    if (message.sender_id !== user?.id) {
     // Find the contact to get their avatar
     const senderContact = contacts.find(contact => contact.id === message.sender_id);
+    console.log('=== SENDING NOTIFICATION DATA ===');
+    console.log('Sender contact:', senderContact);
+    console.log('Avatar URL from contact:', senderContact?.avatar_url);
+
     const senderName = message.sender_username ||
      message.username ||
      senderContact?.username ||
@@ -409,6 +413,7 @@ const App = () => {
 
     // Get avatar from contact, not from message
     const senderAvatarUrl = senderContact?.avatar_url || null;
+    console.log('Final avatar URL:', senderAvatarUrl);
 
     // Send to Electron instead of web notification
     if (window.require) {
