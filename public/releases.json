@@ -1,0 +1,30 @@
+{
+    "latest": "1.0.0",
+    "releases": [
+        {
+            "version": "1.0.0",
+            "release_date": "2025-01-15",
+            "featured": true,
+            "changelog": [
+                "Initial release of uChat desktop application",
+                "Real-time messaging with Socket.IO integration",
+                "Custom notification system with avatar support",
+                "System tray functionality for background operation",
+                "Dual window modes: compact login and full chat interface",
+                "Cross-platform support for Windows, macOS, and Linux",
+                "Dark and light theme with system preference detection",
+                "Secure authentication with session management"
+            ],
+            "downloads": {
+                "windows": "/resources/downloads/uChat-Setup-1.0.0.exe",
+                "mac": "/resources/downloads/uChat-1.0.0.dmg",
+                "linux": "/resources/downloads/uChat-1.0.0.AppImage"
+            },
+            "requirements": {
+                "windows": "Windows 10 or later",
+                "mac": "macOS 10.15 or later",
+                "linux": "Ubuntu 18.04+ or equivalent"
+            }
+        }
+    ]
+}

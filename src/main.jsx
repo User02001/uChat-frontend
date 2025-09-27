@@ -8,6 +8,7 @@ import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import Verify from './pages/Verify.jsx'
 import Profile from './pages/Profile.jsx'
+import Downloads from './pages/Downloads';
 
 createRoot(document.getElementById('root')).render(
  <Router>
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')).render(
    <Route path="/profile" element={<Profile />} />
    <Route path="/" element={<Navigate to="/login" replace />} />
    <Route path="*" element={<Navigate to="/login" replace />} />
+   <Route path="/downloads" element={<Downloads />} />
   </Routes>
  </Router>
 )
