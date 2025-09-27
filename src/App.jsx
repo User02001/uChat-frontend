@@ -400,21 +400,24 @@ const App = () => {
 
    // Show notification if message is from someone else
    if (message.sender_id !== user?.id) {
-    // Find the contact to get their avatar
-    const senderContact = contacts.find(contact => contact.id === message.sender_id);
     console.log('=== SENDING NOTIFICATION DATA ===');
     console.log('Message sender_id:', message.sender_id, typeof message.sender_id);
     console.log('Contacts array length:', contacts.length);
-    console.log('All contact IDs:', contacts.map(c => ({ id: c.id, type: typeof c.id, username: c.username })));
-    console.log('Sender contact:', senderContact);
 
+    // Try to find contact, but have fallbacks
+    const senderContact = contacts.find(contact => contact.id === message.sender_id);
     const senderName = message.sender_username ||
      message.username ||
      senderContact?.username ||
      'New Message';
 
-    // Get avatar from contact, not from message
-    const senderAvatarUrl = senderContact?.avatar_url || null;
+    // Use multiple fallback sources for avatar
+    const senderAvatarUrl = senderContact?.avatar_url ||
+     message.sender_avatar ||
+     message.avatar_url ||
+     null;
+
+    console.log('Sender contact:', senderContact);
     console.log('Final avatar URL:', senderAvatarUrl);
 
     // Send to Electron instead of web notification
