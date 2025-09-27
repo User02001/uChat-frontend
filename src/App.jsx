@@ -403,8 +403,10 @@ const App = () => {
     // Find the contact to get their avatar
     const senderContact = contacts.find(contact => contact.id === message.sender_id);
     console.log('=== SENDING NOTIFICATION DATA ===');
+    console.log('Message sender_id:', message.sender_id, typeof message.sender_id);
+    console.log('Contacts array length:', contacts.length);
+    console.log('All contact IDs:', contacts.map(c => ({ id: c.id, type: typeof c.id, username: c.username })));
     console.log('Sender contact:', senderContact);
-    console.log('Avatar URL from contact:', senderContact?.avatar_url);
 
     const senderName = message.sender_username ||
      message.username ||
