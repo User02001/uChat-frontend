@@ -196,6 +196,7 @@ const Profile = ({ onBack }) => {
  };
 
  const sidebarItems = [
+  { icon: 'fas fa-home', label: 'Home' },
   { icon: 'fas fa-user', label: 'Profile', active: true },
   { icon: 'fas fa-comment', label: 'Messages' },
   { icon: 'fas fa-users', label: 'Contacts' },
@@ -235,11 +236,12 @@ const Profile = ({ onBack }) => {
         <div
          className={`sidebar-nav-item ${item.active ? 'active' : ''} ${item.danger ? 'danger' : ''}`}
          onClick={
-          item.label === 'Logout' ? handleLogout :
-           item.label === 'Delete Account' ? () => setShowDeleteModal(true) :
-            undefined
+          item.label === 'Home' ? () => navigate('/chat') :
+           item.label === 'Logout' ? handleLogout :
+            item.label === 'Delete Account' ? () => setShowDeleteModal(true) :
+             undefined
          }
-         style={item.label === 'Logout' ? { cursor: 'pointer' } : {}}
+         style={item.label === 'Home' || item.label === 'Logout' ? { cursor: 'pointer' } : {}}
         >
          <i className={item.icon}></i>
          <span>{item.label}</span>
