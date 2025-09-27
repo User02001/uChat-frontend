@@ -446,44 +446,65 @@ const App = () => {
   socket.on('new_message', (data) => {
    const message = data.message;
 
-   // Only add to messages if it belongs to the currently active chat
-   setMessages(prev => [...prev, message]);
+   console.log('=== FILTERING DEBUG START ===');
+   console.log('TIMING CHECK - Handler execution time:', new Date().toISOString());
 
-   // COMPREHENSIVE DEBUG OUTPUT - ALL AT ONCE
-   console.log('===========================================');
-   console.log('=== COMPLETE MESSAGE DEBUG SESSION ===');
-   console.log('===========================================');
-   console.log('1. RAW DATA FROM SOCKET:');
-   console.log('   Full data object:', data);
-   console.log('   Message object:', message);
-   console.log('   Message keys:', Object.keys(message));
-   console.log('   Message values:', Object.values(message));
-   console.log('');
+   // Capture current state values
+   console.log('STATE VALUES AT FILTER TIME:');
+   console.log('  activeContact:', activeContact);
+   console.log('  activeContact?.id:', activeContact?.id, '(type:', typeof activeContact?.id, ')');
+   console.log('  user:', user);
+   console.log('  user?.id:', user?.id, '(type:', typeof user?.id, ')');
 
-   console.log('2. MESSAGE PROPERTIES:');
-   console.log('   message.id:', message.id);
-   console.log('   message.sender_id:', message.sender_id, '(type:', typeof message.sender_id, ')');
-   console.log('   message.sender_username:', message.sender_username);
-   console.log('   message.username:', message.username);
-   console.log('   message.sender_avatar:', message.sender_avatar);
-   console.log('   message.avatar_url:', message.avatar_url);
-   console.log('   message.sender_handle:', message.sender_handle);
-   console.log('');
+   console.log('MESSAGE DATA:');
+   console.log('  message.sender_id:', message.sender_id, '(type:', typeof message.sender_id, ')');
+   console.log('  message.receiver_id:', message.receiver_id, '(type:', typeof message.receiver_id, ')');
 
-   console.log('3. APP STATE:');
-   console.log('   Current user:', user);
-   console.log('   User ID:', user?.id, '(type:', typeof user?.id, ')');
-   console.log('   Contacts array length:', contacts.length);
-   console.log('   Contacts array:', contacts);
-   if (contacts.length > 0) {
-    console.log('   First contact structure:', contacts[0]);
-    console.log('   First contact keys:', Object.keys(contacts[0]));
-    console.log('   All contact IDs and types:');
-    contacts.forEach((contact, index) => {
-     console.log(`     Contact ${index}: ID=${contact.id} (${typeof contact.id}), username=${contact.username}, avatar=${contact.avatar_url || contact.avatar || 'none'}`);
-    });
+   console.log('CONDITION CHECKS:');
+   console.log('  activeContact exists:', !!activeContact);
+   console.log('  user exists:', !!user);
+
+   if (activeContact && user) {
+    const condition1 = message.sender_id === activeContact.id && message.receiver_id === user.id;
+    const condition2 = message.sender_id === user.id && message.receiver_id === activeContact.id;
+
+    console.log('  RECEIVING condition (sender=contact, receiver=user):', condition1);
+    console.log('    message.sender_id === activeContact.id:', message.sender_id, '===', activeContact.id, '=', message.sender_id === activeContact.id);
+    console.log('    message.receiver_id === user.id:', message.receiver_id, '===', user.id, '=', message.receiver_id === user.id);
+
+    console.log('  SENDING condition (sender=user, receiver=contact):', condition2);
+    console.log('    message.sender_id === user.id:', message.sender_id, '===', user.id, '=', message.sender_id === user.id);
+    console.log('    message.receiver_id === activeContact.id:', message.receiver_id, '===', activeContact.id, '=', message.receiver_id === activeContact.id);
+
+    const overallCondition = condition1 || condition2;
+    console.log('  OVERALL CONDITION (should add message):', overallCondition);
+
+    // TYPE COERCION TEST
+    const condition1_coerced = Number(message.sender_id) === Number(activeContact.id) && Number(message.receiver_id) === Number(user.id);
+    const condition2_coerced = Number(message.sender_id) === Number(user.id) && Number(message.receiver_id) === Number(activeContact.id);
+    const overallCondition_coerced = condition1_coerced || condition2_coerced;
+    console.log('  WITH TYPE COERCION:', overallCondition_coerced);
+
+    if (overallCondition) {
+     console.log('  ✅ MESSAGE WILL BE ADDED TO CHAT');
+     setMessages(prev => [...prev, message]);
+    } else {
+     console.log('  ❌ MESSAGE REJECTED - DOES NOT BELONG TO ACTIVE CHAT');
+     console.log('  🔄 TESTING WITH TYPE COERCION...');
+     if (overallCondition_coerced) {
+      console.log('  ✅ TYPE COERCION WORKED - ADDING MESSAGE');
+      setMessages(prev => [...prev, message]);
+     } else {
+      console.log('  ❌ EVEN TYPE COERCION FAILED');
+     }
+    }
+   } else {
+    console.log('  ❌ MISSING STATE - activeContact or user is null/undefined');
+    console.log('  📝 Adding message anyway for debugging...');
+    setMessages(prev => [...prev, message]);
    }
-   console.log('');
+
+   console.log('=== FILTERING DEBUG END ===');
 
    setTypingUsers(prev => {
     const newSet = new Set(prev);
@@ -494,30 +515,17 @@ const App = () => {
    // Show notification if message is from someone else AND not from currently active contact
    if (message.sender_id !== user?.id &&
     (!activeContact || message.sender_id !== activeContact.id)) {
-    console.log('4. NOTIFICATION PROCESSING:');
-    console.log('   Message is from someone else, processing notification...');
+    console.log('NOTIFICATION: Processing notification for message from', message.sender_id);
 
-    // FIXED: Don't require contact to be in contacts list
-    const senderName = message.sender_username ||
-     message.username ||
-     'Unknown User';  // ← Remove dependency on senderContact
-    console.log('   Resolved sender name:', senderName);
-
-    // Try avatar from message first, then contact as backup
+    const senderName = message.sender_username || message.username || 'Unknown User';
     const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
     let senderAvatarUrl = avatarFromMessage;
 
-    // Only try contact lookup as backup if message has no avatar
     if (!senderAvatarUrl) {
      const senderContact = contacts.find(contact => contact.id === message.sender_id);
      senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
     }
 
-    console.log('   Avatar sources:');
-    console.log('     From message:', avatarFromMessage);
-    console.log('     Final avatar URL:', senderAvatarUrl);
-
-    // Send to Electron - this should work for ANY sender
     if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
@@ -534,23 +542,16 @@ const App = () => {
        message_type: message.message_type
       };
 
-      console.log('5. SENDING TO ELECTRON:');
-      console.log('   Clean message object:', cleanMessage);
-      console.log('   Avatar in clean message:', cleanMessage.sender_avatar);
-
       ipcRenderer.send('web-notification', {
        type: 'new_message',
-       data: {
-        message: cleanMessage
-       }
+       data: { message: cleanMessage }
       });
      } catch (e) {
       console.log('Electron IPC not available:', e);
      }
     }
    } else {
-    console.log('4. NOTIFICATION SKIPPED: Message is from current user');
-    console.log('===========================================');
+    console.log('NOTIFICATION: Skipped - message from current user or active contact');
    }
   });
 
