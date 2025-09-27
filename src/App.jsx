@@ -410,13 +410,25 @@ const App = () => {
     if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
+
+      // Create a clean, serializable message object
+      const cleanMessage = {
+       id: message.id,
+       sender_id: message.sender_id,
+       receiver_id: message.receiver_id,
+       content: message.content,
+       sender_username: senderName,
+       sender_avatar: message.sender_avatar,
+       file_url: message.file_url,
+       file_name: message.file_name,
+       timestamp: message.timestamp,
+       message_type: message.message_type
+      };
+
       ipcRenderer.send('web-notification', {
        type: 'new_message',
        data: {
-        message: {
-         ...message,
-         sender_username: senderName
-        }
+        message: cleanMessage
        }
       });
      } catch (e) {
