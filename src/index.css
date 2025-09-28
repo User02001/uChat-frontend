@@ -18,13 +18,6 @@ body, html {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior: none;
-    position: fixed;
-    overflow: hidden;
-}
-
-body {
-    position: static;
-    overflow: auto;
 }
 
 /* ===============================
@@ -198,7 +191,7 @@ body {
 }
 
 /* Main App Container */
-.app-container {
+.app-content {
     display: flex;
     height: 100vh;
     height: 100dvh;
@@ -233,15 +226,15 @@ body {
         position: relative;
     }
 
-        .app-container.mobile-chat-open .sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
+    .app-content.mobile-chat-open .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
 
-        .app-container.mobile-chat-open .chat-container {
-            transform: translateX(0);
-            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
+    .app-content.mobile-chat-open .chat-container {
+        transform: translateX(0);
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
 }
 
 /* Sidebar */
@@ -590,7 +583,7 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0;
+    padding: 0 0 20px 0;
     -webkit-overflow-scrolling: touch;
     transform: translateZ(0);
 }
@@ -1601,7 +1594,6 @@ input:focus-visible {
         display: block;
     }
 
-    /* Hide desktop search section on mobile */
     .sidebar-header .search-section {
         display: none;
     }
@@ -2297,4 +2289,91 @@ html, body, * {
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     opacity: 0.9;
+}
+
+/* Verification Banner */
+.verification-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #f59e0b;
+    color: #92400e;
+    padding: 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 9999;
+    height: 48px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.verification-link {
+    color: #92400e;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.app-content {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--bg-primary);
+    overflow: hidden;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .app-content.with-banner {
+        height: calc(100vh - 48px); /* Increased from 36px to 72px */
+        height: calc(100dvh - 48px);
+        box-sizing: border-box;
+    }
+
+@media (min-width: 769px) {
+    .app-content.with-banner .sidebar {
+        height: calc(100vh - 48px) !important;
+        height: calc(100dvh - 48px) !important;
+    }
+
+    .app-content.with-banner .nav-sidebar {
+        top: 48px;
+    }
+}
+
+@supports (-webkit-touch-callout: none) {
+    .app-content.with-banner {
+        height: calc(-webkit-fill-available - 48px);
+    }
+}
+
+.app-container.with-banner .sidebar {
+    margin-top: 0;
+}
+
+.app-container.with-banner .nav-sidebar {
+    top: 48px;
+}
+
+body.with-verification-banner {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.verification-banner ~ .app-container {
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    .contacts-list {
+        padding-bottom: 100px; /* Add this line */
+    }
 }

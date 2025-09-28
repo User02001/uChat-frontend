@@ -48,6 +48,7 @@ const App = () => {
  const [deleteConfirm, setDeleteConfirm] = useState(null);
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
  const [sessionDismissed, setSessionDismissed] = useState(false);
+ const [showVerificationBanner, setShowVerificationBanner] = useState(false);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -74,6 +75,17 @@ const App = () => {
  useEffect(() => {
   activeContactRef.current = activeContact;
  }, [activeContact]);
+
+ // Show verification banner for unverified users
+ useEffect(() => {
+  if (user && !user.is_verified) {
+   setShowVerificationBanner(true);
+   document.body.classList.add('with-verification-banner');
+  } else {
+   setShowVerificationBanner(false);
+   document.body.classList.remove('with-verification-banner');
+  }
+ }, [user]);
 
  useEffect(() => {
   userRef.current = user;
@@ -1105,6 +1117,18 @@ const App = () => {
 
  return (
   <div className={`app-container ${isMobile && showMobileChat ? 'mobile-chat-open' : ''}`}>
+   <>
+    {showVerificationBanner && (
+     <div className="verification-banner">
+      <i className="fas fa-exclamation-triangle"></i>
+      You are unverified!
+      <a href="/verify" className="verification-link">
+       Verify your email now
+      </a>
+     </div>
+    )}
+
+   <div className={showVerificationBanner ? 'app-content with-banner' : 'app-content'}>
    <Sidebar showMobileChat={showMobileChat} onLogout={handleLogout} />
 
    <div className="sidebar">
@@ -1302,7 +1326,22 @@ const App = () => {
         </div>
         <div className="contact-info">
          <div className="contact-main">
-          <span className="contact-name">{contact.username}</span>
+          <span className="contact-name">
+           {contact.username}
+           {!contact.is_verified && (
+            <span style={{
+             backgroundColor: '#ef4444',
+             color: 'white',
+             fontSize: '9px',
+             padding: '1px 4px',
+             borderRadius: '3px',
+             marginLeft: '6px',
+             fontWeight: '600'
+            }}>
+             UNVERIFIED
+            </span>
+           )}
+          </span>
           <span className="contact-time">
            {contact.lastMessageTime ? (() => {
             const now = new Date();
@@ -1353,6 +1392,20 @@ const App = () => {
        <div className="chat-user-info">
         <div className="chat-username-container">
          <span className="chat-username">{activeContact.username}</span>
+         {!activeContact.is_verified && (
+          <span style={{
+           backgroundColor: '#ef4444',
+           color: 'white',
+           fontSize: '10px',
+           padding: '2px 6px',
+           borderRadius: '4px',
+           marginLeft: '8px',
+           fontWeight: '600',
+           textTransform: 'uppercase'
+          }}>
+           UNVERIFIED
+          </span>
+         )}
          <span className="chat-aka">aka</span>
          <span className="chat-handle">@{activeContact.handle}</span>
         </div>
@@ -1777,7 +1830,9 @@ const App = () => {
    >
     <source src="/resources/ringtones/default_ringtone.mp3" type="audio/mpeg" />
     <source src="/resources/ringtones/default_ringtone.wav" type="audio/wav" />
-   </audio>
+    </audio>
+    </div>
+   </>
   </div>
  );
 };

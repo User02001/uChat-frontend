@@ -255,3 +255,10 @@
   background-color: rgba(255, 0, 0, 0.1);
   color: darkred;
 }
+
+@media (min-width: 769px) {
+    .app-content.with-banner .nav-sidebar {
+        height: calc(100vh - 48px) !important;
+        top: 48px;
+    }
+}

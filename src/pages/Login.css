@@ -338,22 +338,22 @@ body, html {
 
 /* Yellow aura background animation - ULTRA OPTIMIZED */
 .aura-background {
-    position: fixed;
-    top: 35%;
-    left: 25%;
-    width: 800px;
-    height: 800px;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 1;
-    background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 193, 7, 0.5) 30%, rgba(255, 165, 0, 0.3) 50%, transparent 70%);
-    border-radius: 50%;
-    filter: blur(60px);
-    animation: aura-breathe 4s ease-in-out infinite;
-    will-change: opacity;
-    transform-origin: center;
-    backface-visibility: hidden;
-    perspective: 1000px;
+    position: fixed !important;
+    top: 15% !important;
+    left: 20% !important;
+    width: 1200px !important;
+    height: 1200px !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.9) 0%, rgba(255, 193, 7, 0.6) 30%, rgba(255, 165, 0, 0.4) 50%, transparent 70%) !important;
+    border-radius: 50% !important;
+    filter: blur(60px) !important;
+    animation: aura-breathe 2.5s ease-in-out infinite !important;
+    will-change: opacity !important;
+    transform-origin: center !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
 }
 
 @keyframes aura-breathe {

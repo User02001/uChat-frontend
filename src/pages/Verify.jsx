@@ -13,14 +13,34 @@ const Verify = () => {
  const [email, setEmail] = useState('');
 
  useEffect(() => {
-  // Get email from navigation state or redirect if not available
-  if (location.state && location.state.email) {
-   setEmail(location.state.email);
-  } else {
-   // If no email in state, redirect to signup
-   navigate('/signup');
-   return;
-  }
+  // Check if user is already logged in first
+  const checkAuthAndSetup = async () => {
+   try {
+    const response = await fetch(`${API_BASE_URL}/api/me`, {
+     credentials: 'include'
+    });
+
+    if (response.ok) {
+     // User is logged in
+     const data = await response.json();
+     setEmail(data.user.email);
+     return; // Don't redirect, user is authenticated
+    }
+   } catch (error) {
+    console.log('Not logged in, checking navigation state');
+   }
+
+   // If not logged in, check navigation state like before
+   if (location.state && location.state.email) {
+    setEmail(location.state.email);
+   } else {
+    // Only redirect to signup if not logged in AND no email in state
+    navigate('/signup');
+    return;
+   }
+  };
+
+  checkAuthAndSetup();
  }, [location.state, navigate]);
 
  useEffect(() => {
@@ -85,21 +105,30 @@ const Verify = () => {
   }
 
   try {
-   const response = await fetch(`${API_BASE_URL}/api/verify`, {
+   // Try logged-in verification first, fallback to regular verification
+   let response = await fetch(`${API_BASE_URL}/api/verify-logged-in`, {
     method: 'POST',
-    headers: {
-     'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ code: verificationCode })
    });
 
+   // If that fails with 401, try regular verification
+   if (response.status === 401) {
+    response = await fetch(`${API_BASE_URL}/api/verify`, {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     credentials: 'include',
+     body: JSON.stringify({ code: verificationCode })
+    });
+   }
+
    const data = await response.json();
 
    if (response.ok) {
-    setSuccess('Email verified successfully! Redirecting to login...');
+    setSuccess('Email verified successfully! Redirecting...');
     setTimeout(() => {
-     navigate('/login');
+     navigate('/chat'); // Always redirect to chat after verification
     }, 2000);
    } else {
     setError(data.error || 'Verification failed');
@@ -118,14 +147,22 @@ const Verify = () => {
   setSuccess('');
 
   try {
-   const response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+   // Try logged-in resend first, fallback to regular resend
+   let response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
     method: 'POST',
-    headers: {
-     'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ email })
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include'
    });
+
+   // If that fails with 401, try regular resend
+   if (response.status === 401) {
+    response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
+     method: 'POST',
+     headers: { 'Content-Type': 'application/json' },
+     credentials: 'include',
+     body: JSON.stringify({ email })
+    });
+   }
 
    const data = await response.json();
 
@@ -170,7 +207,7 @@ const Verify = () => {
       Check your spam folder if you don't see the email in your inbox.
      </p>
      <p className="helper-text">
-      The email should be from <strong>uchat@ufonic.xyz</strong>, and anything else are FAKE, so don't trust them.
+      Email may take 5 or more minutes to arrive.
      </p>
     </div>
 
@@ -221,6 +258,16 @@ const Verify = () => {
       <button type="submit" className="login-btn primary" disabled={loading}>
        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-envelope-open'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Verifying...' : 'Verify Email'}
+      </button>
+
+      <button
+       type="button"
+       onClick={() => navigate('/chat')}
+       className="oauth-btn"
+       style={{ marginTop: '12px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+      >
+       <i className="fas fa-arrow-right" style={{ marginRight: '8px' }}></i>
+       Skip verification for now
       </button>
      </form>
 
