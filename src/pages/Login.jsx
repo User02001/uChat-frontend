@@ -12,6 +12,7 @@ const Login = () => {
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
  const [showPassword, setShowPassword] = useState(false);
+ const [agreedToTerms, setAgreedToTerms] = useState(false);
 
  useEffect(() => {
   // Load Font Awesome
@@ -226,7 +227,28 @@ const Login = () => {
         </button>
        </div>
       </div>
-      <button type="submit" className="login-btn primary" disabled={loading}>
+      <div className="terms-checkbox">
+       <label className="checkbox-label">
+        <input
+         type="checkbox"
+         checked={agreedToTerms}
+         onChange={(e) => setAgreedToTerms(e.target.checked)}
+         className="checkbox-input"
+        />
+        <span className="checkbox-custom"></span>
+        <span className="checkbox-text">
+         By using uChat, I agree to follow the{' '}
+         <a href="/terms" target="_blank" className="terms-link">
+          Terms & Conditions
+         </a>
+         {' '}as well as the{' '}
+         <a href="/privacy" target="_blank" className="terms-link">
+          Privacy Policy
+         </a>.
+        </span>
+       </label>
+      </div>
+      <button type="submit" className="login-btn primary" disabled={loading || !agreedToTerms}>
        {loading ? 'Logging in...' : 'Login'}
       </button>
      </form>

@@ -1,0 +1,303 @@
+{
+    "lastUpdated": "October 2, 2025",
+    "sections": [
+        {
+            "id": "introduction",
+            "title": "Introduction",
+            "icon": "fas fa-info-circle",
+            "content": {
+                "intro": "This Privacy Policy explains how UFOnic collects, uses, and protects your personal information when you use uChat. By using uChat, you agree to the practices described in this policy.",
+                "paragraphs": [
+                    "This Privacy Policy should be read together with our Terms and Conditions, which contain additional important information about data security and user responsibilities.",
+                    "UFOnic is committed to being transparent about how we handle your data.",
+                    "We do not sell your personal information to third parties.",
+                    "If you have any questions about this policy, please contact us at ufonic.official@gmail.com"
+                ]
+            }
+        },
+        {
+            "id": "data-collection",
+            "title": "Information We Collect",
+            "icon": "fas fa-database",
+            "content": {
+                "intro": "We collect several types of information to provide and improve uChat services.",
+                "paragraphs": [
+                    "We collect information you provide directly when creating an account and using the platform.",
+                    "We automatically collect certain technical information when you access uChat.",
+                    "All collected data is necessary for the operation and improvement of the platform."
+                ],
+                "list": {
+                    "title": "Personal Information:",
+                    "items": [
+                        "Account details: username, email address, profile picture",
+                        "Messages and content you send (stored as PLAIN TEXT)",
+                        "Media files and attachments you upload",
+                        "Account settings and preferences"
+                    ]
+                },
+                "list2": {
+                    "title": "Technical Information:",
+                    "items": [
+                        "IP addresses and connection metadata",
+                        "Device information (browser type, operating system)",
+                        "Usage data (features accessed, time spent on platform)",
+                        "Log files and error reports"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "data-usage",
+            "title": "How We Use Your Information",
+            "icon": "fas fa-cogs",
+            "content": {
+                "intro": "We use the collected information for specific purposes related to operating uChat.",
+                "paragraphs": [
+                    "Your data is used primarily to provide, maintain, and improve the uChat messaging service.",
+                    "We may access message content for moderation purposes, to respond to user reports, or to address technical issues.",
+                    "Usage data helps us understand how people use uChat and identify areas for improvement.",
+                    "We do not use your data for advertising purposes or share it with advertisers."
+                ],
+                "list": {
+                    "title": "Specific Uses:",
+                    "items": [
+                        "To create and manage your account",
+                        "To deliver messages between users",
+                        "To enforce our Terms and Conditions and combat abuse",
+                        "To respond to user support requests",
+                        "To improve platform performance and fix bugs",
+                        "To comply with legal obligations if required"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "data-storage",
+            "title": "How We Store Your Data - CRITICAL INFORMATION",
+            "icon": "fas fa-server",
+            "content": {
+                "intro": "IMPORTANT: Understanding how your data is stored is crucial to making informed decisions about using uChat.",
+                "paragraphs": [
+                    "All data is stored on servers operated by UFOnic, located in Mongolia.",
+                    "Messages and user content are stored as PLAIN TEXT in our database without encryption at rest.",
+                    "Only your password is encrypted using secure hashing and salting methods. We cannot see or recover your password.",
+                    "Server administrators have technical access to the database and can view message content if necessary for system maintenance, moderation, or technical support.",
+                    "While data is encrypted during transmission (HTTPS), it is NOT encrypted while stored on our servers.",
+                    "This means your messages are vulnerable if our servers are compromised, accessed without authorization, or subject to legal requests.",
+                    "We retain your data while your account is active and for 30 days after account deletion, unless required by law to retain it longer."
+                ],
+                "list": {
+                    "title": "What This Means For You:",
+                    "items": [
+                        "Your messages can be read by server administrators",
+                        "Messages are not protected if servers are breached",
+                        "Law enforcement or legal processes may compel us to provide your data",
+                        "We cannot guarantee absolute privacy of your communications",
+                        "You should NEVER share sensitive information on uChat"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "data-sharing",
+            "title": "Information Sharing & Disclosure",
+            "icon": "fas fa-share-alt",
+            "content": {
+                "intro": "We do not sell your personal information. However, there are limited circumstances where we may share your data.",
+                "paragraphs": [
+                    "We do NOT sell, rent, or trade your personal information to third parties for marketing purposes.",
+                    "We do NOT share your data with advertisers or data brokers.",
+                    "Your data remains on our servers and is not transferred to third-party services, except as described below."
+                ],
+                "list": {
+                    "title": "When We May Disclose Information:",
+                    "items": [
+                        "Legal Compliance: If required by law, court order, subpoena, or government request",
+                        "Safety & Security: To protect against illegal activity, fraud, or threats to user safety",
+                        "Terms Enforcement: To investigate and enforce violations of our Terms and Conditions",
+                        "With Your Consent: If you explicitly authorize us to share specific information",
+                        "Business Transfer: In the event UFOnic is acquired or merged (users would be notified)"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "user-rights",
+            "title": "Your Privacy Rights",
+            "icon": "fas fa-user-shield",
+            "content": {
+                "intro": "You have certain rights regarding your personal information stored on uChat.",
+                "paragraphs": [
+                    "You can exercise these rights at any time by contacting us at ufonic.official@gmail.com",
+                    "We will respond to your requests within a reasonable timeframe, typically within 30 days.",
+                    "Some rights may be limited by applicable laws or legitimate business interests."
+                ],
+                "list": {
+                    "title": "Your Rights Include:",
+                    "items": [
+                        "Access: Request a copy of the personal data we hold about you",
+                        "Correction: Update or correct inaccurate account information",
+                        "Deletion: Request deletion of your account and associated data",
+                        "Data Portability: Receive your data in a structured format (where feasible)",
+                        "Objection: Object to certain data processing activities",
+                        "Withdrawal of Consent: Stop using uChat and delete your account at any time"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "security-measures",
+            "title": "Security Measures & Limitations",
+            "icon": "fas fa-lock",
+            "content": {
+                "intro": "We implement basic security measures to protect your data, but there are significant limitations you must understand.",
+                "paragraphs": [
+                    "We use HTTPS encryption to protect data transmitted between your device and our servers.",
+                    "Passwords are securely hashed and salted using industry-standard methods.",
+                    "We implement session management and authentication to prevent unauthorized account access.",
+                    "However, we do NOT provide end-to-end encryption, and messages are stored as plain text.",
+                    "No security system is perfect. There is always a risk of unauthorized access, data breaches, or technical failures.",
+                    "Given these limitations, you use uChat at your own risk and should never share sensitive information."
+                ],
+                "list": {
+                    "title": "DO NOT Share on uChat:",
+                    "items": [
+                        "Passwords or authentication credentials",
+                        "Credit card numbers or banking information",
+                        "Social security numbers or national ID numbers",
+                        "Medical records or health information",
+                        "Confidential business documents",
+                        "Private photos or documents you wouldn't want exposed",
+                        "Any information that could be used for identity theft or fraud"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "data-breach",
+            "title": "Data Breach Notification",
+            "icon": "fas fa-exclamation-triangle",
+            "content": {
+                "intro": "In the event of a security breach or unauthorized access to user data, we will take the following actions:",
+                "paragraphs": [
+                    "We will investigate the incident immediately and assess what data may have been compromised.",
+                    "Affected users will be notified via email within 72 hours of discovering the breach, where feasible.",
+                    "The notification will include information about what data was potentially compromised and recommended actions you should take.",
+                    "We will take steps to secure the platform and prevent similar breaches in the future.",
+                    "Depending on the nature and severity of the breach, we may also notify relevant regulatory authorities as required by law.",
+                    "Given that messages are stored as plain text, any database compromise could expose all message content."
+                ]
+            }
+        },
+        {
+            "id": "data-retention",
+            "title": "Data Retention",
+            "icon": "fas fa-calendar-times",
+            "content": {
+                "intro": "We retain your data for as long as necessary to provide uChat services and fulfill legal obligations.",
+                "paragraphs": [
+                    "Active accounts: Data is retained indefinitely while your account remains active.",
+                    "Deleted accounts: After you delete your account, we retain your data for 30 days before permanent deletion.",
+                    "This 30-day period allows for account recovery if you change your mind, and ensures proper service wind-down.",
+                    "After 30 days, your data is permanently deleted from our active systems.",
+                    "We may retain certain information longer if required by law, to comply with legal processes, or to resolve disputes.",
+                    "Backups may retain data for additional periods as part of normal system operations."
+                ]
+            }
+        },
+        {
+            "id": "children",
+            "title": "Children's Privacy",
+            "icon": "fas fa-child",
+            "content": {
+                "intro": "uChat is not intended for children under the age of 13.",
+                "paragraphs": [
+                    "You must be at least 13 years old to create an account on uChat.",
+                    "If you are under 18, you should have permission from a parent or guardian before using uChat.",
+                    "We do not knowingly collect personal information from children under 13.",
+                    "If we become aware that a user is under 13, we will terminate their account and delete their information.",
+                    "Parents or guardians who believe their child has created an account should contact us immediately at ufonic.official@gmail.com"
+                ]
+            }
+        },
+        {
+            "id": "international",
+            "title": "International Users & Data Transfers",
+            "icon": "fas fa-globe",
+            "content": {
+                "intro": "uChat is operated from Mongolia and subject to Mongolian law.",
+                "paragraphs": [
+                    "By using uChat, you understand that your data will be stored on servers located in Mongolia.",
+                    "If you access uChat from outside Mongolia, your information will be transferred to and processed in Mongolia.",
+                    "Mongolia's data protection laws may differ from those in your country or region.",
+                    "If you are located in the European Union, United Kingdom, or other regions with specific data protection regulations, you acknowledge that your data will be transferred to Mongolia, which may not provide the same level of protection as your home country.",
+                    "By using uChat, you consent to this international data transfer and processing."
+                ]
+            }
+        },
+        {
+            "id": "cookies",
+            "title": "Cookies & Tracking",
+            "icon": "fas fa-cookie-bite",
+            "content": {
+                "intro": "We use cookies and similar technologies to operate uChat.",
+                "paragraphs": [
+                    "Cookies are small data files stored on your device that help us provide and improve the service.",
+                    "We use cookies for session management, authentication, and to remember your preferences.",
+                    "We do NOT use third-party advertising cookies or tracking pixels.",
+                    "You can control cookie settings through your browser, but disabling cookies may affect uChat functionality.",
+                    "We may collect analytics data about how users interact with the platform to improve performance and user experience."
+                ]
+            }
+        },
+        {
+            "id": "changes",
+            "title": "Changes to Privacy Policy",
+            "icon": "fas fa-edit",
+            "content": {
+                "intro": "We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements.",
+                "paragraphs": [
+                    "We will notify users of material changes via email or through an in-app notification.",
+                    "Changes become effective 30 days after notification unless otherwise stated.",
+                    "Your continued use of uChat after changes take effect constitutes acceptance of the updated Privacy Policy.",
+                    "If you do not agree with the changes, you should stop using uChat and may delete your account.",
+                    "We encourage you to review this Privacy Policy periodically to stay informed about how we protect your information.",
+                    "The 'Last Updated' date at the top of this policy indicates when it was most recently revised."
+                ]
+            }
+        },
+        {
+            "id": "contact",
+            "title": "Contact Us",
+            "icon": "fas fa-envelope",
+            "content": {
+                "intro": "If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us.",
+                "paragraphs": [
+                    "Email: ufonic.official@gmail.com",
+                    "We aim to respond to all privacy-related inquiries within 48-72 hours.",
+                    "For data access, correction, or deletion requests, please include your account username and a description of your request.",
+                    "For security concerns or suspected breaches, contact us immediately at the email above.",
+                    "You may also contact us through the in-app support feature if available."
+                ]
+            }
+        },
+        {
+            "id": "acknowledgment",
+            "title": "User Acknowledgment",
+            "icon": "fas fa-check-circle",
+            "content": {
+                "intro": "By using uChat, you explicitly acknowledge and agree that:",
+                "paragraphs": [
+                    "You have read and understood this Privacy Policy in its entirety.",
+                    "You understand that your messages and data are stored as plain text without encryption at rest.",
+                    "You understand that server administrators can technically access your data.",
+                    "You accept the security limitations and risks described in this policy.",
+                    "You will not use uChat to share sensitive, confidential, or private information.",
+                    "You consent to your data being stored and processed in Mongolia.",
+                    "You are using uChat at your own risk with full knowledge of how your data is handled.",
+                    "This Privacy Policy should be read together with our Terms and Conditions for complete information about using uChat."
+                ]
+            }
+        }
+    ]
+}

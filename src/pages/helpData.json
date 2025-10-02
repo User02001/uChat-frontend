@@ -1,0 +1,244 @@
+{
+    "categories": [
+        {
+            "id": "getting-started",
+            "name": "Getting Started",
+            "icon": "fas fa-rocket",
+            "description": "Learn the basics of using uChat and get started with your first conversation",
+            "questions": [
+                {
+                    "id": "gs-1",
+                    "question": "How do I create an account?",
+                    "answer": "Creating an account on uChat is pretty easy:",
+                    "steps": [
+                        "Click on the 'Sign Up' button on the homepage OR click on the Google button if you prefer to use your Google Account (if you do this, you don't have to do the remaining steps shown below",
+                        "Enter your email address, username, and create a secure password that is hard to guess",
+                        "When taken to the verification page, make sure you have your email that you just used, and when a 7 seven digit code arrives, enter that code",
+                        "That's it!",
+                        "You can now add anyone in your home page by searching in the search bar!   "
+                    ]
+                },
+                {
+                    "id": "gs-2",
+                    "question": "How do I send my first message?",
+                    "answer": "Sending messages on uChat is easy! Once you're logged in, you can start conversations with your contacts or create new group chats. Simply select a contact from your list, type your message in the text box at the bottom, and hit send or press Enter."
+                },
+                {
+                    "id": "gs-3",
+                    "question": "What is a handle and how do I choose one?",
+                    "answer": "Your handle is your unique identifier on uChat (like @yourname). Handles must be unique and can't be a one that is already used. It is because if all usernames and handles were the same, you cannot differentiate different users on who is who, right? That's why handles exist. You should choose a handle that is 3-20 characters long."
+                },
+                {
+                    "id": "gs-4",
+                    "question": "How do I customize my profile?",
+                    "answer": "You can customize your profile by navigating to Profile Settings. If you are on desktop, click the Profile icon, or if you are on mobile, click the three dots at the bottom of the screen (the More menu) and select Profile. From there unfortunately, you can only update your profile picture for now. We will add changing username, handles and other info very soon."
+                }
+            ]
+        },
+        {
+            "id": "messaging",
+            "name": "Messaging",
+            "icon": "fas fa-comment-dots",
+            "description": "Everything you need to know about sending and managing messages",
+            "questions": [
+                {
+                    "id": "msg-1",
+                    "question": "How do I send a photo or file?",
+                    "answer": "To send media files or documents, click on the attachment icon (paperclip) in the message input area. You can select images, videos, documents, or other files from your device. uChat supports ALL types of files. Maximum file size is 1GB per file. If you need more, please contact us."
+                },
+                {
+                    "id": "msg-2",
+                    "question": "Can I edit or delete messages after sending?",
+                    "answer": "Yes, you can DELETE your messages but editing hasn't beed added right now. Will be added soon."
+                },
+                {
+                    "id": "msg-3",
+                    "question": "How do I know if my message was read?",
+                    "answer": "You can't :|"
+                },
+                {
+                    "id": "msg-4",
+                    "question": "What are reactions and how do I use them?",
+                    "answer": "Reactions are a quick way to respond to messages without typing a reply. Simply hover over any message or click on the message if on mobile, and click the emoji icon that appears. You can choose from various emoji reactions like thumbs up, heart, laugh, and more. Multiple people can react to the same message, and all reactions will be displayed."
+                }
+            ]
+        },
+        {
+            "id": "contacts",
+            "name": "Contacts & Friends",
+            "icon": "fas fa-users",
+            "description": "Manage your contacts and build your network on uChat",
+            "questions": [
+                {
+                    "id": "cnt-1",
+                    "question": "How do I add someone to my contact?",
+                    "answer": "There is one and only way to add a user to your contact:",
+                    "steps": [
+                        "Search for their username or handle using the search bar",
+                        "When you find them, click 'Add'",
+                        "That's it, they are now added instantly!"
+                    ]
+                },
+                {
+                    "id": "cnt-2",
+                    "question": "How do I block or unblock someone?",
+                    "answer": "Blocking process is manual for now. If you want anyone blocked for valid reasons such as harassment or more, immediately contact us at ufonic.official@gmail.com."
+                }
+            ]
+        },
+        {
+            "id": "groups",
+            "name": "Group Chats",
+            "icon": "fas fa-user-friends",
+            "description": "Create and manage group conversations with multiple participants",
+            "questions": [
+                {
+                    "id": "grp-1",
+                    "question": "How do I create a group chat?",
+                    "answer": "To create a group chat, click the 'New Group' button in your chat list. Give your group a name and optional description, add members from your contacts, and customize the group icon if desired. Once created, all members can send messages, share files, and participate in the conversation."
+                },
+                {
+                    "id": "grp-2",
+                    "question": "What's the maximum number of people in a group?",
+                    "answer": "uChat supports group chats with up to 256 members. For larger communities, we recommend using our Communities feature which supports unlimited members with additional moderation tools and organizational features."
+                },
+                {
+                    "id": "grp-3",
+                    "question": "How do I leave a group chat?",
+                    "answer": "To leave a group, open the group chat, click on the group name at the top, scroll down and select 'Leave Group'. You'll no longer receive messages from the group, but the chat history will remain on your device. Group admins can remove members, but cannot prevent members from leaving voluntarily."
+                },
+                {
+                    "id": "grp-4",
+                    "question": "What are group admin permissions?",
+                    "answer": "Group admins have special permissions including: adding or removing members, changing the group name and icon, managing group settings, assigning other admins, and moderating messages. The group creator is automatically an admin and can assign additional admins as needed."
+                }
+            ]
+        },
+        {
+            "id": "privacy",
+            "name": "Privacy & Security",
+            "icon": "fas fa-shield-alt",
+            "description": "Keep your account secure and control your privacy settings",
+            "questions": [
+                {
+                    "id": "prv-1",
+                    "question": "How secure are my messages?",
+                    "answer": "Welp, this platform is targeted towards people that does not care about this stuff, there are no E2EE at least, not yet, so if you want secure messages, use other platforms!"
+                },
+                {
+                    "id": "prv-2",
+                    "question": "How do I enable two-factor authentication?",
+                    "answer": "Simple answer is we don't implement such features. Use other platforms if you really want security!!"
+                },
+                {
+                    "id": "prv-3",
+                    "question": "Who can see my profile information?",
+                    "answer": "EVERYONE can see your basic information such as username, and handle. Other data cannot be viewed."
+                },
+                {
+                    "id": "prv-4",
+                    "question": "How do I report inappropriate content or users?",
+                    "answer": "If you encounter inappropriate content or abusive behavior, you can report it directly. Click the three-dot menu on any message or user profile and select 'Report'. Provide details about the issue, and I will review it within 24 hours. Serious violations may result in account suspension."
+                },
+                {
+                    "id": "prv-5",
+                    "question": "Who are unverified users?",
+                    "answer": "Unverified users are users that have NOT verified their email. This means they can be suspicious and could be a scam/bot or accounts made to spread harmful and inappropriate content. If YOU are the unverified user, you can verify your email by following the instructions in the header of the home page. If you do encounter one of them, PLEASE be cautious and make sure to do these things:",
+                    "steps": [
+                        "Do not share personal information",
+                        "Do not send money or financial details",
+                        "Do not click on ANY suspicious links",
+                        "Block them and report them immediately if they act too suspicious",
+                        "If you feel threatened or unsafe, contact local authorities"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "settings",
+            "name": "Settings & Preferences",
+            "icon": "fas fa-cog",
+            "description": "Customize your uChat experience and manage account settings",
+            "questions": [
+                {
+                    "id": "set-1",
+                    "question": "How do I change between light and dark mode?",
+                    "answer": "uChat automatically detects your system mode and set dark/white mode automatically."
+                },
+                {
+                    "id": "set-2",
+                    "question": "Can I customize notification settings?",
+                    "answer": "There are no notifications in the website of this platform. However, if you want notifications, download the uChat Windows App from the Downloads page."
+                },
+                {
+                    "id": "set-3",
+                    "question": "How do I change my password?",
+                    "answer": "To change your password, go to Profile > Security > Change Password. Enter your current password, then create and confirm your new password. Make sure your new password is strong and unique. We recommend using a combination of letters, numbers, and special characters."
+                }
+            ]
+        },
+        {
+            "id": "account",
+            "name": "Account Management",
+            "icon": "fas fa-user-cog",
+            "description": "Manage your account, subscriptions, and account-related issues",
+            "questions": [
+                {
+                    "id": "acc-1",
+                    "question": "How do I delete my account?",
+                    "answer": "To permanently delete your account, go to Profile Settings and scroll to the bottom. Click on 'Delete Account' in the sidebar. You'll need to type 'DELETE THIS ACCOUNT' to confirm. Warning: This action is permanent and cannot be undone. All your messages, contacts, and data will be permanently removed. PROCEED WITH CAUTION!"
+                },
+                {
+                    "id": "acc-2",
+                    "question": "I forgot my password. How do I reset it?",
+                    "answer": "Click 'Forgot Password' on the login page. Enter your email address or username, and we'll send you a password reset link. Click the link in the email and follow the instructions to create a new password. The reset link expires after 15 minutes for security reasons."
+                },
+                {
+                    "id": "acc-3",
+                    "question": "Can I have multiple accounts?",
+                    "answer": "While you can create multiple uChat accounts with different email addresses, I reckon you should only use one for convenience. If you need seperate accounts, then make sure to remember their email and password for log in."
+                },
+                {
+                    "id": "acc-4",
+                    "question": "How do I verify my email address?",
+                    "answer": "When you create your account, we'll send a verification email with a 7 digit code to your registered email address. Click the verification link in the email to confirm your account. If you didn't receive the email, check your spam folder or request a new verification email by clicking 'Resend Code'. Remember that the email may take up to 5 or more minutes."
+                }
+            ]
+        },
+        {
+            "id": "troubleshooting",
+            "name": "Troubleshooting",
+            "icon": "fas fa-wrench",
+            "description": "Solutions to common problems and technical issues",
+            "questions": [
+                {
+                    "id": "trb-1",
+                    "question": "Messages are not sending. What should I do?",
+                    "answer": "If messages aren't sending, try these troubleshooting steps:",
+                    "steps": [
+                        "Check your internet connection (WiFi or mobile data)",
+                        "Refresh the page or restart the app",
+                        "Clear your browser cache and cookies",
+                        "Make sure you're using the latest version of uChat if using Windows version",
+                        "Contact support if the issue persists"
+                    ]
+                },
+                {
+                    "id": "trb-2",
+                    "question": "Why can't I upload files or images?",
+                    "answer": "File upload issues are usually related to file size or format. Make sure your file is under 1GB. Also check your internet connection speed. If uploading still fails, try using a different browser or clearing your cache."
+                },
+                {
+                    "id": "trb-3",
+                    "question": "The app is running slow or freezing. How can I fix it?",
+                    "answer": "Performance issues can often be resolved by: clearing your browser cache, closing unnecessary tabs or apps, checking for browser updates, disabling browser extensions that might interfere, or switching to a different browser. For mobile apps, try closing and reopening the app or restarting your device."
+                },
+                {
+                    "id": "trb-4",
+                    "question": "I'm not receiving notifications. What's wrong?",
+                    "answer": "In the Windows app, make sure the app is actually running in the background. You can check it with Task Manager too, if you want. If the issue persists, restart the app."
+                }
+            ]
+        }
+    ]
+}

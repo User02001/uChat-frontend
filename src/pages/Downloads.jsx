@@ -124,7 +124,7 @@ const Downloads = () => {
       />
      </div>
      <h1>Download uChat</h1>
-     <p>An indie messaging app that cuts away all the corporate stuff</p>
+     <p>Only for Windows, sorry :(</p>
     </div>
 
     {latestRelease && (

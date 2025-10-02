@@ -24,7 +24,13 @@ const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
       </span>
      </div>
      <div className="reply-message">
-      {truncateMessage(replyingTo.content)}
+      {replyingTo.deleted ? (
+       <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+        This message has been deleted
+       </em>
+      ) : (
+       truncateMessage(replyingTo.content || '')
+      )}
      </div>
     </div>
    </div>

@@ -1,0 +1,270 @@
+{
+    "lastUpdated": "October 2, 2025",
+    "sections": [
+        {
+            "id": "introduction",
+            "title": "Introduction",
+            "icon": "fas fa-info-circle",
+            "content": {
+                "intro": "Welcome to uChat, a messaging platform operated by UFOnic. These Terms and Conditions govern your use of uChat. By accessing or using uChat, you agree to be bound by these terms.",
+                "paragraphs": [
+                    "These terms constitute a legally binding agreement between you and UFOnic. Please read them carefully before using uChat.",
+                    "If you do not agree with any part of these terms, you must not use uChat.",
+                    "UFOnic reserves the right to update these terms at any time. Continued use of the platform after changes constitutes acceptance of the updated terms.",
+                    "If you do not comply with these terms, UFOnic reserves the right to temporarily or permanently suspend your account."
+                ]
+            }
+        },
+        {
+            "id": "account",
+            "title": "Account Registration",
+            "icon": "fas fa-user-plus",
+            "content": {
+                "intro": "To use uChat, you must create an account and provide accurate information.",
+                "paragraphs": [
+                    "You must be at least 13 years old to create an account on uChat. If you are under 18, you must have permission from a parent or guardian.",
+                    "You are responsible for keeping your account information, including passwords, email, handles, and username, secure.",
+                    "You agree to provide accurate, current, and complete information during registration and to update such information as needed.",
+                    "You may not use another person's account without permission.",
+                    "UFOnic reserves the right to suspend or terminate accounts that violate these terms or engage in fraudulent activity."
+                ],
+                "list": {
+                    "title": "Account Requirements:",
+                    "items": [
+                        "Valid email address for verification",
+                        "Unique username that does not impersonate others",
+                        "Strong password with at least 8 characters",
+                        "Acceptance of our Privacy Policy and Terms"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "privacy",
+            "title": "Privacy & Data Protection",
+            "icon": "fas fa-shield-alt",
+            "content": {
+                "intro": "Your privacy is important to UFOnic. This section explains how we handle your data on uChat.",
+                "paragraphs": [
+                    "We collect and process personal information to operate and improve uChat.",
+                    "We do not sell your personal data to third parties.",
+                    "You have the right to access, modify, or delete your personal information at any time by contacting us.",
+                    "We retain your data while your account is active and for 30 days after deletion, except where required by law.",
+                    "We comply with applicable data protection laws. These terms are governed by the laws of Mongolia."
+                ],
+                "list": {
+                    "title": "Data We Collect:",
+                    "items": [
+                        "Account information (username, email, profile picture)",
+                        "Messages and media files you send (stored as plain text)",
+                        "Device and usage information",
+                        "IP addresses and connection metadata"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "conduct",
+            "title": "User Conduct",
+            "icon": "fas fa-gavel",
+            "content": {
+                "intro": "Users must follow acceptable conduct standards when using uChat.",
+                "paragraphs": [
+                    "You agree not to use uChat for any unlawful purpose or in violation of these terms.",
+                    "Harassment, bullying, hate speech, or threatening behavior is strictly prohibited.",
+                    "You may not impersonate others or create fake/bot accounts.",
+                    "Spam, phishing attempts, and malicious content are not allowed.",
+                    "Sharing illegal content, including child exploitation material, will result in immediate account termination and reporting to authorities."
+                ],
+                "list": {
+                    "title": "Prohibited Activities:",
+                    "items": [
+                        "Harassment or threatening other users",
+                        "Sharing malware, viruses, or harmful code",
+                        "Attempting to hack or compromise the platform",
+                        "Distributing spam or unsolicited commercial content",
+                        "Posting illegal, obscene, or defamatory content",
+                        "Violating intellectual property rights",
+                        "Engaging in any activity that is unlawful in your jurisdiction"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "content",
+            "title": "Content Ownership",
+            "icon": "fas fa-copyright",
+            "content": {
+                "intro": "You retain ownership of content you create, but grant UFOnic rights to operate uChat.",
+                "paragraphs": [
+                    "You retain all rights to content you upload, send, or create on uChat.",
+                    "By using uChat, you grant UFOnic a non-exclusive, worldwide license to host, store, and transmit your content as necessary to provide the service.",
+                    "You are responsible for ensuring you have the right to share any content you post.",
+                    "UFOnic reserves the right to remove content that violates these terms or applicable laws.",
+                    "User-generated content does not represent the views of UFOnic."
+                ]
+            }
+        },
+        {
+            "id": "termination",
+            "title": "Account Termination",
+            "icon": "fas fa-user-times",
+            "content": {
+                "intro": "Either party may terminate the account relationship under certain conditions.",
+                "paragraphs": [
+                    "You may delete your account at any time through the account settings.",
+                    "UFOnic may suspend or terminate your account if you violate these terms.",
+                    "Upon termination, your right to use uChat immediately ceases.",
+                    "We will retain your data for 30 days after account deletion unless otherwise required by law.",
+                    "Termination does not relieve you of obligations incurred prior to termination."
+                ],
+                "list": {
+                    "title": "Reasons for Account Termination:",
+                    "items": [
+                        "Violation of Terms and Conditions",
+                        "Fraudulent or illegal activity",
+                        "Multiple reports of harassment or abuse",
+                        "User request for account deletion"
+                    ]
+                }
+            }
+        },
+        {
+            "id": "liability",
+            "title": "Limitation of Liability",
+            "icon": "fas fa-exclamation-triangle",
+            "content": {
+                "intro": "uChat is provided 'as is' with limitations on liability.",
+                "paragraphs": [
+                    "uChat is provided 'as is' without warranties of any kind, either express or implied.",
+                    "UFOnic does not guarantee uninterrupted or error-free service.",
+                    "UFOnic is not liable for any indirect, incidental, or consequential damages arising from your use of uChat, including but not limited to data loss, security breaches, or unauthorized access.",
+                    "You use uChat at your own risk. Given the security limitations described in these terms, you acknowledge that you are solely responsible for determining whether uChat is appropriate for your use.",
+                    "Some jurisdictions do not allow limitation of liability, so these limitations may not apply to you.",
+                    "UFOnic's total liability to you for any claims arising from your use of uChat shall not exceed the amount you paid to use the service (which is currently zero for free accounts)."
+                ]
+            }
+        },
+        {
+            "id": "security",
+            "title": "Security & Encryption - IMPORTANT NOTICE",
+            "icon": "fas fa-lock",
+            "content": {
+                "intro": "CRITICAL SECURITY INFORMATION: uChat is designed for casual messaging only. Please read this section carefully before using the platform.",
+                "paragraphs": [
+                    "HTTPS encryption protects data during transmission between your device and our servers.",
+                    "Passwords are securely hashed and salted. We cannot see or recover your password.",
+                    "However, messages and user data are stored as PLAIN TEXT in our database and are NOT encrypted at rest.",
+                    "Server administrators can technically access message content for system maintenance, moderation, and technical purposes.",
+                    "Messages are transmitted and stored without end-to-end encryption.",
+                    "DO NOT use uChat to share: passwords, credit card information, banking details, social security numbers, private documents, confidential business communications, medical information, or any other sensitive data.",
+                    "Use uChat ONLY for casual conversations that you are comfortable being stored as plain text.",
+                    "By using uChat, you explicitly acknowledge these security limitations and accept all associated risks."
+                ],
+                "list": {
+                    "title": "Security Measures We Implement:",
+                    "items": [
+                        "HTTPS encryption for data in transit",
+                        "Secure password hashing and salting",
+                        "User authentication and session management",
+                        "Basic protection against common attacks",
+                        "Regular security updates to the platform"
+                    ]
+                },
+                "warning": "WARNING: No system is 100% secure. In the event of a security breach, data compromise, or unauthorized access, we will notify affected users as soon as reasonably possible."
+            }
+        },
+        {
+            "id": "breach",
+            "title": "Data Breach Notification",
+            "icon": "fas fa-exclamation-circle",
+            "content": {
+                "intro": "In the event of a security breach or unauthorized access to user data, UFOnic will take the following actions:",
+                "paragraphs": [
+                    "We will investigate the breach and assess the scope of compromised data as quickly as possible.",
+                    "Affected users will be notified via email within 72 hours of discovering the breach, where feasible.",
+                    "We will provide information about what data was compromised and what steps users should take.",
+                    "We will take reasonable measures to secure the platform and prevent future breaches.",
+                    "We may be required to report certain breaches to regulatory authorities depending on applicable laws."
+                ]
+            }
+        },
+        {
+            "id": "intellectual",
+            "title": "Intellectual Property",
+            "icon": "fas fa-lightbulb",
+            "content": {
+                "intro": "uChat and its original content, features, and functionality are owned by UFOnic.",
+                "paragraphs": [
+                    "The uChat/UFOnic name, logo, and all related marks are trademarks owned by UFOnic.",
+                    "You may not use our trademarks without prior written permission.",
+                    "Our software, design, and documentation are protected by copyright laws.",
+                    "You may not copy, modify, or create derivative works of our platform without authorization.",
+                    "Third-party trademarks and content are property of their respective owners."
+                ]
+            }
+        },
+        {
+            "id": "disputes",
+            "title": "Dispute Resolution & Governing Law",
+            "icon": "fas fa-balance-scale",
+            "content": {
+                "intro": "Any disputes arising from these terms shall be resolved as described below.",
+                "paragraphs": [
+                    "These terms are governed by the laws of Mongolia, regardless of where you access uChat from.",
+                    "Any disputes will be resolved in the courts of Mongolia and subject to Mongolian jurisdiction.",
+                    "Any disputes will first be addressed through good faith negotiations between you and UFOnic.",
+                    "Either party may seek appropriate legal remedies if negotiations fail.",
+                    "By using uChat, you consent to the exclusive jurisdiction of Mongolian courts for any disputes arising from these terms."
+                ]
+            }
+        },
+        {
+            "id": "changes",
+            "title": "Changes to Terms",
+            "icon": "fas fa-edit",
+            "content": {
+                "intro": "UFOnic may modify these terms from time to time.",
+                "paragraphs": [
+                    "We will notify you of any material changes via email or in-app notification.",
+                    "Changes become effective 30 days after notification unless otherwise stated.",
+                    "Your continued use of uChat after changes take effect constitutes acceptance of the new terms.",
+                    "If you do not agree to the new terms, you must stop using uChat and may delete your account.",
+                    "We recommend reviewing these terms periodically to stay informed of any updates."
+                ]
+            }
+        },
+        {
+            "id": "contact",
+            "title": "Contact Information",
+            "icon": "fas fa-envelope",
+            "content": {
+                "intro": "If you have questions about these terms, please contact UFOnic.",
+                "paragraphs": [
+                    "For questions about these Terms and Conditions, contact us at: ufonic.official@gmail.com",
+                    "For privacy-related inquiries or to exercise your data rights (access, modification, deletion), email us at the address above.",
+                    "For security concerns or to report a suspected breach, contact us immediately at: ufonic.official@gmail.com",
+                    "We aim to respond to all inquiries within 48-72 hours.",
+                    "You may also reach us through the in-app support feature if available."
+                ]
+            }
+        },
+        {
+            "id": "acknowledgment",
+            "title": "User Acknowledgment",
+            "icon": "fas fa-check-circle",
+            "content": {
+                "intro": "By creating an account and using uChat, you explicitly acknowledge and agree to the following:",
+                "paragraphs": [
+                    "You have read and understood these Terms and Conditions in their entirety.",
+                    "You understand that messages are stored as plain text without encryption at rest.",
+                    "You understand that server administrators can technically access your message content.",
+                    "You will not use uChat for sensitive, confidential, or private communications.",
+                    "You accept all risks associated with using a platform that does not provide end-to-end encryption.",
+                    "You agree to be bound by the laws of Mongolia for any disputes arising from your use of uChat.",
+                    "You are using uChat at your own risk and UFOnic has clearly disclosed all security limitations."
+                ]
+            }
+        }
+    ]
+}

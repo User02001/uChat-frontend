@@ -196,12 +196,7 @@ const Profile = ({ onBack }) => {
  };
 
  const sidebarItems = [
-  { icon: 'fas fa-home', label: 'Home' },
-  { icon: 'fas fa-user', label: 'Profile', active: true },
-  { icon: 'fas fa-comment', label: 'Messages' },
-  { icon: 'fas fa-users', label: 'Contacts' },
-  { icon: 'fas fa-bell', label: 'Notifications' },
-  { icon: 'fas fa-cog', label: 'Settings' },
+  { icon: 'fas fa-home', label: 'Home', active: false },
   { icon: 'fas fa-sign-out-alt', label: 'Logout' },
   { icon: 'fas fa-trash', label: 'Delete Account', danger: true },
  ];

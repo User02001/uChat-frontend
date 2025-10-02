@@ -14,8 +14,9 @@ const Signup = () => {
  });
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
- const [showPassword, setShowPassword] = useState(false); // ADD THIS LINE
- const [showConfirmPassword, setShowConfirmPassword] = useState(false); // ADD THIS LINE
+ const [showPassword, setShowPassword] = useState(false);
+ const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+ const [agreedToTerms, setAgreedToTerms] = useState(false);
 
  useEffect(() => {
   // Load Font Awesome
@@ -344,7 +345,28 @@ const Signup = () => {
        </div>
       </div>
 
-      <button type="submit" className="login-btn primary" disabled={loading}>
+      <div className="terms-checkbox">
+       <label className="checkbox-label">
+        <input
+         type="checkbox"
+         checked={agreedToTerms}
+         onChange={(e) => setAgreedToTerms(e.target.checked)}
+         className="checkbox-input"
+        />
+        <span className="checkbox-custom"></span>
+        <span className="checkbox-text">
+         By creating an uChat account, I agree to follow the{' '}
+         <a href="/terms" target="_blank" className="terms-link">
+          Terms & Conditions
+         </a>
+         {' '}as well as the{' '}
+         <a href="/privacy" target="_blank" className="terms-link">
+          Privacy Policy
+         </a>.
+        </span>
+       </label>
+      </div>
+      <button type="submit" className="login-btn primary" disabled={loading || !agreedToTerms}>
        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-user-plus'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Creating Account...' : 'Create Account'}
       </button>

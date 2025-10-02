@@ -9,6 +9,10 @@ import MessagesSkeleton from './components/MessagesSkeleton';
 import ContactsSkeleton from './components/ContactsSkeleton';
 import Reaction from './components/Reaction';
 import './pages/downloads-recommend.css'
+import DeleteModal from './components/DeleteModal';
+import './index.css'
+import './pages/calls.css'
+import UnverifiedModal from './components/UnverifiedModal';
 
 const App = () => {
  const navigate = useNavigate();
@@ -49,6 +53,7 @@ const App = () => {
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
  const [sessionDismissed, setSessionDismissed] = useState(false);
  const [showVerificationBanner, setShowVerificationBanner] = useState(false);
+ const [showUnverifiedModal, setShowUnverifiedModal] = useState(null);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -85,6 +90,11 @@ const App = () => {
    setShowVerificationBanner(false);
    document.body.classList.remove('with-verification-banner');
   }
+
+  // Add cleanup function to remove the class when component unmounts
+  return () => {
+   document.body.classList.remove('with-verification-banner');
+  };
  }, [user]);
 
  useEffect(() => {
@@ -192,22 +202,22 @@ const App = () => {
  const scrollToMessage = (messageId) => {
   const messageElement = document.getElementById(`message-${messageId}`);
   if (messageElement) {
-   // Check if element is already in view
    const rect = messageElement.getBoundingClientRect();
    const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
 
    if (isInView) {
-    // No scrolling needed, highlight immediately
-    const messageBubble = messageElement.querySelector('.message-bubble');
-    if (messageBubble) {
-     messageBubble.classList.add('message-highlighted');
+    // Find the element to highlight - could be .message-bubble, .message-content, or .deleted-message
+    const targetElement = messageElement.querySelector('.message-bubble') ||
+     messageElement.querySelector('.deleted-message') ||
+     messageElement.querySelector('.message-content');
 
+    if (targetElement) {
+     targetElement.classList.add('message-highlighted');
      setTimeout(() => {
-      messageBubble.classList.remove('message-highlighted');
+      targetElement.classList.remove('message-highlighted');
      }, 800);
     }
    } else {
-    // Scrolling needed, wait for scroll to finish
     messageElement.scrollIntoView({
      behavior: 'smooth',
      block: 'center'
@@ -217,13 +227,15 @@ const App = () => {
     const handleScrollEnd = () => {
      clearTimeout(scrollTimeout);
      scrollTimeout = setTimeout(() => {
-      const messageBubble = messageElement.querySelector('.message-bubble');
-      if (messageBubble) {
-       messageBubble.classList.add('message-highlighted');
+      const targetElement = messageElement.querySelector('.message-bubble') ||
+       messageElement.querySelector('.deleted-message') ||
+       messageElement.querySelector('.message-content');
 
+      if (targetElement) {
+       targetElement.classList.add('message-highlighted');
        setTimeout(() => {
-        messageBubble.classList.remove('message-highlighted');
-       }, 400);
+        targetElement.classList.remove('message-highlighted');
+       }, 800);
       }
 
       document.removeEventListener('scroll', handleScrollEnd, true);
@@ -540,12 +552,42 @@ const App = () => {
   });
 
   socket.on('message_deleted', (data) => {
-   // mark message deleted in local state (UI updates instantly; server also broadcasts)
+   // Mark message as deleted in local state AND update any replies to it
    setMessages(prev =>
-    prev.map(m =>
-     m.id === data.message_id ? { ...m, deleted: true, content: null } : m
-    )
+    prev.map(m => {
+     if (m.id === data.message_id) {
+      // Mark the deleted message itself
+      return { ...m, deleted: true, content: null, file_path: null, file_name: null };
+     } else if (m.original_message && m.original_message.id === data.message_id) {
+      // Update the original_message reference in any replies
+      return {
+       ...m,
+       original_message: {
+        ...m.original_message,
+        deleted: true,
+        content: null,
+        file_path: null,
+        file_name: null
+       }
+      };
+     }
+     return m;
+    })
    );
+
+   // Update replyingTo state if the deleted message is being replied to
+   setReplyingTo(prev => {
+    if (prev && prev.id === data.message_id) {
+     return {
+      ...prev,
+      deleted: true,
+      content: null,
+      file_path: null,
+      file_name: null
+     };
+    }
+    return prev;
+   });
   });
 
   socket.on('contact_updated', (data) => {
@@ -1121,7 +1163,10 @@ const App = () => {
     {showVerificationBanner && (
      <div className="verification-banner">
       <i className="fas fa-exclamation-triangle"></i>
-      You are unverified!
+      You are {""}
+      <a href="/help" className="unverified-link">
+       unverified!
+      </a>
       <a href="/verify" className="verification-link">
        Verify your email now
       </a>
@@ -1216,7 +1261,8 @@ const App = () => {
 
     <div className="mobile-header">
      <div className="mobile-logo">
-      <span className="mobile-logo-text">uChat</span>
+       <img draggable="false" src="/resources/favicon.png" alt="uChat Logo" className="mobile-logo-icon" />
+       <span className="mobile-logo-text">uChat</span>
      </div>
      <div className="mobile-header-actions">
       <div className="contact-avatar-container" onClick={() => setShowUserMenu(!showUserMenu)}>
@@ -1329,17 +1375,16 @@ const App = () => {
           <span className="contact-name">
            {contact.username}
            {!contact.is_verified && (
-            <span style={{
-             backgroundColor: '#ef4444',
-             color: 'white',
-             fontSize: '9px',
-             padding: '1px 4px',
-             borderRadius: '3px',
-             marginLeft: '6px',
-             fontWeight: '600'
-            }}>
-             UNVERIFIED
-            </span>
+            <img
+             src="/resources/broken-lock.svg"
+             alt="Unverified"
+             className="unverified-icon"
+             onClick={(e) => {
+              e.stopPropagation();
+              setShowUnverifiedModal(contact.username);
+             }}
+             title="Unverified user"
+            />
            )}
           </span>
           <span className="contact-time">
@@ -1354,6 +1399,19 @@ const App = () => {
 
             const timeString = messageTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
 
+            // Mobile: show only time relative format (e.g., "3d")
+            if (window.innerWidth <= 768) {
+             if (isToday) {
+              return timeString;
+             } else if (isYesterday) {
+              return '1d';
+             } else {
+              const days = Math.floor((now - messageTime) / 86400000);
+              return `${days}d`;
+             }
+            }
+
+            // Desktop: show full format
             if (isToday) {
              return `Today at ${timeString}`;
             } else if (isYesterday) {
@@ -1391,23 +1449,18 @@ const App = () => {
        </div>
        <div className="chat-user-info">
         <div className="chat-username-container">
-         <span className="chat-username">{activeContact.username}</span>
-         {!activeContact.is_verified && (
-          <span style={{
-           backgroundColor: '#ef4444',
-           color: 'white',
-           fontSize: '10px',
-           padding: '2px 6px',
-           borderRadius: '4px',
-           marginLeft: '8px',
-           fontWeight: '600',
-           textTransform: 'uppercase'
-          }}>
-           UNVERIFIED
-          </span>
-         )}
-         <span className="chat-aka">aka</span>
-         <span className="chat-handle">@{activeContact.handle}</span>
+           <span className="chat-username">{activeContact.username}</span>
+           {!activeContact.is_verified && (
+            <img
+             src="/resources/broken-lock.svg"
+             alt="Unverified"
+             className="unverified-icon"
+             onClick={() => setShowUnverifiedModal(activeContact.username)}
+             title="Unverified user - Click for more info"
+            />
+           )}
+           <span className="chat-aka">aka</span>
+           <span className="chat-handle">@{activeContact.handle}</span>
         </div>
         <span className="chat-status">
          {onlineUsers.includes(activeContact.id)
@@ -1463,16 +1516,23 @@ const App = () => {
              {message.original_message && (
               <div
                className="reply-inside"
-               onClick={() => scrollToMessage(message.original_message.id)}
+               onClick={() => !message.original_message.deleted && scrollToMessage(message.original_message.id)}
+               style={message.original_message.deleted ? { cursor: 'default' } : { cursor: 'pointer' }}
               >
                <span className="reply-sender-inside">
                 {message.original_message.sender_id === user.id ? 'You' : message.original_message.sender_username}
                </span>
                <span className="reply-content-inside">
-                {(() => {
-                 const orig = message.original_message?.content || '';
-                 return orig.length > 40 ? orig.substring(0, 40) + '...' : orig;
-                })()}
+                {message.original_message.deleted ? (
+                 <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                  This message has been DELETED
+                 </em>
+                ) : (
+                 (() => {
+                  const orig = message.original_message?.content || '';
+                  return orig.length > 40 ? orig.substring(0, 40) + '...' : orig;
+                 })()
+                )}
                </span>
               </div>
              )}
@@ -1534,70 +1594,63 @@ const App = () => {
               })()}
              </div>
             </div>
-            <button
-             className="message-reply-btn"
-             onClick={() => handleReplyToMessage(message)}
-             title="Reply to this message"
-            >
-             <i className="fas fa-reply"></i>
-            </button>
-            <button
-             className="message-reaction-btn"
-             onClick={() => setShowReactionPopup(showReactionPopup === message.id ? null : message.id)}
-             title="React to this message"
-            >
-             <i className="fas fa-smile"></i>
-            </button>
-            {message.sender_id === user.id && !message.deleted && (
-             <button
-              className="message-delete-btn"
-              onClick={() => setDeleteConfirm(message.id)}
-              title="Delete message"
-             >
-              <i className="fas fa-trash"></i>
-             </button>
+            {!message.deleted && (
+             <>
+              <button
+               className="message-reply-btn"
+               onClick={() => handleReplyToMessage(message)}
+               title="Reply to this message"
+              >
+               <i className="fas fa-reply"></i>
+              </button>
+              <button
+               className="message-reaction-btn"
+               onClick={() => setShowReactionPopup(showReactionPopup === message.id ? null : message.id)}
+               title="React to this message"
+              >
+               <i className="fas fa-smile"></i>
+              </button>
+              {message.sender_id === user.id && (
+               <button
+                className="message-delete-btn"
+                onClick={() => setDeleteConfirm(message.id)}
+                title="Delete message"
+               >
+                <i className="fas fa-trash"></i>
+               </button>
+              )}
+             </>
             )}
            </div>
           ))
        )}
 
        <div ref={messagesEndRef} />
-       {deleteConfirm && (
-        <div className="delete-modal">
-         <div className="delete-modal-backdrop" onClick={() => setDeleteConfirm(null)} />
-         <div className="delete-modal-content">
-          <p>Are you sure you want to delete this message?</p>
-          <div className="modal-actions">
-           <button onClick={() => setDeleteConfirm(null)}>Cancel</button>
-           <button
-            onClick={async () => {
-             try {
-              const res = await fetch(`${API_BASE_URL}/api/messages/${deleteConfirm}/delete`, {
-               method: 'POST',
-               credentials: 'include'
-              });
+         {deleteConfirm && (
+          <DeleteModal
+           messageId={deleteConfirm}
+           onClose={() => setDeleteConfirm(null)}
+           onConfirm={async (messageId) => {
+            try {
+             const res = await fetch(`${API_BASE_URL}/api/messages/${messageId}/delete`, {
+              method: 'POST',
+              credentials: 'include'
+             });
 
-              if (res.ok) {
-               // immediate local optimistic update; server will also broadcast
-               setMessages(prev => prev.map(m => m.id === deleteConfirm ? { ...m, deleted: true, content: null } : m));
-              } else {
-               const err = await res.json();
-               setError(err.error || 'Delete failed');
-              }
-             } catch (e) {
-              setError('Delete failed');
-             } finally {
-              setDeleteConfirm(null);
+             if (res.ok) {
+              setMessages(prev => prev.map(m =>
+               m.id === messageId ? { ...m, deleted: true, content: null, file_path: null, file_name: null } : m
+              ));
+             } else {
+              const err = await res.json();
+              setError(err.error || 'Delete failed');
              }
-            }}
-           >
-            Delete
-           </button>
-          </div>
-         </div>
-        </div>
-       )}
-
+            } catch (e) {
+             setError('Delete failed');
+            }
+           }}
+          />
+         )}
       </div>
 
       <div
@@ -1824,6 +1877,12 @@ const App = () => {
      </div>
     </div>
    )}
+     {showUnverifiedModal && (
+      <UnverifiedModal
+       username={showUnverifiedModal}
+       onClose={() => setShowUnverifiedModal(null)}
+      />
+     )}
    <audio
     ref={ringtoneRef}
     preload="none"

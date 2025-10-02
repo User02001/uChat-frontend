@@ -83,8 +83,8 @@ body, html {
 :root[data-theme="dark"] {
     /* Dark theme */
     --bg-primary: #000000 !important;
-    --bg-secondary: #0a0a0a !important;
-    --bg-tertiary: #141414 !important;
+    --bg-secondary: #000000 !important;
+    --bg-tertiary: #131313 !important;
     --text-primary: #ffffff !important;
     --text-secondary: #888888 !important;
     --text-muted: #666666 !important;
@@ -274,6 +274,13 @@ body, html {
 .mobile-logo {
     display: flex;
     align-items: center;
+    gap: 8px;
+}
+
+.mobile-logo-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
 }
 
 .mobile-logo-text {
@@ -2301,7 +2308,7 @@ html, body, * {
     color: #92400e;
     padding: 8px;
     text-align: center;
-    font-size: 13px;
+    font-size: 20px;
     font-weight: 600;
     z-index: 9999;
     height: 48px;
@@ -2309,7 +2316,7 @@ html, body, * {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .verification-link {
@@ -2376,4 +2383,48 @@ body.with-verification-banner {
     .contacts-list {
         padding-bottom: 100px; /* Add this line */
     }
+}
+
+.unverified-icon {
+    width: 30px;
+    height: auto;
+    margin-left: 0px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    filter: brightness(0) saturate(100%) invert(34%) sepia(95%) saturate(6800%) hue-rotate(354deg) brightness(98%) contrast(93%);
+}
+
+    .unverified-icon:hover {
+        transform: scale(1.15);
+        filter: brightness(0) saturate(100%) invert(18%) sepia(97%) saturate(7496%) hue-rotate(354deg) brightness(90%) contrast(93%);
+    }
+
+    .unverified-icon:active {
+        transform: scale(0.95);
+    }
+
+.chat-username-container .unverified-icon {
+    width: 16px;
+    height: 16px;
+}
+
+.contact-name .unverified-icon {
+    width: 17px;
+    height: auto;
+    margin-left: 4px;
+}
+
+.unverified-icon-modal1 {
+    width: 20px;
+    height: auto;
+    margin-left: 0px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-left: 5px;
+    margin-right: 4px;
 }
