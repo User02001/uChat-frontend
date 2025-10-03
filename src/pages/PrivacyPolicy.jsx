@@ -6,40 +6,12 @@ import termsData from './privacyData.json';
 
 const PrivacyPolicy = () => {
  const navigate = useNavigate();
- const [user, setUser] = useState(null);
- const [loading, setLoading] = useState(true);
  const [activeSection, setActiveSection] = useState('introduction');
  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
  useEffect(() => {
-  checkAuth();
- }, []);
-
- useEffect(() => {
   document.title = "uChat | Privacy Policy";
  }, []);
-
- const checkAuth = async () => {
-  try {
-   const response = await fetch(`${API_BASE_URL}/api/me`, {
-    credentials: 'include'
-   });
-
-   if (response.ok) {
-    const data = await response.json();
-    setUser(data.user);
-   } else {
-    navigate('/login', { replace: true });
-    return;
-   }
-  } catch (error) {
-   console.error('Auth check failed:', error);
-   navigate('/login', { replace: true });
-   return;
-  } finally {
-   setLoading(false);
-  }
- };
 
  useEffect(() => {
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -73,15 +45,6 @@ const PrivacyPolicy = () => {
 
  const currentSectionIndex = termsData.sections.findIndex(s => s.id === activeSection);
  const currentSection = termsData.sections[currentSectionIndex];
-
- if (loading) {
-  return (
-   <div className="app-loading">
-    <div className="loading-spinner"></div>
-    <p>Loading Privacy Policy...</p>
-   </div>
-  );
- }
 
  return (
   <div className="terms-container">
