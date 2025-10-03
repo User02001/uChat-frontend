@@ -108,7 +108,7 @@
     width: 32px;
     height: 32px;
     border: none;
-    background: var(--bg-secondary);
+    background: #141414;
     color: var(--text-secondary);
     border-radius: 50%;
     cursor: pointer;
@@ -124,11 +124,11 @@
 
 /* Position reaction button next to reply button */
 .message.sent .message-reaction-btn {
-    left: -80px;
+    left: -84px;
 }
 
 .message.received .message-reaction-btn {
-    right: -80px;
+    right: -84px;
 }
 
 .message:hover .message-reaction-btn {
@@ -136,8 +136,8 @@
 }
 
 .message-reaction-btn:hover {
-    background: var(--button-primary);
-    color: white;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
     transform: translateY(-50%) scale(1.1);
 }
 

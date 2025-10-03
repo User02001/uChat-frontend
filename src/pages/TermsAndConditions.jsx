@@ -71,7 +71,7 @@ const TermsAndConditions = () => {
        <i className="fas fa-user"></i>
       </button>
       <button className="header-btn" onClick={() => navigate('/privacy')} title="Privacy Policy">
-       <i className="fas fa-key"></i>
+       <i className="fas fa-user-shield"></i>
       </button>
      </div>
     </div>

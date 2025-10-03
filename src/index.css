@@ -2263,11 +2263,11 @@ html, body, * {
 
 /* Position relative to bubble */
 .message.sent .message-delete-btn {
-    left: -117px; /* sits evenly after reaction */
+    left: -124px;
 }
 
 .message.received .message-delete-btn {
-    right: -84px;
+    right: -124px;
 }
 
 /* Show on hover */
@@ -2382,6 +2382,20 @@ body.with-verification-banner {
 @media (max-width: 768px) {
     .contacts-list {
         padding-bottom: 100px; /* Add this line */
+    }
+
+    .message.sent .message-delete-btn {
+        left: -105px;
+    }
+
+    .message.received .message-delete-btn {
+        right: -105px;
+    }
+
+    .message-delete-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
     }
 }
 
