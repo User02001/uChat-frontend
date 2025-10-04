@@ -7,6 +7,8 @@ const Sidebar = ({ showMobileChat = false, onLogout }) => {
  const [isDarkMode, setIsDarkMode] = useState(false);
  const moreMenuRef = useRef(null);
 
+ const [isElectron, setIsElectron] = useState(false); // detect electron who we dont have to display downloads button
+
  useEffect(() => {
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   setIsDarkMode(mediaQuery.matches);
@@ -20,6 +22,11 @@ const Sidebar = ({ showMobileChat = false, onLogout }) => {
  useEffect(() => {
   document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
  }, [isDarkMode]);
+
+ useEffect(() => {
+  // Detect if running in Electron
+  setIsElectron(window.navigator.userAgent.toLowerCase().includes('electron'));
+ }, []);
 
  const handleTabClick = (tab) => {
   setActiveTab(tab);
@@ -90,13 +97,15 @@ const Sidebar = ({ showMobileChat = false, onLogout }) => {
      <i className="fas fa-question-circle"></i>
     </button>
 
-    <button
-     className={`nav-btn ${activeTab === 'downloads' ? 'active' : ''}`}
-     title="Downloads"
-     onClick={() => handleTabClick('downloads')}
-    >
-     <i className="fas fa-download"></i>
-    </button>
+    {!isElectron && (
+     <button
+      className={`nav-btn ${activeTab === 'downloads' ? 'active' : ''}`}
+      title="Downloads"
+      onClick={() => handleTabClick('downloads')}
+     >
+      <i className="fas fa-download"></i>
+     </button>
+    )}
 
     <button
      className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`}

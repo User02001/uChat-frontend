@@ -54,6 +54,7 @@ const App = () => {
  const [sessionDismissed, setSessionDismissed] = useState(false);
  const [showVerificationBanner, setShowVerificationBanner] = useState(false);
  const [showUnverifiedModal, setShowUnverifiedModal] = useState(null);
+ const [isOffline, setIsOffline] = useState(false);
 
  const messagesEndRef = useRef(null);
  const typingTimeoutRef = useRef(null);
@@ -142,11 +143,46 @@ const App = () => {
   return () => document.removeEventListener('click', handleClickOutside);
  }, [showUserMenu, showSearch, showReactionPopup]);
 
+ // Listen for network status changes from Electron
+ useEffect(() => {
+  if (window.require) {
+   try {
+    const { ipcRenderer } = window.require('electron');
+
+    // Check initial status
+    ipcRenderer.invoke('get-network-status').then(online => {
+     setIsOffline(!online);
+    });
+
+    // Listen for status changes
+    ipcRenderer.on('network-status-changed', (event, online) => {
+     console.log('Network status update:', online ? 'ONLINE' : 'OFFLINE');
+     setIsOffline(!online);
+
+     // If coming back online, cache will be cleared by webView reload
+     // which happens automatically in offline-manager.js
+    });
+
+    return () => {
+     ipcRenderer.removeAllListeners('network-status-changed');
+    };
+   } catch (e) {
+    console.log('Electron IPC not available for network status');
+   }
+  }
+ }, []);
+
  // Add this useEffect to detect Windows and manage refresh counter
  useEffect(() => {
   const detectWindowsAndManageDisplay = () => {
    const userAgent = navigator.userAgent;
    const isWindows = userAgent.includes('Windows');
+   const isElectron = userAgent.toLowerCase().includes('electron');
+
+   // Don't show if running in Electron
+   if (isElectron) {
+    return;
+   }
 
    // Check if user already has the app (permanent dismissal)
    const userHasApp = localStorage.getItem('uchat-user-has-desktop-app');
@@ -1669,7 +1705,7 @@ const App = () => {
         onCancelReply={handleCancelReply}
         activeContact={activeContact}
        />
-       <form onSubmit={sendMessage} className="message-input-container">
+       <form onSubmit={isOffline ? (e) => e.preventDefault() : sendMessage} className="message-input-container">
         <input
          type="file"
          ref={fileInputRef}
@@ -1682,7 +1718,9 @@ const App = () => {
          type="button"
          className="attachment-button"
          onClick={() => fileInputRef.current?.click()}
-         title="Attach file"
+         title={isOffline ? "Offline - can't send files" : "Attach file"}
+         disabled={isOffline}
+         style={isOffline ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
         >
          <i className="fas fa-paperclip"></i>
         </button>
@@ -1691,18 +1729,20 @@ const App = () => {
          value={messageText}
          onChange={handleMessageInputChange}
          onPaste={handlePaste}
-         placeholder="Type a message..."
+         placeholder={isOffline ? "You're offline - can't send messages" : "Type a message..."}
          className="message-input"
          autoComplete="off"
          autoCapitalize="sentences"
          autoCorrect="on"
          spellCheck="true"
          data-form-type="other"
+         disabled={isOffline}
+         style={isOffline ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
         />
         <button
          type="submit"
          className="send-button"
-         disabled={!messageText.trim()}
+         disabled={!messageText.trim() || isOffline}
         >
          <i className="fas fa-paper-plane"></i>
         </button>
