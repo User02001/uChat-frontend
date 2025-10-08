@@ -466,50 +466,51 @@ const App = () => {
  const initializeSocket = () => {
   if (socketRef.current) {
    socketRef.current.removeAllListeners();
+   socketRef.current.off();
    socketRef.current.disconnect();
+   socketRef.current = null;
   }
 
-  socketRef.current = io(SOCKET_URL, {
+  const socket = io(SOCKET_URL, {
    withCredentials: true,
    transports: ['websocket', 'polling'],
    timeout: 20000,
    forceNew: true,
    reconnection: true,
-   reconnectionAttempts: maxReconnectAttempts,
+   reconnectionAttempts: Infinity,
    reconnectionDelay: 1000,
-   reconnectionDelayMax: 30000,
-   maxReconnectionAttempts: maxReconnectAttempts
+   reconnectionDelayMax: 5000,
   });
 
-  const socket = socketRef.current;
+  socketRef.current = socket;
 
   socket.on('connect', () => {
    setSocketConnected(true);
    setReconnectAttempts(0);
 
-   // Rejoin active chat if there is one
-   if (activeContact) {
-    socket.emit('join_chat', { contact_id: activeContact.id });
+   const currentActiveContact = activeContactRef.current;
+   if (currentActiveContact) {
+    socket.emit('join_chat', { contact_id: currentActiveContact.id });
    }
+
+   // REQUEST FULL CONTACTS UPDATE on reconnect
+   socket.emit('request_contacts_update');
+  });
+
+  // ADD THIS NEW HANDLER:
+  socket.on('online_users_update', (data) => {
+   console.log('Received online users update:', data.online_users);
+   setOnlineUsers(data.online_users || []);
   });
 
   socket.on('disconnect', (reason) => {
-   console.log('Socket disconnected:', reason);
    setSocketConnected(false);
-
-   // Only attempt manual reconnection for certain disconnect reasons
-   if (reason === 'io server disconnect' || reason === 'transport close') {
-    attemptReconnect();
-   }
   });
 
   socket.on('connect_error', (error) => {
-   console.error('Socket connection error:', error);
    setSocketConnected(false);
-   attemptReconnect();
   });
 
-  // Your existing socket event listeners
   socket.on('user_status', (data) => {
    setOnlineUsers(prev => {
     if (data.status === 'online') {
@@ -522,23 +523,18 @@ const App = () => {
 
   socket.on('new_message', (data) => {
    const message = data.message;
-
-   // Get current values from refs (these are always up to date)
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
-   const currentContacts = contactsRef.current;
 
-   console.log('Current activeContact:', currentActiveContact);
-   console.log('Current user:', currentUser);
-
-   // Only add to messages if it belongs to the currently active chat
    if (currentActiveContact && currentUser &&
     ((message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
      (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))) {
-    console.log('✅ MESSAGE ADDED TO CHAT');
-    setMessages(prev => [...prev, message]);
-   } else {
-    console.log('❌ MESSAGE REJECTED');
+
+    setMessages(prev => {
+     const exists = prev.some(m => m.id === message.id);
+     if (exists) return prev;
+     return [...prev, message];
+    });
    }
 
    setTypingUsers(prev => {
@@ -547,9 +543,8 @@ const App = () => {
     return newSet;
    });
 
-   // Notification logic
-   if (message.sender_id !== currentUser?.id &&
-    (!currentActiveContact || message.sender_id !== currentActiveContact.id)) {
+   // ALWAYS send notification for messages from others (not sent by current user)
+   if (message.sender_id !== currentUser?.id) {
     const senderName = message.sender_username || message.username || 'Unknown User';
     const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
     let senderAvatarUrl = avatarFromMessage;
@@ -560,7 +555,33 @@ const App = () => {
      senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
     }
 
-    if (window.require) {
+    // **ADD THIS: Check for Android first**
+    if (window.AndroidBridge && typeof window.AndroidBridge.postMessage === 'function') {
+     try {
+      window.AndroidBridge.postMessage(JSON.stringify({
+       type: 'new_message',
+       data: {
+        message: {
+         id: message.id,
+         sender_id: message.sender_id,
+         receiver_id: message.receiver_id,
+         content: message.content,
+         sender_username: senderName,
+         sender_avatar: senderAvatarUrl,
+         file_url: message.file_url,
+         file_name: message.file_name,
+         timestamp: message.timestamp,
+         message_type: message.message_type
+        }
+       }
+      }));
+      console.log('[Android] Notification sent to AndroidBridge');
+     } catch (e) {
+      console.error('[Android] Failed to send notification:', e);
+     }
+    }
+    // Then check for Electron
+    else if (window.require) {
      try {
       const { ipcRenderer } = window.require('electron');
       ipcRenderer.send('web-notification', {
@@ -580,22 +601,17 @@ const App = () => {
         }
        }
       });
-     } catch (e) {
-      console.log('Electron IPC not available:', e);
-     }
+     } catch (e) { }
     }
    }
   });
 
   socket.on('message_deleted', (data) => {
-   // Mark message as deleted in local state AND update any replies to it
    setMessages(prev =>
     prev.map(m => {
      if (m.id === data.message_id) {
-      // Mark the deleted message itself
       return { ...m, deleted: true, content: null, file_path: null, file_name: null };
      } else if (m.original_message && m.original_message.id === data.message_id) {
-      // Update the original_message reference in any replies
       return {
        ...m,
        original_message: {
@@ -611,7 +627,6 @@ const App = () => {
     })
    );
 
-   // Update replyingTo state if the deleted message is being replied to
    setReplyingTo(prev => {
     if (prev && prev.id === data.message_id) {
      return {
@@ -640,26 +655,18 @@ const App = () => {
   });
 
   socket.on('typing_status', (data) => {
-   console.log('TYPING STATUS RECEIVED:', data.user_id, 'is_typing:', data.is_typing);
-
    const currentActiveContact = activeContactRef.current;
-   console.log('Current active contact ID:', currentActiveContact?.id);
 
    if (currentActiveContact && data.user_id === currentActiveContact.id) {
-    console.log('✅ TYPING STATUS ACCEPTED for active contact');
     setTypingUsers(prev => {
      const newSet = new Set(prev);
      if (data.is_typing) {
       newSet.add(data.user_id);
-      console.log('Added to typing users:', data.user_id, 'Set now contains:', Array.from(newSet));
      } else {
       newSet.delete(data.user_id);
-      console.log('Removed from typing users:', data.user_id, 'Set now contains:', Array.from(newSet));
      }
      return newSet;
     });
-   } else {
-    console.log('❌ TYPING STATUS REJECTED - wrong contact or no active contact');
    }
   });
 
@@ -756,59 +763,72 @@ const App = () => {
   }
  };
 
- const attemptReconnect = () => {
-  if (reconnectAttempts >= maxReconnectAttempts) {
-   console.log('Max reconnection attempts reached');
-   return;
-  }
-
-  if (reconnectTimeoutRef.current) {
-   clearTimeout(reconnectTimeoutRef.current);
-  }
-
-  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-  console.log(`Attempting reconnection in ${delay}ms (attempt ${reconnectAttempts + 1})`);
-
-  reconnectTimeoutRef.current = setTimeout(() => {
-   setReconnectAttempts(prev => prev + 1);
-   initializeSocket();
-  }, delay);
- };
-
  // Handle page visibility changes and browser sleep/wake
  useEffect(() => {
   const handleVisibilityChange = () => {
    if (document.visibilityState === 'visible') {
-    // Page became visible, check socket connection
     if (socketRef.current && !socketRef.current.connected) {
-     console.log('Page visible, reconnecting socket...');
      initializeSocket();
     }
    }
   };
 
   const handleFocus = () => {
-   // Window gained focus, ensure socket is connected
    if (socketRef.current && !socketRef.current.connected) {
-    console.log('Window focused, reconnecting socket...');
     initializeSocket();
    }
   };
 
   const handleOnline = () => {
-   // Network came back online
-   console.log('Network online, reconnecting socket...');
    initializeSocket();
   };
+
+  const heartbeat = setInterval(() => {
+   if (socketRef.current && socketRef.current.connected) {
+    socketRef.current.volatile.emit('ping');
+   } else if (socketRef.current && !socketRef.current.connected) {
+    initializeSocket();
+   }
+  }, 15000);
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleFocus);
   window.addEventListener('online', handleOnline);
 
   return () => {
+   clearInterval(heartbeat);
    document.removeEventListener('visibilitychange', handleVisibilityChange);
    window.removeEventListener('focus', handleFocus);
    window.removeEventListener('online', handleOnline);
+  };
+ }, []);
+
+ useEffect(() => {
+  const syncContacts = () => {
+   if (socketRef.current && socketRef.current.connected) {
+    socketRef.current.emit('request_contacts_update');
+   }
+  };
+
+  // Sync every 10 seconds when tab is visible
+  const interval = setInterval(() => {
+   if (document.visibilityState === 'visible') {
+    syncContacts();
+   }
+  }, 10000);
+
+  // Sync when tab becomes visible
+  const handleVisibility = () => {
+   if (document.visibilityState === 'visible') {
+    syncContacts();
+   }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  return () => {
+   clearInterval(interval);
+   document.removeEventListener('visibilitychange', handleVisibility);
   };
  }, []);
 
@@ -934,43 +954,51 @@ const App = () => {
    }
 
    if (isMobile) {
-    // Clear current contact immediately to avoid showing "Welcome to uChat"
     setActiveContact(null);
     setMessages([]);
-    setShowChatContent(false); // Add this line
-
-    // START the transition FIRST (like back button does)
+    setShowChatContent(false);
     setShowMobileChat(true);
 
-    // Wait for the full transition duration before setting new contact
     setTimeout(() => {
      setActiveContact(contact);
      saveLastContact(contact);
      setTypingUsers(new Set());
-     setIsTyping(false); // Add this line
+     setIsTyping(false);
 
-     if (socketRef.current) {
+     if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('join_chat', { contact_id: contact.id });
+     } else if (socketRef.current) {
+      initializeSocket();
+      setTimeout(() => {
+       if (socketRef.current) {
+        socketRef.current.emit('join_chat', { contact_id: contact.id });
+       }
+      }, 500);
      }
 
-     // Show chat content with opacity animation
      setTimeout(() => {
       setShowChatContent(true);
      }, 100);
 
-     // Add 1 second delay before loading messages to show skeleton
      setTimeout(() => {
       loadMessages(contact.id);
      }, 1000);
-    }, 350); // Add 50ms buffer after transition
+    }, 350);
    } else {
     setActiveContact(contact);
     saveLastContact(contact);
     setMessages([]);
     setTypingUsers(new Set());
 
-    if (socketRef.current) {
+    if (socketRef.current && socketRef.current.connected) {
      socketRef.current.emit('join_chat', { contact_id: contact.id });
+    } else if (socketRef.current) {
+     initializeSocket();
+     setTimeout(() => {
+      if (socketRef.current) {
+       socketRef.current.emit('join_chat', { contact_id: contact.id });
+      }
+     }, 500);
     }
 
     loadMessages(contact.id);
@@ -1034,15 +1062,20 @@ const App = () => {
   });
 
   setMessageText('');
-  setReplyingTo(null); // Clear reply after sending
+  setReplyingTo(null);
+  setIsTyping(false);
 
   if (typingTimeoutRef.current) {
    clearTimeout(typingTimeoutRef.current);
+   typingTimeoutRef.current = null;
   }
-  socketRef.current.emit('typing', {
-   receiver_id: activeContact.id,
-   is_typing: false
-  });
+
+  if (socketRef.current && socketRef.current.connected) {
+   socketRef.current.emit('typing', {
+    receiver_id: activeContact.id,
+    is_typing: false
+   });
+  }
  };
 
  // Emit typing status to other users
@@ -1059,36 +1092,40 @@ const App = () => {
   const newValue = e.target.value;
   setMessageText(newValue);
 
-  if (!activeContact || !socketRef.current) return;
+  if (!activeContact || !socketRef.current || !socketRef.current.connected) return;
 
-  // Clear any existing timeout
   if (typingTimeoutRef.current) {
    clearTimeout(typingTimeoutRef.current);
   }
 
-  const wasTyping = isTyping;
   const shouldBeTyping = newValue.trim().length > 0;
 
-  // Only emit if the typing state actually changed
-  if (wasTyping !== shouldBeTyping) {
-   setIsTyping(shouldBeTyping);
-   socketRef.current.emit('typing', {
-    receiver_id: activeContact.id,
-    is_typing: shouldBeTyping
-   });
-  }
-
-  console.log('TYPING STATE CHANGE:', 'was typing:', wasTyping, 'should be typing:', shouldBeTyping);
-
-  // If user is typing, set the stop-typing timeout
   if (shouldBeTyping) {
+   if (!isTyping) {
+    setIsTyping(true);
+    socketRef.current.emit('typing', {
+     receiver_id: activeContact.id,
+     is_typing: true
+    });
+   }
+
    typingTimeoutRef.current = setTimeout(() => {
+    setIsTyping(false);
+    if (socketRef.current && socketRef.current.connected) {
+     socketRef.current.emit('typing', {
+      receiver_id: activeContact.id,
+      is_typing: false
+     });
+    }
+   }, 3000);
+  } else {
+   if (isTyping) {
     setIsTyping(false);
     socketRef.current.emit('typing', {
      receiver_id: activeContact.id,
      is_typing: false
     });
-   }, 3000);
+   }
   }
  };
 
@@ -1105,6 +1142,13 @@ const App = () => {
    }
   };
  }, []);
+
+ // Add periodic online status refresh
+ setInterval(() => {
+  if (socketRef.current && socketRef.current.connected) {
+   socketRef.current.emit('request_online_users');
+  }
+ }, 5000); // Check every 5 seconds
 
  // Handle user logout
  const handleLogout = async () => {
