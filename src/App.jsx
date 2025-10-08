@@ -603,6 +603,33 @@ const App = () => {
       });
      } catch (e) { }
     }
+    // Finally, fall back to browser notifications
+    else {
+     if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+       const notificationTitle = senderName;
+       const notificationBody = message.message_type === 'image'
+        ? '📷 Sent an image'
+        : message.message_type === 'file'
+         ? `📎 ${message.file_name}`
+         : message.content || 'New message';
+
+       const notification = new Notification(notificationTitle, {
+        body: notificationBody,
+        icon: senderAvatarUrl ? `${API_BASE_URL}${senderAvatarUrl}` : '/resources/default_avatar.png',
+        tag: `message-${message.id}`,
+        requireInteraction: false
+       });
+
+       notification.onclick = () => {
+        window.focus();
+        notification.close();
+       };
+      } else if (Notification.permission !== 'denied') {
+       Notification.requestPermission();
+      }
+     }
+    }
    }
   });
 
@@ -762,6 +789,18 @@ const App = () => {
    handleFileSelect(files);
   }
  };
+
+ // Request notification permission on app load
+ useEffect(() => {
+  if ('Notification' in window && Notification.permission === 'default') {
+   // Only request if not in Electron or Android
+   if (!window.require && !window.AndroidBridge) {
+    Notification.requestPermission().then(permission => {
+     console.log('Notification permission:', permission);
+    });
+   }
+  }
+ }, []);
 
  // Handle page visibility changes and browser sleep/wake
  useEffect(() => {
