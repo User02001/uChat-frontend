@@ -1,9 +1,9 @@
 {
-    "latest": "1.0.8",
+    "latest": "1.0.9",
     "releases": [
         {
-            "version": "1.0.8",
-            "release_date": "2025-10-08",
+            "version": "1.0.9",
+            "release_date": "2025-10-09",
             "featured": true,
             "changelog": [
                 "Initial release of uChat desktop application",
@@ -21,7 +21,7 @@
                 "But also thanks for downloading anyways ;D"
             ],
             "downloads": {
-                "windows": "resources/downloads/uChat-Setup-1.0.8.exe"
+                "windows": "resources/downloads/uChat-Setup-1.0.9.exe"
             },
             "file_sizes": {
                 "windows": "~ 94.8 MB"
