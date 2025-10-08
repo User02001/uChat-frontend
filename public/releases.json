@@ -1,9 +1,9 @@
 {
-    "latest": "1.0.7",
+    "latest": "1.0.8",
     "releases": [
         {
-            "version": "1.0.7",
-            "release_date": "2025-10-04",
+            "version": "1.0.8",
+            "release_date": "2025-10-08",
             "featured": true,
             "changelog": [
                 "Initial release of uChat desktop application",
@@ -14,12 +14,14 @@
                 "Automatic updating when available",
                 "Auto start when the device has restarted",
                 "Added version checking",
+                "Offline mode",
+                "Notifications ALWAYS persists",
                 "There are no downloads for macOS and Linux yet because they are too complex to setup lol",
                 "Same with Android and iOS except the app is being uploaded to APKPure so you have to wait but iOS is never happening prob :(",
                 "But also thanks for downloading anyways ;D"
             ],
             "downloads": {
-                "windows": "resources/downloads/uChat-Setup-1.0.7.exe"
+                "windows": "resources/downloads/uChat-Setup-1.0.8.exe"
             },
             "file_sizes": {
                 "windows": "~ 94.8 MB"

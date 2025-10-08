@@ -52,7 +52,7 @@ const AppRoutes = () => {
     <Route path="/terms" element={<TermsAndConditions key="terms" />} />
     <Route path="/privacy" element={<PrivacyPolicy key="privacy" />} />
     <Route path="/help" element={<Help key="help" />} />
-    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="/" element={<Navigate to="/chat" replace />} />
     <Route path="*" element={<Navigate to="/login" replace />} />
    </Routes>
   </Suspense>
