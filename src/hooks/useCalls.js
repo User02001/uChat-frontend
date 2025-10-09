@@ -10,7 +10,20 @@ const useCalls = (socketRef, setError) => {
   contact: null,
   localStream: null,
   remoteStream: null,
-  incomingOffer: null
+  incomingOffer: null,
+  callId: null
+ });
+
+ const [screenshareState, setScreenshareState] = useState({
+  isActive: false,
+  isSharing: false,
+  isViewing: false,
+  isIncoming: false,
+  contact: null,
+  localStream: null,
+  remoteStream: null,
+  incomingOffer: null,
+  shareId: null
  });
 
  const [audioEnabled, setAudioEnabled] = useState(false);
@@ -20,6 +33,9 @@ const useCalls = (socketRef, setError) => {
  const remoteVideoRef = useRef(null);
  const localStreamRef = useRef(null);
  const ringtoneRef = useRef(null);
+ const screensharePeerRef = useRef(null);
+ const screenshareLocalVideoRef = useRef(null);
+ const screenshareRemoteVideoRef = useRef(null);
 
  const enableAudio = useCallback(async () => {
   if (audioEnabled) return true;
@@ -196,14 +212,13 @@ const useCalls = (socketRef, setError) => {
   return peer;
  };
 
- // Setup socket listeners
  const setupSocketListeners = useCallback(() => {
   if (!socketRef.current) return;
 
   const socket = socketRef.current;
 
+  // CALL LISTENERS
   socket.on('incoming_call', (data) => {
-   // Stop any existing ringtone and play new one
    stopRingtone();
    playRingtone();
 
@@ -212,7 +227,8 @@ const useCalls = (socketRef, setError) => {
     isIncoming: true,
     contact: data.caller,
     type: data.type,
-    incomingOffer: data.offer
+    incomingOffer: data.offer,
+    callId: data.call_id  // ADD THIS
    }));
   });
 
@@ -221,7 +237,8 @@ const useCalls = (socketRef, setError) => {
    setCallState(prev => ({
     ...prev,
     isActive: true,
-    isOutgoing: false
+    isOutgoing: false,
+    callId: data.call_id  // ADD THIS
    }));
   });
 
@@ -241,19 +258,64 @@ const useCalls = (socketRef, setError) => {
    endCall();
   });
 
+  // SCREENSHARE LISTENERS
+  socket.on('screenshare_incoming', (data) => {
+   console.log('Incoming screenshare from:', data.sharer?.username);
+   setScreenshareState(prev => ({
+    ...prev,
+    isIncoming: true,
+    contact: data.sharer,
+    incomingOffer: data.offer,
+    shareId: data.share_id  // ADD THIS
+   }));
+  });
+
+  socket.on('screenshare_accepted', (data) => {
+   console.log('Screenshare accepted by viewer, signaling answer');
+   if (screensharePeerRef.current && !screensharePeerRef.current.destroyed && data.answerSDP) {
+    screensharePeerRef.current.signal(data.answerSDP);
+    setScreenshareState(prev => ({
+     ...prev,
+     isActive: true,
+     shareId: data.share_id  // ADD THIS
+    }));
+   }
+  });
+
+  socket.on('screenshare_rejected', () => {
+   console.log('Screenshare rejected');
+   setError('Screenshare was declined');
+   endScreenshare();
+  });
+
+  socket.on('screenshare_signal', (data) => {
+   console.log('Received screenshare signal from:', data.from_user);
+   if (screensharePeerRef.current && !screensharePeerRef.current.destroyed) {
+    screensharePeerRef.current.signal(data.signal);
+   }
+  });
+
+  socket.on('screenshare_ended', () => {
+   console.log('Screenshare ended by other user');
+   endScreenshare();
+  });
+
   return () => {
    socket.off('incoming_call');
    socket.off('call_accepted');
    socket.off('call_rejected');
    socket.off('webrtc_signal');
    socket.off('call_ended');
+   socket.off('screenshare_incoming');
+   socket.off('screenshare_accepted');
+   socket.off('screenshare_rejected');
+   socket.off('screenshare_signal');
+   socket.off('screenshare_ended');
   };
  }, [socketRef, callState.contact, playRingtone, stopRingtone]);
 
- // Start call
  const startCall = async (contact, type) => {
   try {
-   // Enable audio before starting call - if it fails, show error
    const audioUnlocked = await enableAudio();
    if (!audioUnlocked) {
     setError('Click anywhere first to enable call audio');
@@ -271,13 +333,12 @@ const useCalls = (socketRef, setError) => {
     contact,
     localStream: stream,
     remoteStream: null,
-    incomingOffer: null
+    incomingOffer: null,
+    callId: null  // Will be set when we get response
    });
 
-   // Create peer as initiator
    peerRef.current = createPeer(true, stream);
 
-   // Send call initiate with the peer's signal data
    peerRef.current.on('signal', (data) => {
     socketRef.current.emit('call_initiate', {
      receiver_id: contact.id,
@@ -292,13 +353,12 @@ const useCalls = (socketRef, setError) => {
   }
  };
 
- // Answer call
  const answerCall = async (accept) => {
-  // Always stop ringtone when answering
   stopRingtone();
 
   if (!accept) {
    socketRef.current.emit('call_answer', {
+    call_id: callState.callId,  // ADD THIS
     caller_id: callState.contact.id,
     answer: false
    });
@@ -311,7 +371,8 @@ const useCalls = (socketRef, setError) => {
     contact: null,
     localStream: null,
     remoteStream: null,
-    incomingOffer: null
+    incomingOffer: null,
+    callId: null
    });
    return;
   }
@@ -320,10 +381,8 @@ const useCalls = (socketRef, setError) => {
    const stream = await getUserMedia(callState.type === 'video');
    setLocalStream(stream);
 
-   // Create peer as non-initiator
    peerRef.current = createPeer(false, stream);
 
-   // Signal the incoming offer after peer is ready
    if (callState.incomingOffer) {
     setTimeout(() => {
      if (peerRef.current && !peerRef.current.destroyed) {
@@ -332,9 +391,9 @@ const useCalls = (socketRef, setError) => {
     }, 100);
    }
 
-   // Send answer with peer's signal data
    peerRef.current.on('signal', (data) => {
     socketRef.current.emit('call_answer', {
+     call_id: callState.callId,  // ADD THIS
      caller_id: callState.contact.id,
      answer: true,
      answerSDP: data
@@ -370,9 +429,10 @@ const useCalls = (socketRef, setError) => {
    peerRef.current = null;
   }
 
-  // Emit call end
-  if (callState.contact && socketRef.current) {
+  // Emit call end with call ID
+  if (callState.contact && callState.callId && socketRef.current) {
    socketRef.current.emit('call_end', {
+    call_id: callState.callId,
     target_id: callState.contact.id
    });
   }
@@ -398,6 +458,245 @@ const useCalls = (socketRef, setError) => {
   });
  };
 
+ // Start screenshare
+ const startScreenshare = async (contact) => {
+  try {
+   const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: {
+     cursor: "always",
+     displaySurface: "monitor"
+    },
+    audio: false
+   });
+
+   console.log('Screen stream obtained:', stream.id);
+
+   // Handle user clicking "Stop sharing" button
+   stream.getVideoTracks()[0].onended = () => {
+    console.log('Screen sharing stopped by user');
+    endScreenshare();
+   };
+
+   // Set local video immediately
+   if (screenshareLocalVideoRef.current) {
+    screenshareLocalVideoRef.current.srcObject = stream;
+    screenshareLocalVideoRef.current.muted = true;
+    screenshareLocalVideoRef.current.autoplay = true;
+    screenshareLocalVideoRef.current.playsInline = true;
+    screenshareLocalVideoRef.current.play().catch(e => console.log('Local screenshare play error:', e));
+   }
+
+   setScreenshareState({
+    isActive: false,
+    isSharing: true,
+    isViewing: false,
+    isIncoming: false,
+    contact,
+    localStream: stream,
+    remoteStream: null,
+    incomingOffer: null
+   });
+
+   // Create peer as initiator
+   const peer = new Peer({
+    initiator: true,
+    trickle: false,
+    stream,
+    config: {
+     iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
+     ]
+    }
+   });
+
+   screensharePeerRef.current = peer;
+
+   peer.on('signal', (data) => {
+    console.log('Screenshare signal generated by initiator');
+    if (socketRef.current) {
+     socketRef.current.emit('screenshare_start', {
+      receiver_id: contact.id,
+      offer: data
+     });
+    }
+   });
+
+   // ADD THIS: Listen for share_id from server
+   peer.on('connect', () => {
+    console.log('Screenshare peer connected (sharer)');
+    setScreenshareState(prev => ({
+     ...prev,
+     isActive: true
+    }));
+   });
+
+   peer.on('error', (error) => {
+    console.error('Screenshare peer error:', error);
+    setError('Screenshare connection failed');
+    endScreenshare();
+   });
+
+   peer.on('close', () => {
+    console.log('Screenshare peer closed');
+    endScreenshare();
+   });
+
+  } catch (error) {
+   console.error('Failed to start screenshare:', error);
+   if (error.name === 'NotAllowedError') {
+    setError('Screen sharing permission denied');
+   } else {
+    setError('Failed to start screenshare');
+   }
+  }
+ };
+
+ const answerScreenshare = async (accept) => {
+  if (!accept) {
+   if (socketRef.current) {
+    socketRef.current.emit('screenshare_answer', {
+     share_id: screenshareState.shareId,  // ADD THIS
+     sharer_id: screenshareState.contact.id,
+     answer: false
+    });
+   }
+
+   setScreenshareState({
+    isActive: false,
+    isSharing: false,
+    isViewing: false,
+    isIncoming: false,
+    contact: null,
+    localStream: null,
+    remoteStream: null,
+    incomingOffer: null,
+    shareId: null
+   });
+   return;
+  }
+
+  try {
+   console.log('Accepting screenshare from:', screenshareState.contact?.username);
+
+   const peer = new Peer({
+    initiator: false,
+    trickle: false,
+    config: {
+     iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
+     ]
+    }
+   });
+
+   screensharePeerRef.current = peer;
+
+   peer.on('stream', (remoteStream) => {
+    console.log('Received screenshare stream:', remoteStream.id);
+
+    setScreenshareState(prev => ({
+     ...prev,
+     remoteStream,
+     isActive: true,
+     isIncoming: false,
+     isViewing: true
+    }));
+
+    setTimeout(() => {
+     if (screenshareRemoteVideoRef.current && remoteStream) {
+      console.log('Setting remote video srcObject');
+      screenshareRemoteVideoRef.current.srcObject = remoteStream;
+      screenshareRemoteVideoRef.current.autoplay = true;
+      screenshareRemoteVideoRef.current.playsInline = true;
+      screenshareRemoteVideoRef.current.muted = false;
+      screenshareRemoteVideoRef.current.play().catch(e => {
+       console.error('Remote screenshare play error:', e);
+       setTimeout(() => {
+        if (screenshareRemoteVideoRef.current) {
+         screenshareRemoteVideoRef.current.play().catch(console.error);
+        }
+       }, 500);
+      });
+     }
+    }, 200);
+   });
+
+   if (screenshareState.incomingOffer) {
+    console.log('Signaling incoming offer to peer');
+    peer.signal(screenshareState.incomingOffer);
+   }
+
+   peer.on('signal', (data) => {
+    console.log('Screenshare signal generated by viewer');
+    if (socketRef.current) {
+     socketRef.current.emit('screenshare_signal', {
+      share_id: screenshareState.shareId,  // ADD THIS instead of target_id
+      target_id: screenshareState.contact.id,
+      signal: data
+     });
+    }
+   });
+
+   peer.on('connect', () => {
+    console.log('Screenshare peer connected (viewer)');
+   });
+
+   peer.on('error', (error) => {
+    console.error('Screenshare peer error:', error);
+    setError('Screenshare connection failed');
+    endScreenshare();
+   });
+
+   peer.on('close', () => {
+    console.log('Screenshare peer closed (viewer)');
+    endScreenshare();
+   });
+
+  } catch (error) {
+   console.error('Failed to accept screenshare:', error);
+   setError('Failed to accept screenshare');
+  }
+ };
+
+ // End screenshare
+ const endScreenshare = () => {
+  if (screenshareState.localStream) {
+   screenshareState.localStream.getTracks().forEach(track => track.stop());
+  }
+
+  if (screensharePeerRef.current) {
+   screensharePeerRef.current.destroy();
+   screensharePeerRef.current = null;
+  }
+
+  if (screenshareState.contact && screenshareState.shareId && socketRef.current) {
+   socketRef.current.emit('screenshare_end', {
+    share_id: screenshareState.shareId,  // ADD THIS
+    target_id: screenshareState.contact.id
+   });
+  }
+
+  if (screenshareLocalVideoRef.current) {
+   screenshareLocalVideoRef.current.srcObject = null;
+  }
+  if (screenshareRemoteVideoRef.current) {
+   screenshareRemoteVideoRef.current.srcObject = null;
+  }
+
+  setScreenshareState({
+   isActive: false,
+   isSharing: false,
+   isViewing: false,
+   isIncoming: false,
+   contact: null,
+   localStream: null,
+   remoteStream: null,
+   incomingOffer: null,
+   shareId: null
+  });
+ };
+ 
  return {
   callState,
   localVideoRef,
@@ -408,7 +707,13 @@ const useCalls = (socketRef, setError) => {
   endCall,
   setupSocketListeners,
   audioEnabled,
-  enableAudio
+  enableAudio,
+  screenshareState,
+  screenshareLocalVideoRef,
+  screenshareRemoteVideoRef,
+  startScreenshare,
+  answerScreenshare,
+  endScreenshare
  };
 };
 

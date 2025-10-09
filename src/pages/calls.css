@@ -418,3 +418,8 @@
         opacity: 0.9;
         margin: 0;
     }
+
+/* Hide the pseudo icon inside active/full call layouts */
+.video-call::before {
+    display: none;
+}

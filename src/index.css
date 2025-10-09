@@ -1065,7 +1065,7 @@ body, html {
 }
 
     .message-input:focus {
-        border-color: var(--primary);
+        border-color: yellow;
     }
 
     .message-input::placeholder {
@@ -2442,3 +2442,302 @@ body.with-verification-banner {
     margin-left: 5px;
     margin-right: 4px;
 }
+
+/* Minimize/Maximize call functionality - FIXED VERSION */
+.call-overlay-minimized-923847 {
+    width: 350px !important;
+    height: 180px !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    bottom: auto !important;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+    border: 3px solid var(--button-primary);
+}
+
+    .call-overlay-minimized-923847::before {
+        display: none !important;
+    }
+
+    .call-overlay-minimized-923847 .active-call {
+        height: 100%;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Show video in minimized mode */
+    .call-overlay-minimized-923847 .video-container {
+        display: block !important;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        cursor: pointer;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+        .call-overlay-minimized-923847 .video-container .remote-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 17px;
+            display: block;
+        }
+
+        .call-overlay-minimized-923847 .video-container .local-video {
+            display: none !important;
+        }
+
+/* Audio call minimized - show avatar */
+.call-overlay-audio-minimized-847392 {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    padding: 16px;
+    cursor: pointer;
+    position: relative;
+    box-sizing: border-box;
+}
+
+    .call-overlay-audio-minimized-847392 img {
+        width: 60px !important;
+        height: 60px !important;
+        border-radius: 50%;
+        border: 3px solid var(--button-primary);
+        margin-bottom: 8px !important;
+    }
+
+    .call-overlay-audio-minimized-847392 h3 {
+        font-size: 14px !important;
+        margin: 0 !important;
+        color: var(--text-primary);
+    }
+
+    .call-overlay-audio-minimized-847392 p {
+        font-size: 11px !important;
+        margin: 2px 0 0 0 !important;
+        color: var(--text-secondary);
+    }
+
+/* Call status overlay in minimized mode */
+.call-status-minimized-738291 {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 25px;
+    z-index: 5;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+    .call-status-minimized-738291 h3 {
+        font-size: 13px;
+        font-weight: 500;
+        margin: 0;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+/* Call controls in minimized mode */
+.call-controls-minimized-192837 {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    padding: 0;
+    gap: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    box-sizing: border-box;
+}
+
+.end-call-btn-minimized-482910 {
+    width: 48px;
+    height: 48px;
+    font-size: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #ff4757;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+}
+
+    .end-call-btn-minimized-482910::before {
+        content: '\f095';
+        display: inline-block;
+        transform: rotate(135deg);
+    }
+
+    .end-call-btn-minimized-482910:hover {
+        background: #ff3742;
+        transform: scale(1.05);
+    }
+
+.maximize-call-btn-573829 {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: var(--button-primary);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+    .maximize-call-btn-573829:hover {
+        background: var(--button-primary-hover);
+        transform: scale(1.1);
+    }
+
+    .maximize-call-btn-573829:active {
+        transform: scale(0.95);
+    }
+
+.minimize-call-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+    .minimize-call-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.1);
+    }
+
+    .minimize-call-btn:active {
+        transform: scale(0.95);
+    }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .call-overlay-minimized-923847 {
+        width: calc(100% - 40px);
+        max-width: 280px;
+        height: 160px;
+        top: 80px !important;
+        right: 20px !important;
+    }
+
+    .minimize-call-btn-928374 {
+        right: 16px;
+        top: 16px;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+    }
+
+    .call-status-minimized-738291 {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        padding: 6px 10px;
+    }
+
+        .call-status-minimized-738291 h3 {
+            font-size: 12px;
+        }
+
+    .call-controls-minimized-192837 {
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        gap: 6px;
+    }
+
+    .end-call-btn-minimized-482910 {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+    }
+
+    .maximize-call-btn-573829 {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+    }
+
+    .call-overlay-audio-minimized-847392 img {
+        width: 50px !important;
+        height: 50px !important;
+    }
+
+    .call-overlay-audio-minimized-847392 h3 {
+        font-size: 13px !important;
+    }
+
+    .call-overlay-audio-minimized-847392 p {
+        font-size: 10px !important;
+    }
+}
+
+/* Screenshare minimized styles */
+.screenshare-overlay-minimized-847392 .video-container {
+    display: block !important;
+}
+
+    .screenshare-overlay-minimized-847392 .video-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+        border-radius: 20px;
+    }
+
+/* Click to maximize */
+.call-overlay-minimized-923847 .video-container,
+.call-overlay-audio-minimized-847392 {
+    cursor: pointer;
+}
+
+    .call-overlay-minimized-923847 .video-container:hover,
+    .call-overlay-audio-minimized-847392:hover {
+        opacity: 0.9;
+    }
