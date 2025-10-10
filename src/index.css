@@ -1355,10 +1355,6 @@ input:focus-visible {
     .messages-container {
         padding: 24px 28px;
     }
-
-    .message-input-container {
-        padding: 24px 28px;
-    }
 }
 
 .contact-preview {
@@ -1828,6 +1824,68 @@ input:focus-visible {
     .attachment-button:hover {
         background-color: var(--bg-secondary);
     }
+
+/* GIF button */
+.gif-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: auto;
+    padding-bottom: 35px;
+}
+
+    .gif-button:hover {
+        background-color: var(--bg-secondary);
+    }
+
+.gif-wrapper {
+    width: 5em;
+    display: inline-block;
+    position: relative;
+    vertical-align: middle;
+}
+
+    .gif-wrapper img {
+        width: 100%;
+        height: auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: opacity 0.3s ease;
+    }
+
+        .gif-wrapper img[src="/resources/gif.svg"] {
+            opacity: 1;
+        }
+
+        .gif-wrapper img[src="/resources/gif-active.svg"] {
+            opacity: 0;
+        }
+
+    .gif-wrapper:hover img[src="/resources/gif.svg"] {
+        opacity: 0;
+    }
+
+    .gif-wrapper:hover img[src="/resources/gif-active.svg"] {
+        opacity: 1;
+    }
+
+:root[data-theme="light"] .gif-button:hover {
+    color: var(--primary);
+}
+
+:root[data-theme="dark"] .gif-button:hover {
+    color: #74c0fc;
+}
 
 /* Light mode hover */
 :root[data-theme="light"] .attachment-button:hover {

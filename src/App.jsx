@@ -13,6 +13,8 @@ import DeleteModal from './components/DeleteModal';
 import './index.css'
 import './pages/calls.css'
 import UnverifiedModal from './components/UnverifiedModal';
+import linkify from './hooks/linkify.jsx';
+import Gifs from './components/Gifs';
 
 const App = () => {
  const navigate = useNavigate();
@@ -48,6 +50,7 @@ const App = () => {
  const reconnectTimeoutRef = useRef(null);
  const maxReconnectAttempts = 10;
  const fileInputRef = useRef(null);
+ const [showGifPicker, setShowGifPicker] = useState(false);
  const [dragOver, setDragOver] = useState(false);
  const [deleteConfirm, setDeleteConfirm] = useState(null);
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
@@ -1678,7 +1681,8 @@ const App = () => {
                 ) : (
                  (() => {
                   const orig = message.original_message?.content || '';
-                  return orig.length > 40 ? orig.substring(0, 40) + '...' : orig;
+                  const truncated = orig.length > 40 ? orig.substring(0, 40) + '...' : orig;
+                  return linkify(truncated);
                  })()
                 )}
                </span>
@@ -1710,7 +1714,7 @@ const App = () => {
               </div>
              ) : (
               <div className="message-content">
-               {message.content}
+               {linkify(message.content)}
               </div>
              )}
 
@@ -1835,6 +1839,19 @@ const App = () => {
          style={isOffline ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
         >
          <i className="fas fa-paperclip"></i>
+        </button>
+        <button
+         type="button"
+         className="gif-button"
+         onClick={() => setShowGifPicker(true)}
+         title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
+         disabled={isOffline}
+         style={isOffline ? { cursor: 'not-allowed', opacity: 0.5 } : {}}
+        >
+         <div className="gif-wrapper">
+           <img src="/resources/gif.svg" alt="GIF Icon" />
+           <img src="/resources/gif-active.svg" alt="GIF Icon Active" />
+         </div>
         </button>
         <input
          type="text"
@@ -2186,6 +2203,21 @@ const App = () => {
     </audio>
     </div>
    </>
+   {showGifPicker && (
+    <Gifs
+     onSelectGif={(gifUrl) => {
+      if (socketRef.current && activeContact) {
+       socketRef.current.emit('send_message', {
+        receiver_id: activeContact.id,
+        content: gifUrl,
+        reply_to: replyingTo ? replyingTo.id : null
+       });
+       setReplyingTo(null);
+      }
+     }}
+     onClose={() => setShowGifPicker(false)}
+    />
+   )}
   </div>
  );
 };
