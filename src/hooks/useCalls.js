@@ -944,22 +944,9 @@ const useCalls = (socketRef, setError) => {
 
    peerRef.current = createPeer(false, stream, false);
 
-   if (callState.incomingOffer) {
-    // DELAY before signaling - critical for mobile
-    setTimeout(() => {
-     if (peerRef.current && !peerRef.current.destroyed) {
-      try {
-       peerRef.current.signal(callState.incomingOffer);
-       console.log('[Call] ✅ Offer signaled');
-      } catch (err) {
-       console.error('[Call] ❌ Signal error:', err);
-      }
-     }
-    }, 500);
-   }
-
+   // Set up signal handler BEFORE signaling the offer
    peerRef.current.on('signal', (data) => {
-    if (socketRef.current && socketRef.current.connected) {
+    if (socketRef.current && socketRef.current.connected && data.type === 'answer') {
      socketRef.current.emit('call_answer', {
       call_id: callState.callId,
       caller_id: callState.contact.id,
@@ -970,6 +957,22 @@ const useCalls = (socketRef, setError) => {
     }
    });
 
+   // NOW signal the offer after everything is set up
+   if (callState.incomingOffer) {
+    // Small delay to ensure peer is fully initialized
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    if (peerRef.current && !peerRef.current.destroyed) {
+     try {
+      peerRef.current.signal(callState.incomingOffer);
+      console.log('[Call] ✅ Offer signaled');
+     } catch (err) {
+      console.error('[Call] ❌ Signal error:', err);
+      throw err;
+     }
+    }
+   }
+
    setCallState(prev => ({
     ...prev,
     localStream: stream,
@@ -979,6 +982,7 @@ const useCalls = (socketRef, setError) => {
   } catch (error) {
    console.error('[Call] Answer failed:', error);
    setError('Failed to access camera/microphone');
+   endCall();
   }
  };
 
