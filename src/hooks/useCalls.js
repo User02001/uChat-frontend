@@ -150,14 +150,37 @@ const useCalls = (socketRef, setError) => {
 
  // Create peer connection
  const createPeer = (initiator, stream) => {
+  console.log(`[WebRTC] Creating peer - Initiator: ${initiator}`);
+
   const peer = new Peer({
    initiator,
-   trickle: true,
+   trickle: true, // Enable trickle ICE for faster connection
    stream,
    config: {
     iceServers: [
+     // GOOGLE STUN SERVERS (5 different ones for redundancy)
      { urls: 'stun:stun.l.google.com:19302' },
+     { urls: 'stun:stun1.l.google.com:19302' },
+     { urls: 'stun:stun2.l.google.com:19302' },
+     { urls: 'stun:stun3.l.google.com:19302' },
+     { urls: 'stun:stun4.l.google.com:19302' },
+
+     // TWILIO STUN
      { urls: 'stun:global.stun.twilio.com:3478' },
+
+     // PUBLIC STUN SERVERS (backup army)
+     { urls: 'stun:stun.stunprotocol.org:3478' },
+     { urls: 'stun:stun.voip.blackberry.com:3478' },
+     { urls: 'stun:stun.sipnet.net:3478' },
+     { urls: 'stun:stun.voxgratia.org:3478' },
+     { urls: 'stun:stun.ekiga.net' },
+     { urls: 'stun:stun.ideasip.com' },
+     { urls: 'stun:stun.schlund.de' },
+     { urls: 'stun:stun.voiparound.com' },
+     { urls: 'stun:stun.voipbuster.com' },
+     { urls: 'stun:stun.voipstunt.com' },
+
+     // FREE TURN SERVERS (for strict NAT/firewall scenarios)
      {
       urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
@@ -174,20 +197,42 @@ const useCalls = (socketRef, setError) => {
       credential: 'openrelayproject'
      }
     ],
-    iceCandidatePoolSize: 10
+    // AGGRESSIVE ICE OPTIONS
+    iceCandidatePoolSize: 10, // Pre-gather candidates
+    iceTransportPolicy: 'all', // Try everything: UDP, TCP, TURN
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require'
+   },
+   // SIMPLE-PEER OPTIONS
+   offerOptions: {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
+   },
+   answerOptions: {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
    }
   });
 
+  // SIGNAL EVENT - send ICE candidates as they're generated
   peer.on('signal', (data) => {
-   if (socketRef.current) {
+   console.log('[WebRTC] Signal generated:', data.type);
+   if (socketRef.current && socketRef.current.connected) {
     socketRef.current.emit('webrtc_signal', {
      target_id: callState.contact?.id,
      signal: data
     });
+    console.log('[WebRTC] Signal sent to server');
+   } else {
+    console.error('[WebRTC] Socket not connected, cannot send signal');
    }
   });
 
+  // STREAM EVENT - remote video/audio received
   peer.on('stream', (remoteStream) => {
+   console.log('[WebRTC] Remote stream received:', remoteStream.id);
+   console.log('[WebRTC] Stream tracks:', remoteStream.getTracks().map(t => `${t.kind}: ${t.enabled}`));
+
    setCallState(prev => ({
     ...prev,
     remoteStream,
@@ -196,34 +241,99 @@ const useCalls = (socketRef, setError) => {
     isOutgoing: false
    }));
 
-   // Set up remote video with a small delay to ensure element exists
-   setTimeout(() => {
-    if (remoteVideoRef.current && remoteStream) {
-     remoteVideoRef.current.srcObject = remoteStream;
-     remoteVideoRef.current.autoplay = true;
-     remoteVideoRef.current.playsInline = true;
-     remoteVideoRef.current.muted = false;
-     remoteVideoRef.current.play().catch(e => {
-      // Try again after a short delay
-      setTimeout(() => {
-       if (remoteVideoRef.current) {
-        remoteVideoRef.current.play().catch(console.error);
+   // AGGRESSIVE VIDEO SETUP with multiple retry attempts
+   const setupRemoteVideo = (attempt = 0) => {
+    setTimeout(() => {
+     if (remoteVideoRef.current && remoteStream) {
+      console.log(`[WebRTC] Setting up remote video (attempt ${attempt + 1})`);
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.autoplay = true;
+      remoteVideoRef.current.playsInline = true;
+      remoteVideoRef.current.muted = false;
+
+      remoteVideoRef.current.play().then(() => {
+       console.log('[WebRTC] Remote video playing successfully');
+      }).catch(e => {
+       console.error(`[WebRTC] Remote video play failed (attempt ${attempt + 1}):`, e);
+       // Retry up to 5 times with increasing delays
+       if (attempt < 5) {
+        setupRemoteVideo(attempt + 1);
        }
-      }, 500);
-     });
-    }
-   }, 200);
+      });
+     }
+    }, 200 * (attempt + 1)); // Increasing delay: 200ms, 400ms, 600ms...
+   };
+
+   setupRemoteVideo(0);
   });
 
+  // CONNECT EVENT - peers have connected
+  peer.on('connect', () => {
+   console.log('[WebRTC] ✅ Peer connection established!');
+  });
+
+  // ERROR EVENT - connection failed
   peer.on('error', (error) => {
-   console.error('Peer error:', error);
-   setError('Call connection failed');
+   console.error('[WebRTC] ❌ Peer error:', error);
+   console.error('[WebRTC] Error stack:', error.stack);
+   setError(`Call connection failed: ${error.message}`);
+
+   // Give it 2 seconds then end call
+   setTimeout(() => {
+    endCall();
+   }, 2000);
+  });
+
+  // CLOSE EVENT - connection closed
+  peer.on('close', () => {
+   console.log('[WebRTC] Connection closed');
    endCall();
   });
 
-  peer.on('close', () => {
-   endCall();
-  });
+  // MONITOR ICE CONNECTION STATE
+  if (peer._pc) {
+   peer._pc.oniceconnectionstatechange = () => {
+    console.log('[WebRTC] ICE connection state:', peer._pc.iceConnectionState);
+
+    // If stuck in 'checking' for too long, something's wrong
+    if (peer._pc.iceConnectionState === 'checking') {
+     setTimeout(() => {
+      if (peer._pc.iceConnectionState === 'checking') {
+       console.error('[WebRTC] Stuck in checking state - possible firewall/NAT issue');
+       setError('Connection timeout - check firewall settings');
+      }
+     }, 15000); // 15 second timeout
+    }
+
+    // Failed state - immediate error
+    if (peer._pc.iceConnectionState === 'failed') {
+     console.error('[WebRTC] ICE connection failed');
+     setError('Connection failed - trying to reconnect...');
+
+     // Try ICE restart
+     if (initiator && peer._pc.restartIce) {
+      console.log('[WebRTC] Attempting ICE restart...');
+      peer._pc.restartIce();
+     }
+    }
+   };
+
+   peer._pc.onconnectionstatechange = () => {
+    console.log('[WebRTC] Connection state:', peer._pc.connectionState);
+   };
+
+   peer._pc.onicegatheringstatechange = () => {
+    console.log('[WebRTC] ICE gathering state:', peer._pc.iceGatheringState);
+   };
+
+   peer._pc.onicecandidate = (event) => {
+    if (event.candidate) {
+     console.log('[WebRTC] ICE candidate:', event.candidate.type, event.candidate.protocol);
+    } else {
+     console.log('[WebRTC] ICE gathering complete');
+    }
+   };
+  }
 
   return peer;
  };
@@ -355,22 +465,12 @@ const useCalls = (socketRef, setError) => {
 
    peerRef.current = createPeer(true, stream);
 
-   let offerSent = false;
    peerRef.current.on('signal', (data) => {
-    if (!offerSent && data.type === 'offer') {
-     socketRef.current.emit('call_initiate', {
-      receiver_id: contact.id,
-      type,
-      offer: data
-     });
-     offerSent = true;
-    } else if (data.candidate) {
-     // Send ICE candidates as they come
-     socketRef.current.emit('webrtc_signal', {
-      target_id: contact.id,
-      signal: data
-     });
-    }
+    socketRef.current.emit('call_initiate', {
+     receiver_id: contact.id,
+     type,
+     offer: data
+    });
    });
 
   } catch (error) {
@@ -417,23 +517,13 @@ const useCalls = (socketRef, setError) => {
     }, 100);
    }
 
-   let answerSent = false;
    peerRef.current.on('signal', (data) => {
-    if (!answerSent && data.type === 'answer') {
-     socketRef.current.emit('call_answer', {
-      call_id: callState.callId,
-      caller_id: callState.contact.id,
-      answer: true,
-      answerSDP: data
-     });
-     answerSent = true;
-    } else if (data.candidate) {
-     // Send ICE candidates as they come
-     socketRef.current.emit('webrtc_signal', {
-      target_id: callState.contact.id,
-      signal: data
-     });
-    }
+    socketRef.current.emit('call_answer', {
+     call_id: callState.callId,  // ADD THIS
+     caller_id: callState.contact.id,
+     answer: true,
+     answerSDP: data
+    });
    });
 
    setCallState(prev => ({
@@ -534,32 +624,15 @@ const useCalls = (socketRef, setError) => {
    });
 
    // Create peer as initiator
-   // Create peer as initiator
    const peer = new Peer({
     initiator: true,
-    trickle: true,
+    trickle: false,
     stream,
     config: {
      iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      {
-       urls: 'turn:openrelay.metered.ca:80',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      }
-     ],
-     iceCandidatePoolSize: 10
+      { urls: 'stun:global.stun.twilio.com:3478' }
+     ]
     }
    });
 
@@ -634,28 +707,12 @@ const useCalls = (socketRef, setError) => {
 
    const peer = new Peer({
     initiator: false,
-    trickle: true,
+    trickle: false,
     config: {
      iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      {
-       urls: 'turn:openrelay.metered.ca:80',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      }
-     ],
-     iceCandidatePoolSize: 10
+      { urls: 'stun:global.stun.twilio.com:3478' }
+     ]
     }
    });
 
@@ -697,10 +754,11 @@ const useCalls = (socketRef, setError) => {
    }
 
    peer.on('signal', (data) => {
+    console.log('Screenshare signal generated by viewer');
     if (socketRef.current) {
-     console.log('Sending signal:', data.type); // Debug
-     socketRef.current.emit('webrtc_signal', {
-      target_id: callState.contact?.id,
+     socketRef.current.emit('screenshare_signal', {
+      share_id: screenshareState.shareId,  // ADD THIS instead of target_id
+      target_id: screenshareState.contact.id,
       signal: data
      });
     }
