@@ -83,6 +83,30 @@ const App = () => {
   handleMessageNotification,
  } = useAppLogic();
 
+ // Expose a safe quick-reply bridge for the Electron main process
+ useEffect(() => {
+  if (typeof window !== "undefined") {
+   window.socketRef = socketRef;
+
+   window.quickReply = async (receiverId, message) => {
+    if (!socketRef.current || !socketRef.current.connected) {
+     initializeSocket();
+     await new Promise(r => setTimeout(r, 600));
+    }
+
+    if (socketRef.current && socketRef.current.connected) {
+     socketRef.current.emit("send_message", {
+      receiver_id: receiverId,
+      content: message,
+      reply_to: null
+     });
+     return true;
+    }
+    return false;
+   };
+  }
+ }, [socketRef, initializeSocket]);
+
  const {
   callState,
   localVideoRef,

@@ -200,6 +200,17 @@ export const useAppLogic = () => {
    handleMessageNotification(message);
   });
 
+  socket.on("desktop_notification", (data) => {
+   const currentActiveContact = activeContactRef.current;
+   const currentUser = userRef.current;
+   const message = data.message;
+
+   // Only show notification if this chat is NOT currently active
+   if (!currentActiveContact || currentActiveContact.id !== message.sender_id) {
+    handleMessageNotification(message);
+   }
+  });
+
   socket.on("message_deleted", (data) => {
    setMessages((prev) =>
     prev.map((m) => {
@@ -552,7 +563,10 @@ export const useAppLogic = () => {
   [messageText, activeContact, replyingTo]
  );
 
- // Handle typing indicator
+ // Handle typing indicator with debouncing
+ const lastTypingEmit = useRef(0);
+ const typingEmitCooldown = 1000; // Only emit once per second
+
  const handleMessageInputChange = useCallback(
   (e) => {
    const newValue = e.target.value;
@@ -566,10 +580,13 @@ export const useAppLogic = () => {
    }
 
    const shouldBeTyping = newValue.trim().length > 0;
+   const now = Date.now();
 
    if (shouldBeTyping) {
-    if (!isTyping) {
+    // Only emit typing event if cooldown has passed
+    if (!isTyping || (now - lastTypingEmit.current) > typingEmitCooldown) {
      setIsTyping(true);
+     lastTypingEmit.current = now;
      socketRef.current.emit("typing", {
       receiver_id: activeContact.id,
       is_typing: true,
