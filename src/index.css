@@ -1,7 +1,4 @@
-/* Add FontAwesome icons */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
-
-/* Reset default styles */
 * {
     margin: 0;
     padding: 0;
@@ -20,12 +17,8 @@ body, html {
     overscroll-behavior: none;
 }
 
-/* ===============================
-   THEME VARIABLES
-   =============================== */
 :root[data-theme="light"],
 :root:not([data-theme]) {
-    /* Light theme */
     --bg-primary: #f5f5f5 !important;
     --bg-secondary: #ffffff !important;
     --bg-tertiary: #fafafa !important;
@@ -52,7 +45,6 @@ body, html {
     --message-sent-text: #ffffff !important;
     --message-received-text: #1a1a1a !important;
     --typing-bg: #e8e8e8 !important;
-    /* Alert colors - light */
     --error-bg: #fef2f2 !important;
     --error-text: #dc2626 !important;
     --error-border: #fecaca !important;
@@ -62,7 +54,6 @@ body, html {
     --warning-bg: #fffbeb !important;
     --warning-text: #d97706 !important;
     --warning-border: #fed7aa !important;
-    /* File colors - light */
     --file-bg: rgba(0, 0, 0, 0.05);
     --file-bg-hover: rgba(0, 0, 0, 0.1);
     --file-bg-sent: rgba(255, 255, 255, 0.15);
@@ -81,7 +72,6 @@ body, html {
 }
 
 :root[data-theme="dark"] {
-    /* Dark theme */
     --bg-primary: #000000 !important;
     --bg-secondary: #000000 !important;
     --bg-tertiary: #131313 !important;
@@ -108,7 +98,6 @@ body, html {
     --message-sent-text: #ffffff !important;
     --message-received-text: #ffffff !important;
     --typing-bg: #111111 !important;
-    /* Alert colors - dark */
     --error-bg: #1f1315 !important;
     --error-text: #f87171 !important;
     --error-border: #991b1b !important;
@@ -118,7 +107,6 @@ body, html {
     --warning-bg: #1c1917 !important;
     --warning-text: #fbbf24 !important;
     --warning-border: #92400e !important;
-    /* File colors - dark */
     --file-bg: rgba(255, 255, 255, 0.05);
     --file-bg-hover: rgba(255, 255, 255, 0.1);
     --file-bg-sent: rgba(255, 255, 255, 0.1);
@@ -136,13 +124,10 @@ body, html {
     --file-icon-default: #adb5bd;
 }
 
-
-/* Smooth transitions for all interactive elements */
 * {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-/* Loading Screen */
 .app-loading {
     min-height: 100vh;
     background: var(--bg-primary);
@@ -190,7 +175,6 @@ body, html {
     }
 }
 
-/* Main App Container */
 .app-content {
     display: flex;
     height: 100vh;
@@ -207,7 +191,6 @@ body, html {
     }
 }
 
-/* iOS Safari specific fixes */
 @supports (-webkit-touch-callout: none) {
     .sidebar {
         height: -webkit-fill-available;
@@ -220,7 +203,6 @@ body, html {
     }
 }
 
-/* Mobile view states */
 @media (max-width: 768px) {
     .app-container {
         position: relative;
@@ -237,7 +219,6 @@ body, html {
     }
 }
 
-/* Sidebar */
 .sidebar {
     width: 320px;
     background: var(--bg-secondary);
@@ -258,7 +239,6 @@ body, html {
     z-index: 5;
 }
 
-/* Mobile header logo */
 .mobile-header {
     display: none;
     align-items: center;
@@ -421,7 +401,6 @@ body, html {
         transform: scale(0.98);
     }
 
-/* Search Section */
 .search-section {
     position: relative;
 }
@@ -447,8 +426,7 @@ body, html {
 
     .search-input:focus {
         outline: none;
-        border-color: var(--button-primary);
-        box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
+        background: #2d2d2d;
     }
 
     .search-input::placeholder {
@@ -585,7 +563,6 @@ body, html {
         transform: scale(0.95);
     }
 
-/* Contacts List */
 .contacts-list {
     flex: 1;
     overflow-y: auto;
@@ -697,13 +674,11 @@ body, html {
     border: 2px solid var(--bg-primary);
 }
 
-    /* Online state (green + pulse) */
     .status-indicator.online {
         background-color: #4caf50;
         animation: pulse 1.5s infinite;
     }
 
-    /* Offline state (gray, no animation) */
     .status-indicator.offline {
         background-color: #9e9e9e;
         animation: none;
@@ -752,7 +727,6 @@ body, html {
     text-overflow: ellipsis;
 }
 
-/* Chat Container */
 .chat-container {
     flex: 1;
     display: flex;
@@ -839,13 +813,12 @@ body, html {
     font-weight: 500;
 }
 
-/* Messages Container */
 .messages-container {
     flex: 1;
     overflow-y: auto;
     padding: 20px 24px;
     display: flex;
-    flex-direction: column; /* Back to normal, not column-reverse */
+    flex-direction: column;
     gap: 16px;
     background: var(--bg-primary);
     scroll-behavior: auto;
@@ -855,7 +828,6 @@ body, html {
     overflow-anchor: none;
 }
 
-    /* Custom scrollbar */
     .messages-container::-webkit-scrollbar {
         width: 8px;
     }
@@ -950,13 +922,13 @@ body, html {
     border: 2px solid var(--bg-primary);
 }
 
-    .message.received .message-bubble {
-        align-self: flex-start;
-        margin-top: 0;
-        display: flex;
-        flex-direction: column;
-        max-width: calc(75vw - 60px);
-    }
+.message.received .message-bubble {
+    align-self: flex-start;
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: calc(75vw - 60px);
+}
 
 .message-content {
     padding: 12px 16px;
@@ -1042,7 +1014,6 @@ body, html {
     animation: typingFloatOut 0.3s ease forwards;
 }
 
-/* Message Input */
 .message-input-container {
     display: flex;
     align-items: center;
@@ -1063,10 +1034,6 @@ body, html {
     outline: none;
     transition: border-color 0.2s ease;
 }
-
-    .message-input:focus {
-        border-color: yellow;
-    }
 
     .message-input::placeholder {
         color: var(--text-secondary);
@@ -1107,7 +1074,6 @@ body, html {
         font-size: 14px;
     }
 
-/* No Chat Selected */
 .no-chat-selected {
     display: flex;
     flex-direction: column;
@@ -1133,7 +1099,6 @@ body, html {
         line-height: 1.5;
     }
 
-/* Error Toast */
 .error-toast {
     position: fixed;
     bottom: 24px;
@@ -1160,19 +1125,6 @@ body, html {
     }
 }
 
-/* Focus styles for accessibility */
-*:focus-visible {
-    outline: 2px solid var(--accent-blue);
-    outline-offset: 2px;
-}
-
-button:focus-visible,
-input:focus-visible {
-    outline: 2px solid var(--accent-blue);
-    outline-offset: 2px;
-}
-
-/* Mobile Responsive Design */
 @media (max-width: 768px) {
     .app-container {
         height: 100vh;
@@ -1239,7 +1191,7 @@ input:focus-visible {
     }
 
     .message-input-container {
-        padding: 16px 20px;
+        padding: 16px 16px;
     }
 
     .error-toast {
@@ -1319,7 +1271,6 @@ input:focus-visible {
     }
 }
 
-/* Tablet styles */
 @media (min-width: 769px) and (max-width: 1024px) {
     .sidebar {
         width: 280px;
@@ -1330,7 +1281,6 @@ input:focus-visible {
     }
 }
 
-/* Large desktop styles */
 @media (min-width: 1200px) {
     .sidebar {
         width: 360px;
@@ -1425,7 +1375,6 @@ input:focus-visible {
         }
 }
 
-/* Mobile Search Overlay */
 .mobile-search-trigger {
     display: none;
     padding: 4px 16px;
@@ -1545,7 +1494,6 @@ input:focus-visible {
     -webkit-border-radius: 25px;
 }
 
-/* iPhone X and newer safe area support */
 @supports (padding: max(0px)) {
     @media (max-width: 768px) {
         .app-container {
@@ -1567,15 +1515,15 @@ input:focus-visible {
     }
 }
 
-    .mobile-search-input:focus {
-        outline: none;
-        border-color: var(--button-primary);
-        box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
-    }
+.mobile-search-input:focus {
+    outline: none;
+    border-color: var(--button-primary);
+    box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
+}
 
-    .mobile-search-input::placeholder {
-        color: var(--text-secondary);
-    }
+.mobile-search-input::placeholder {
+    color: var(--text-secondary);
+}
 
 .mobile-search-content {
     flex: 1;
@@ -1591,7 +1539,6 @@ input:focus-visible {
     font-size: 16px;
 }
 
-/* Show mobile search trigger only on mobile */
 @media (max-width: 768px) {
     .mobile-search-trigger {
         display: block;
@@ -1602,7 +1549,6 @@ input:focus-visible {
     }
 }
 
-/* Ensure overlay search results are full width on mobile */
 @media (max-width: 768px) {
     .mobile-search-overlay .search-results {
         position: static;
@@ -1629,7 +1575,6 @@ input:focus-visible {
         }
 }
 
-/* iOS touch improvements */
 @media (max-width: 768px) {
     .contact-item,
     .search-result,
@@ -1641,7 +1586,6 @@ input:focus-visible {
         touch-action: manipulation;
     }
 
-    /* Ensure minimum touch target size */
     .user-menu-btn,
     .mobile-back-btn,
     .search-close {
@@ -1650,12 +1594,10 @@ input:focus-visible {
     }
 }
 
-/* Prevent zoom on double tap */
 * {
     touch-action: manipulation;
 }
 
-/* Fix for iOS momentum scrolling */
 .messages-container,
 .contacts-list,
 .mobile-search-content {
@@ -1791,7 +1733,6 @@ input:focus-visible {
     align-self: flex-start;
 }
 
-/* Message input area with drag/drop styling */
 .message-input-area {
     position: relative;
     transition: all 0.2s ease;
@@ -1804,7 +1745,6 @@ input:focus-visible {
         padding: 4px;
     }
 
-/* Attachment button */
 .attachment-button {
     background: none;
     border: none;
@@ -1825,7 +1765,6 @@ input:focus-visible {
         background-color: var(--bg-secondary);
     }
 
-/* GIF button */
 .gif-button {
     background: none;
     border: none;
@@ -1887,17 +1826,14 @@ input:focus-visible {
     color: #74c0fc;
 }
 
-/* Light mode hover */
 :root[data-theme="light"] .attachment-button:hover {
     color: var(--primary);
 }
 
-/* Dark mode hover - use a bright color instead of primary */
 :root[data-theme="dark"] .attachment-button:hover {
-    color: #74c0fc; /* Light blue that's visible in dark mode */
+    color: #74c0fc;
 }
 
-/* Image message styling */
 .message-image {
     margin: 4px 0;
     border-radius: 8px;
@@ -1921,7 +1857,6 @@ input:focus-visible {
         opacity: 0.9;
     }
 
-/* File message styling */
 .message-file {
     display: flex;
     align-items: center;
@@ -1981,17 +1916,14 @@ input:focus-visible {
     opacity: 1;
 }
 
-/* Light mode hover */
 :root[data-theme="light"] .message-file:hover .file-download {
     color: var(--primary);
 }
 
-/* Dark mode hover - use a bright color instead of primary */
 :root[data-theme="dark"] .message-file:hover .file-download {
-    color: #74c0fc; /* Light blue that's visible in dark mode */
+    color: #74c0fc;
 }
 
-/* Sent vs received message file styling */
 .message.sent .message-file {
     background-color: var(--file-bg-sent);
     border-color: rgba(255, 255, 255, 0.1);
@@ -2001,7 +1933,6 @@ input:focus-visible {
         background-color: var(--file-bg-sent-hover);
     }
 
-/* File type specific colors using CSS variables */
 .file-icon .fa-file-pdf {
     color: var(--file-icon-pdf);
 }
@@ -2047,7 +1978,6 @@ input:focus-visible {
     color: var(--file-icon-default);
 }
 
-/* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .message-image {
         max-width: 250px;
@@ -2072,14 +2002,43 @@ input:focus-visible {
     }
 }
 
-/* Dark mode specific adjustments */
+@media (max-width: 768px) {
+    .message-input-container {
+        padding: 12px 8px;
+        gap: 4px;
+    }
+
+    .attachment-button,
+    .gif-button {
+        width: 36px;
+        height: 36px;
+        padding: 6px;
+    }
+
+    .gif-button {
+        padding-bottom: 28px;
+    }
+
+    .gif-wrapper {
+        margin-bottom: 0;
+    }
+
+    .message-input {
+        padding: 10px 12px;
+    }
+
+    .send-button {
+        padding: 10px 16px;
+        min-width: 44px;
+    }
+}
+
 @media (prefers-color-scheme: dark) {
     .shared-image {
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 }
 
-/* Light mode specific adjustments */
 @media (prefers-color-scheme: light) {
     .shared-image {
         border: 1px solid rgba(0, 0, 0, 0.1);
@@ -2112,7 +2071,6 @@ input:focus-visible {
     position: relative;
 }
 
-/* Incoming call notification styles */
 .incoming-call-notification {
     position: fixed;
     top: 20px;
@@ -2196,10 +2154,10 @@ input:focus-visible {
 
     .decline-btn-small::before {
         font-family: "Font Awesome 5 Free";
-        font-weight: 900; /* or the correct weight/style you use */
-        content: "\f095"; /* the phone icon */
+        font-weight: 900;
+        content: "\f095";
         display: inline-block;
-        transform: rotate(135deg); /* adjust angle until it looks like a hang-up handset */
+        transform: rotate(135deg);
     }
 
 .accept-btn-small {
@@ -2228,7 +2186,6 @@ input:focus-visible {
     }
 }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
     .incoming-call-notification {
         top: 10px;
@@ -2259,18 +2216,15 @@ input:focus-visible {
     font-weight: 500;
 }
 
-/* Light mode handle color */
 :root[data-theme="light"] .chat-handle,
 :root:not([data-theme]) .chat-handle {
     color: #f57c00;
 }
 
-/* Dark mode handle color */
 :root[data-theme="dark"] .chat-handle {
     color: #ffd54f;
 }
 
-/* Global custom scrollbar for all elements (WebKit browsers) */
 *::-webkit-scrollbar {
     width: 8px;
 }
@@ -2291,13 +2245,11 @@ input:focus-visible {
         opacity: 0.8;
     }
 
-/* Global scrollbar styling for Firefox */
 html, body, * {
     scrollbar-width: thin;
     scrollbar-color: var(--text-muted) var(--bg-secondary);
 }
 
-/* Message hover delete button */
 .message-delete-btn {
     position: absolute;
     top: 50%;
@@ -2319,7 +2271,6 @@ html, body, * {
     z-index: 5;
 }
 
-/* Position relative to bubble */
 .message.sent .message-delete-btn {
     left: -124px;
 }
@@ -2328,12 +2279,10 @@ html, body, * {
     right: -124px;
 }
 
-/* Show on hover */
 .message:hover .message-delete-btn {
     opacity: 1;
 }
 
-/* Hover/active states */
 .message-delete-btn:hover {
     background: var(--error-bg);
     color: var(--error-text);
@@ -2356,7 +2305,6 @@ html, body, * {
     opacity: 0.9;
 }
 
-/* Verification Banner */
 .verification-banner {
     position: fixed;
     top: 0;
@@ -2394,7 +2342,7 @@ html, body, * {
 }
 
     .app-content.with-banner {
-        height: calc(100vh - 48px); /* Increased from 36px to 72px */
+        height: calc(100vh - 48px);
         height: calc(100dvh - 48px);
         box-sizing: border-box;
     }
@@ -2439,7 +2387,7 @@ body.with-verification-banner {
 
 @media (max-width: 768px) {
     .contacts-list {
-        padding-bottom: 100px; /* Add this line */
+        padding-bottom: 100px;
     }
 
     .message.sent .message-delete-btn {
@@ -2501,7 +2449,6 @@ body.with-verification-banner {
     margin-right: 4px;
 }
 
-/* Minimize/Maximize call functionality - FIXED VERSION */
 .call-overlay-minimized-923847 {
     width: 350px !important;
     height: 180px !important;
@@ -2532,7 +2479,6 @@ body.with-verification-banner {
         overflow: hidden;
     }
 
-    /* Show video in minimized mode */
     .call-overlay-minimized-923847 .video-container {
         display: block !important;
         width: 100%;
@@ -2560,7 +2506,6 @@ body.with-verification-banner {
             display: none !important;
         }
 
-/* Audio call minimized - show avatar */
 .call-overlay-audio-minimized-847392 {
     display: flex !important;
     flex-direction: column;
@@ -2594,7 +2539,6 @@ body.with-verification-banner {
         color: var(--text-secondary);
     }
 
-/* Call status overlay in minimized mode */
 .call-status-minimized-738291 {
     position: absolute;
     top: 12px;
@@ -2620,7 +2564,6 @@ body.with-verification-banner {
         text-overflow: ellipsis;
     }
 
-/* Call controls in minimized mode */
 .call-controls-minimized-192837 {
     position: absolute;
     bottom: 12px;
@@ -2714,7 +2657,6 @@ body.with-verification-banner {
         transform: scale(0.95);
     }
 
-/* Mobile responsive */
 @media (max-width: 768px) {
     .call-overlay-minimized-923847 {
         width: calc(100% - 40px);
@@ -2776,7 +2718,6 @@ body.with-verification-banner {
     }
 }
 
-/* Screenshare minimized styles */
 .screenshare-overlay-minimized-847392 .video-container {
     display: block !important;
 }
@@ -2789,7 +2730,6 @@ body.with-verification-banner {
         border-radius: 20px;
     }
 
-/* Click to maximize */
 .call-overlay-minimized-923847 .video-container,
 .call-overlay-audio-minimized-847392 {
     cursor: pointer;
