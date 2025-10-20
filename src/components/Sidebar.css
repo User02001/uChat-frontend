@@ -262,3 +262,9 @@
         top: 48px;
     }
 }
+
+@media (max-width: 768px) {
+    .nav-sidebar.search-hidden {
+        display: none;
+    }
+}

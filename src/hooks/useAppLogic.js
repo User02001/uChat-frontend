@@ -48,6 +48,8 @@ export const useAppLogic = () => {
  const [isOffline, setIsOffline] = useState(false);
  const [callMinimized, setCallMinimized] = useState(false);
  const [screenshareMinimized, setScreenshareMinimized] = useState(false);
+ const [userStatuses, setUserStatuses] = useState({}); // Track user statuses (online/away/offline)
+ const activityTimeoutRef = useRef(null);
 
  // Refs for keeping state in sync
  const activeContactRef = useRef(null);
@@ -126,6 +128,7 @@ export const useAppLogic = () => {
   socketRef.current = socket;
 
   socket.on("connect", () => {
+   console.log("Socket connected!");
    setSocketConnected(true);
    setReconnectAttempts(0);
 
@@ -134,7 +137,9 @@ export const useAppLogic = () => {
     socket.emit("join_chat", { contact_id: currentActiveContact.id });
    }
 
+   // IMMEDIATELY request fresh contacts data and online status
    socket.emit("request_contacts_update");
+   socket.emit("request_online_users");
   });
 
   socket.on("online_users_update", (data) => {
@@ -150,8 +155,16 @@ export const useAppLogic = () => {
   });
 
   socket.on("user_status", (data) => {
+   console.log("User status update received:", data);
+
+   // Update user statuses map
+   setUserStatuses((prev) => ({
+    ...prev,
+    [data.user_id]: data.status
+   }));
+
    setOnlineUsers((prev) => {
-    if (data.status === "online") {
+    if (data.status === "online" || data.status === "away") {
      return [...prev, data.user_id].filter(
       (id, index, arr) => arr.indexOf(id) === index
      );
@@ -160,13 +173,21 @@ export const useAppLogic = () => {
     }
    });
 
-   if (data.status === "offline" && data.last_seen) {
+   // ALWAYS update last_seen for this user, regardless of status
+   if (data.last_seen) {
     setContacts((prev) =>
      prev.map((contact) =>
       contact.id === data.user_id
        ? { ...contact, last_seen: data.last_seen }
        : contact
      )
+    );
+
+    // Also update active contact if it's the same user
+    setActiveContact((prev) =>
+     prev && prev.id === data.user_id
+      ? { ...prev, last_seen: data.last_seen }
+      : prev
     );
    }
   });
@@ -663,6 +684,13 @@ export const useAppLogic = () => {
   return null;
  }, [isMobile]);
 
+ // Emit user activity to backend
+ const emitActivity = useCallback(() => {
+  if (socketRef.current && socketRef.current.connected) {
+   socketRef.current.emit("user_activity");
+  }
+ }, []);
+
  // Handle message notification
  const handleMessageNotification = useCallback((message) => {
   const currentUser = userRef.current;
@@ -775,7 +803,8 @@ export const useAppLogic = () => {
    }
    if (
     showMobileSearch &&
-    !event.target.closest(".mobile-search-container")
+    !event.target.closest(".mobile-search-overlay") &&
+    !event.target.closest(".mobile-search-back")
    ) {
     setShowMobileSearch(false);
     setSearchQuery("");
@@ -1005,6 +1034,33 @@ export const useAppLogic = () => {
   return () => mediaQuery.removeEventListener("change", handleThemeChange);
  }, []);
 
+ // Activity tracking with debouncing - only emit every 30 seconds max
+ useEffect(() => {
+  let lastEmit = 0;
+  const EMIT_COOLDOWN = 10000; // 10 seconds
+
+  const handleActivity = () => {
+   const now = Date.now();
+   if (now - lastEmit > EMIT_COOLDOWN) {
+    lastEmit = now;
+    emitActivity();
+   }
+  };
+
+  // Track meaningful user activities (removed mousemove to avoid constant triggers)
+  window.addEventListener('keydown', handleActivity);
+  window.addEventListener('click', handleActivity);
+  window.addEventListener('scroll', handleActivity);
+  window.addEventListener('touchstart', handleActivity);
+
+  return () => {
+   window.removeEventListener('keydown', handleActivity);
+   window.removeEventListener('click', handleActivity);
+   window.removeEventListener('scroll', handleActivity);
+   window.removeEventListener('touchstart', handleActivity);
+  };
+ }, [emitActivity]);
+
  // Cleanup on unmount
  useEffect(() => {
   return () => {
@@ -1091,6 +1147,8 @@ export const useAppLogic = () => {
   setCallMinimized,
   screenshareMinimized,
   setScreenshareMinimized,
+  userStatuses,
+  setUserStatuses,
 
   // Refs
   socketRef,
@@ -1117,5 +1175,6 @@ export const useAppLogic = () => {
   saveLastContact,
   loadLastContact,
   handleMessageNotification,
+  emitActivity,
  };
 };

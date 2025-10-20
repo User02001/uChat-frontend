@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Sidebar.css';
 
-const Sidebar = ({ showMobileChat = false, onLogout }) => {
+const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout }) => {
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
  const [isDarkMode, setIsDarkMode] = useState(false);
@@ -77,7 +77,7 @@ const Sidebar = ({ showMobileChat = false, onLogout }) => {
  }, [showMore]);
 
  return (
-  <div className={`nav-sidebar ${showMobileChat ? 'mobile-hidden' : ''}`}>
+  <div className={`nav-sidebar ${showMobileChat ? 'mobile-hidden' : ''} ${showMobileSearch ? 'search-hidden' : ''}`}>
    <div className="nav-buttons">
     <button
      className={`nav-btn ${activeTab === 'chats' ? 'active' : ''}`}

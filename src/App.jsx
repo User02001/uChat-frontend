@@ -55,6 +55,7 @@ const App = () => {
   isOffline, setIsOffline,
   callMinimized, setCallMinimized,
   screenshareMinimized, setScreenshareMinimized,
+  userStatuses, setUserStatuses,
 
   // Refs
   socketRef,
@@ -277,6 +278,25 @@ const App = () => {
   return time.toLocaleDateString();
  };
 
+ const formatInactiveTime = (lastSeenTimestamp) => {
+  if (!lastSeenTimestamp) return "Inactive";
+
+  const now = new Date();
+  const lastSeen = new Date(lastSeenTimestamp + "Z");
+  const diffMs = now - lastSeen;
+
+  const minutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(diffMs / 86400000);
+  const weeks = Math.floor(days / 7);
+
+  if (minutes < 2) return "Inactive just now";
+  if (minutes < 60) return `Inactive for ${minutes}m`;
+  if (hours < 24) return `Inactive for ${hours}h`;
+  if (days < 7) return `Inactive for ${days}d`;
+  return `Inactive for ${weeks}w`;
+ };
+
  const formatLastSeen = (lastSeenTimestamp) => {
   if (!lastSeenTimestamp) return "Offline";
 
@@ -286,13 +306,18 @@ const App = () => {
   const diffMinutes = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+  const diffYears = Math.floor(diffDays / 365);
 
   if (diffMinutes < 2) return "Last seen just now";
   if (diffMinutes < 60) return `Last seen ${diffMinutes}m ago`;
   if (diffHours < 24) return `Last seen ${diffHours}h ago`;
   if (diffDays === 1) return "Last seen yesterday";
   if (diffDays < 7) return `Last seen ${diffDays}d ago`;
-  return "Last seen long ago";
+  if (diffWeeks < 4) return `Last seen ${diffWeeks}w ago`;
+  if (diffMonths < 12) return `Last seen ${diffMonths} month${diffMonths === 1 ? '' : 's'} ago`;
+  return `Last seen ${diffYears} year${diffYears === 1 ? '' : 's'} ago`;
  };
 
  // File size formatter
@@ -528,7 +553,7 @@ const App = () => {
       showVerificationBanner ? "app-content with-banner" : "app-content"
      }
     >
-     <Sidebar showMobileChat={showMobileChat} onLogout={handleLogout} />
+     <Sidebar showMobileChat={showMobileChat} showMobileSearch={showMobileSearch} onLogout={handleLogout} />
 
      <div className="sidebar">
       <div className="sidebar-header">
@@ -544,7 +569,7 @@ const App = () => {
           className="profile-avatar"
           draggable="false"
          />
-         <div className="status-indicator online"></div>
+         <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
         </div>
         <div className="user-info">
          <span className="username">{user?.username}</span>
@@ -650,7 +675,7 @@ const App = () => {
           draggable="false"
           className="mobile-avatar"
          />
-         <div className="status-indicator online"></div>
+         <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
         </div>
        </div>
        {showUserMenu && (
@@ -660,14 +685,14 @@ const App = () => {
        )}
       </div>
 
-      <div
-       className="mobile-search-trigger"
-       onClick={() => setShowMobileSearch(true)}
-      >
-       <input
-        type="text"
-        placeholder="Search..."
-        readOnly
+      <div className="mobile-search-trigger">
+       <button
+        type="button"
+        onClick={(e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         setShowMobileSearch(true);
+        }}
         style={{
          width: "100%",
          padding: "8px 16px",
@@ -675,10 +700,16 @@ const App = () => {
          border: "1px solid var(--border)",
          background: "var(--bg-tertiary)",
          fontSize: "14px",
-         color: "var(--text-primary)",
+         color: "var(--text-secondary)",
          cursor: "pointer",
+         textAlign: "left",
+         fontFamily: "inherit",
+         WebkitAppearance: "none",
+         appearance: "none",
         }}
-       />
+       >
+        Search...
+       </button>
       </div>
 
       {showMobileSearch && (
@@ -780,9 +811,8 @@ const App = () => {
             draggable="false"
            />
            <div
-            className={`status-indicator ${onlineUsers.includes(contact.id)
-              ? "online"
-              : "offline"
+            className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
+              onlineUsers.includes(contact.id) ? "online" : "offline"
              }`}
            ></div>
           </div>
@@ -905,9 +935,8 @@ const App = () => {
            className="chat-avatar"
           />
           <div
-           className={`status-indicator ${onlineUsers.includes(activeContact.id)
-             ? "online"
-             : "offline"
+           className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+             onlineUsers.includes(activeContact.id) ? "online" : "offline"
             }`}
           ></div>
          </div>
@@ -927,15 +956,19 @@ const App = () => {
              title="Unverified user - Click for more info"
             />
            )}
-           <span className="chat-aka">aka</span>
-           <span className="chat-handle">
-            @{activeContact.handle}
-           </span>
+           {!(isMobile && showMobileChat) && (
+            <>
+             <span className="chat-aka">aka</span>
+             <span className="chat-handle">@{activeContact.handle}</span>
+            </>
+           )}
           </div>
           <span className="chat-status">
-           {onlineUsers.includes(activeContact.id)
-            ? "Available Now"
-            : formatLastSeen(activeContact.last_seen)}
+           {userStatuses[activeContact.id] === "away"
+            ? formatInactiveTime(activeContact.last_seen)
+            : onlineUsers.includes(activeContact.id)
+             ? "Available Now"
+             : formatLastSeen(activeContact.last_seen)}
           </span>
          </div>
          <div className="call-buttons">
@@ -994,9 +1027,8 @@ const App = () => {
                draggable="false"
               />
               <div
-               className={`status-indicator ${onlineUsers.includes(activeContact.id)
-                 ? "online"
-                 : "offline"
+               className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+                 onlineUsers.includes(activeContact.id) ? "online" : "offline"
                 }`}
               ></div>
              </div>
@@ -1240,35 +1272,19 @@ const App = () => {
            type="button"
            className="attachment-button"
            onClick={() => fileInputRef.current?.click()}
-           title={
-            isOffline ? "Offline - can't send files" : "Attach file"
-           }
+           title={isOffline ? "Offline - can't send files" : "Attach file"}
            disabled={isOffline}
-           style={
-            isOffline ? { cursor: "not-allowed", opacity: 0.5 } : {}
-           }
           >
-           <i className="fas fa-paperclip"></i>
+           <img src="/resources/icons/attachment.svg" alt="Attach" draggable="false" />
           </button>
           <button
            type="button"
            className="gif-button"
            onClick={() => setShowGifPicker(true)}
-           title={
-            isOffline ? "Offline - can't send GIFs" : "Send GIF"
-           }
+           title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
-           style={
-            isOffline ? { cursor: "not-allowed", opacity: 0.5 } : {}
-           }
           >
-           <div className="gif-wrapper">
-            <img src="/resources/gif.svg" alt="GIF Icon" />
-            <img
-             src="/resources/gif-active.svg"
-             alt="GIF Icon Active"
-            />
-           </div>
+           <img src="/resources/icons/gif.svg" alt="GIF" draggable="false" />
           </button>
           <input
            type="text"
@@ -1278,7 +1294,7 @@ const App = () => {
            placeholder={
             isOffline
              ? "You're offline - can't send messages"
-             : "Send a message..."
+             : "What u thinkin?"
            }
            className="message-input"
            autoComplete="off"
@@ -1292,12 +1308,12 @@ const App = () => {
            }
           />
           <button
-           type="submit"
-           className="send-button"
-           disabled={!messageText.trim() || isOffline}
-          >
-           <i className="fas fa-paper-plane"></i>
-          </button>
+ type="submit"
+ className="send-button"
+ disabled={!messageText.trim() || isOffline}
+>
+ <img src="/resources/icons/send.svg" alt="Send" draggable="false" />
+</button>
          </form>
         </div>
        </>
