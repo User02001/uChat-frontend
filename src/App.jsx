@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppLogic } from "./hooks/useAppLogic";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
@@ -14,6 +14,7 @@ import "./pages/calls.css";
 import UnverifiedModal from "./components/UnverifiedModal";
 import linkify from "./hooks/linkify.jsx";
 import Gifs from "./components/Gifs";
+import ProfileModal from "./components/ProfileModal";
 
 const App = () => {
 
@@ -33,6 +34,8 @@ const App = () => {
   error, setError,
   showUserMenu, setShowUserMenu,
   showMobileSearch, setShowMobileSearch,
+  hasMoreMessages, setHasMoreMessages,
+  loadingMoreMessages, setLoadingMoreMessages,
   searchExiting, setSearchExiting,
   isMobile, setIsMobile,
   showMobileChat, setShowMobileChat,
@@ -56,6 +59,7 @@ const App = () => {
   callMinimized, setCallMinimized,
   screenshareMinimized, setScreenshareMinimized,
   userStatuses, setUserStatuses,
+  showProfileModal, setShowProfileModal,
 
   // Refs
   socketRef,
@@ -503,22 +507,90 @@ const App = () => {
   }, 200);
  };
 
- // Auto-scroll to bottom when new messages arrive or contact changes
+ // Handle scroll for lazy loading
+ const messagesContainerRef = useRef(null);
+ const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
+ const previousScrollHeight = useRef(0);
+
+ const handleScroll = useCallback(() => {
+  const container = messagesContainerRef.current;
+  if (!container || loadingMoreMessages || !hasMoreMessages || !activeContact) return;
+
+  const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+
+  if (isNearBottom) {
+   setShouldScrollToBottom(true);
+  } else {
+   setShouldScrollToBottom(false);
+  }
+
+  if (container.scrollTop < 50 && messages.length > 0) {
+   const oldestMessage = messages[0];
+   if (oldestMessage) {
+    setLoadingMoreMessages(true);
+    previousScrollHeight.current = container.scrollHeight;
+    loadMessages(activeContact.id, oldestMessage.id);
+   }
+  }
+ }, [loadingMoreMessages, hasMoreMessages, messages, activeContact, loadMessages]);
+
+ // Auto-scroll to bottom when new messages arrive (but not when loading more)
  useEffect(() => {
-  const scrollToBottom = () => {
-   messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  };
+  if (shouldScrollToBottom && !loadingMoreMessages) {
+   const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+   };
+   scrollToBottom();
+   const timeouts = [100, 300, 500, 1000].map((delay) =>
+    setTimeout(scrollToBottom, delay)
+   );
+   return () => timeouts.forEach(clearTimeout);
+  }
+ }, [messages, shouldScrollToBottom, loadingMoreMessages]);
 
-  // Immediate scroll
-  scrollToBottom();
+ // Restore scroll position after loading more messages
+ useEffect(() => {
+  if (!loadingMoreMessages && previousScrollHeight.current > 0) {
+   const container = messagesContainerRef.current;
+   if (container) {
+    // Wait for images to load before adjusting scroll
+    const images = container.querySelectorAll('img[src*="/static/uploads"]');
 
-  // Delayed scroll to account for images loading
-  const timeouts = [100, 300, 500, 1000].map((delay) =>
-   setTimeout(scrollToBottom, delay)
-  );
+    if (images.length === 0) {
+     // No images, adjust immediately
+     const newScrollHeight = container.scrollHeight;
+     const scrollDiff = newScrollHeight - previousScrollHeight.current;
+     container.scrollTop += scrollDiff;
+     previousScrollHeight.current = 0;
+    } else {
+     // Wait for all images to load
+     const imagePromises = Array.from(images).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+       img.onload = resolve;
+       img.onerror = resolve; // Also resolve on error to prevent hanging
+       // Timeout fallback
+       setTimeout(resolve, 1000);
+      });
+     });
 
-  return () => timeouts.forEach(clearTimeout);
- }, [messages, activeContact]);
+     Promise.all(imagePromises).then(() => {
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - previousScrollHeight.current;
+      container.scrollTop += scrollDiff;
+      previousScrollHeight.current = 0;
+     });
+    }
+   }
+  }
+ }, [loadingMoreMessages]);
+
+ // Reset scroll behavior when changing contacts
+ useEffect(() => {
+  setShouldScrollToBottom(true);
+  setHasMoreMessages(true);
+  previousScrollHeight.current = 0;
+ }, [activeContact]);
 
  if (loading) {
   return (
@@ -567,6 +639,8 @@ const App = () => {
           }
           alt="Profile"
           className="profile-avatar"
+          onClick={() => setShowProfileModal(user)}
+          style={{ cursor: 'pointer' }}
           draggable="false"
          />
          <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
@@ -807,12 +881,17 @@ const App = () => {
               : "/resources/default_avatar.png"
             }
             alt={contact.username}
+            onClick={(e) => {
+             e.stopPropagation();
+             setShowProfileModal(contact);
+            }}
+            style={{ cursor: 'pointer' }}
             className="contact-avatar"
             draggable="false"
            />
            <div
             className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
-              onlineUsers.includes(contact.id) ? "online" : "offline"
+             onlineUsers.includes(contact.id) ? "online" : "offline"
              }`}
            ></div>
           </div>
@@ -822,7 +901,7 @@ const App = () => {
              {contact.username}
              {!contact.is_verified && (
               <img
-               src="/resources/broken-lock.svg"
+               src="/resources/icons/unverified.svg"
                alt="Unverified"
                className="unverified-icon"
                onClick={(e) => {
@@ -888,8 +967,8 @@ const App = () => {
            </div>
            <span
             className={`contact-preview ${contact.unread && activeContact?.id !== contact.id
-              ? "unread"
-              : ""
+             ? "unread"
+             : ""
              }`}
            >
             {contact.lastMessage
@@ -932,11 +1011,13 @@ const App = () => {
              : "/resources/default_avatar.png"
            }
            alt={activeContact.username}
+           onClick={() => setShowProfileModal(activeContact)}
+           style={{ cursor: 'pointer' }}
            className="chat-avatar"
           />
           <div
            className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-             onlineUsers.includes(activeContact.id) ? "online" : "offline"
+            onlineUsers.includes(activeContact.id) ? "online" : "offline"
             }`}
           ></div>
          </div>
@@ -947,7 +1028,7 @@ const App = () => {
            </span>
            {!activeContact.is_verified && (
             <img
-             src="/resources/broken-lock.svg"
+             src="/resources/icons/unverified.svg"
              alt="Unverified"
              className="unverified-icon"
              onClick={() =>
@@ -964,10 +1045,10 @@ const App = () => {
            )}
           </div>
           <span className="chat-status">
-           {userStatuses[activeContact.id] === "away"
-            ? formatInactiveTime(activeContact.last_seen)
-            : onlineUsers.includes(activeContact.id)
-             ? "Available Now"
+           {userStatuses[activeContact.id] === "online"
+            ? "Available Now"
+            : userStatuses[activeContact.id] === "away"
+             ? formatInactiveTime(activeContact.last_seen)
              : formatLastSeen(activeContact.last_seen)}
           </span>
          </div>
@@ -997,7 +1078,27 @@ const App = () => {
          </div>
         </div>
 
-        <div className="messages-container">
+        <div
+         className="messages-container"
+         ref={messagesContainerRef}
+         onScroll={handleScroll}
+        >
+         {loadingMoreMessages && (
+          <div style={{
+           display: 'flex',
+           justifyContent: 'center',
+           padding: '20px',
+           color: 'var(--text-secondary)'
+          }}>
+           <div className="loading-spinner" style={{
+            width: '24px',
+            height: '24px',
+            border: '3px solid var(--border)',
+            borderTop: '3px solid var(--button-primary)',
+            marginBottom: '0'
+           }}></div>
+          </div>
+         )}
          {messages.length === 0 && isMobile ? (
           <MessagesSkeleton />
          ) : messages.length === 0 ? (
@@ -1024,11 +1125,15 @@ const App = () => {
                }
                alt={activeContact.username}
                className="message-avatar"
+               onClick={(e) => {
+                e.stopPropagation();
+                setShowProfileModal(activeContact);
+               }}
                draggable="false"
               />
               <div
                className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-                 onlineUsers.includes(activeContact.id) ? "online" : "offline"
+                onlineUsers.includes(activeContact.id) ? "online" : "offline"
                 }`}
               ></div>
              </div>
@@ -1090,10 +1195,11 @@ const App = () => {
              ) : message.message_type === "image" ? (
               <div className="message-image">
                <img
-                src={`${API_BASE_URL}${message.file_path}`}
-                alt="Shared image"
-                className="shared-image"
-               />
+                  src={`${API_BASE_URL}${message.file_path}`}
+                  alt="Shared image"
+                  className="shared-image"
+                  onLoad={(e) => e.target.classList.add('loaded')}
+                />
               </div>
              ) : message.message_type === "file" ? (
               <div
@@ -1183,7 +1289,7 @@ const App = () => {
               {message.sender_id === user.id && (
                <button
                 className="message-delete-btn"
-                onClick={() => setDeleteConfirm(message.id)}
+                onClick={() => setDeleteConfirm(message)}
                 title="Delete message"
                >
                 <i className="fas fa-trash"></i>
@@ -1198,7 +1304,7 @@ const App = () => {
          <div ref={messagesEndRef} />
          {deleteConfirm && (
           <DeleteModal
-           messageId={deleteConfirm}
+           message={deleteConfirm}
            onClose={() => setDeleteConfirm(null)}
            onConfirm={async (messageId) => {
             try {
@@ -1308,12 +1414,12 @@ const App = () => {
            }
           />
           <button
- type="submit"
- className="send-button"
- disabled={!messageText.trim() || isOffline}
->
- <img src="/resources/icons/send.svg" alt="Send" draggable="false" />
-</button>
+           type="submit"
+           className="send-button"
+           disabled={!messageText.trim() || isOffline}
+          >
+           <img src="/resources/icons/send.svg" alt="Send" draggable="false" />
+          </button>
          </form>
         </div>
        </>
@@ -1405,8 +1511,8 @@ const App = () => {
      {(screenshareState.isActive || screenshareState.isSharing) && (
       <div
        className={`call-overlay screenshare-overlay ${screenshareMinimized
-         ? "call-overlay-minimized-923847 screenshare-overlay-minimized-847392"
-         : ""
+        ? "call-overlay-minimized-923847 screenshare-overlay-minimized-847392"
+        : ""
         }`}
       >
        <div className="active-call">
@@ -1696,6 +1802,40 @@ const App = () => {
       }
      }}
      onClose={() => setShowGifPicker(false)}
+    />
+   )}
+   {showProfileModal && (
+    <ProfileModal
+     user={showProfileModal}
+     onClose={() => setShowProfileModal(null)}
+     currentUserId={user.id}
+     onlineUsers={onlineUsers}
+     userStatuses={userStatuses}
+     onSendMessage={(message) => {
+      if (socketRef.current && showProfileModal) {
+       socketRef.current.emit("send_message", {
+        receiver_id: showProfileModal.id,
+        content: message,
+        reply_to: null
+       });
+      }
+     }}
+     onStartCall={() => {
+      if (showProfileModal && startCall) {
+       startCall(showProfileModal, "audio");
+      }
+     }}
+     onStartVideoCall={() => {
+      if (showProfileModal && startCall) {
+       startCall(showProfileModal, "video");
+      }
+     }}
+     onOpenChat={(u) => {
+      setShowProfileModal(false);
+      selectContact(u);
+     }}
+     lastMessage={showProfileModal?.lastMessage}
+     lastMessageSenderId={showProfileModal?.lastSenderId}
     />
    )}
   </div>

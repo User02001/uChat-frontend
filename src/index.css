@@ -686,6 +686,7 @@ body, html {
     .status-indicator.online {
         background-color: #4caf50;
         background-image: none;
+        animation: onlineIndicator 2s infinite;
     }
 
     .status-indicator.offline {
@@ -705,19 +706,16 @@ body, html {
         border-radius: 0;
     }
 
-@keyframes pulse {
+@keyframes onlineIndicator {
     0% {
-        transform: scale(1);
         opacity: 1;
     }
 
     50% {
-        transform: scale(1.2);
         opacity: 0.7;
     }
 
     100% {
-        transform: scale(1);
         opacity: 1;
     }
 }
@@ -2655,7 +2653,7 @@ body.with-verification-banner {
 }
 
     .minimize-call-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
+        background: var(--button-primary);
         transform: scale(1.1);
     }
 
@@ -2744,4 +2742,13 @@ body.with-verification-banner {
     .call-overlay-minimized-923847 .video-container:hover,
     .call-overlay-audio-minimized-847392:hover {
         opacity: 0.9;
+    }
+
+.shared-image {
+    min-height: 200px; /* Reserve space while loading */
+    background: var(--bg-tertiary);
+}
+
+    .shared-image.loaded {
+        min-height: auto;
     }

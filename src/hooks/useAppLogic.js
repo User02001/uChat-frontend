@@ -49,6 +49,8 @@ export const useAppLogic = () => {
  const [callMinimized, setCallMinimized] = useState(false);
  const [screenshareMinimized, setScreenshareMinimized] = useState(false);
  const [userStatuses, setUserStatuses] = useState({}); // Track user statuses (online/away/offline)
+ const [showProfileModal, setShowProfileModal] = useState(null);
+ const [isLoadingMessages, setIsLoadingMessages] = useState(false);
  const activityTimeoutRef = useRef(null);
 
  // Refs for keeping state in sync
@@ -221,6 +223,35 @@ export const useAppLogic = () => {
    handleMessageNotification(message);
   });
 
+  socket.on("messages_loaded", (data) => {
+   const { messages: newMessages, has_more } = data;
+
+   // Add 500ms delay before processing
+   setTimeout(() => {
+    setHasMoreMessages(has_more);
+    setLoadingMoreMessages(false);
+    setIsLoadingMessages(false);
+
+    if (newMessages.length > 0) {
+     setMessages((prev) => {
+      const combined = [...newMessages, ...prev];
+      const unique = combined.filter((msg, index, self) =>
+       index === self.findIndex((m) => m.id === msg.id)
+      );
+      return unique.sort((a, b) => a.id - b.id);
+     });
+
+     const reactionsData = {};
+     newMessages.forEach((message) => {
+      if (message.reactions && Object.keys(message.reactions).length > 0) {
+       reactionsData[message.id] = message.reactions;
+      }
+     });
+     setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
+    }
+   }, 200); // 500ms artificial delay
+  });
+
   socket.on("desktop_notification", (data) => {
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
@@ -372,34 +403,21 @@ export const useAppLogic = () => {
   }
  }, [navigate]);
 
- // Load messages for a specific contact
- const loadMessages = useCallback(async (contactId) => {
-  try {
-   const response = await fetch(
-    `${API_BASE_URL}/api/messages/${contactId}`,
-    {
-     credentials: "include",
-    }
-   );
+ // Load messages for a specific contact with pagination
+ const loadMessages = useCallback((contactId, beforeId = null) => {
+  if (!socketRef.current || !socketRef.current.connected || isLoadingMessages) return;
 
-   if (response.ok) {
-    const data = await response.json();
-    setMessages(data.messages);
+  setIsLoadingMessages(true);
 
-    const reactionsData = {};
-    data.messages.forEach((message) => {
-     if (message.reactions && Object.keys(message.reactions).length > 0) {
-      reactionsData[message.id] = message.reactions;
-     }
-    });
-    setMessageReactions(reactionsData);
-   } else if (response.status === 401) {
-    navigate("/login", { replace: true });
-   }
-  } catch (error) {
-   console.error("Failed to load messages:", error);
-  }
- }, [navigate]);
+  socketRef.current.emit("load_messages", {
+   contact_id: contactId,
+   before_id: beforeId,
+   limit: 10
+  });
+ }, [isLoadingMessages]);
+
+ const [hasMoreMessages, setHasMoreMessages] = useState(true);
+ const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
 
  // Search for users
  const searchUsers = useCallback(async (query) => {
@@ -508,7 +526,9 @@ export const useAppLogic = () => {
       }, 100);
 
       setTimeout(() => {
-       loadMessages(contact.id);
+       setMessages([]);
+       setHasMoreMessages(true);
+       loadMessages(contact.id, null);
       }, 1000);
      }, 350);
     } else {
@@ -532,7 +552,9 @@ export const useAppLogic = () => {
       }, 500);
      }
 
-     loadMessages(contact.id);
+     setMessages([]);
+     setHasMoreMessages(true);
+     loadMessages(contact.id, null);
     }
    }
   },
@@ -1149,6 +1171,14 @@ export const useAppLogic = () => {
   setScreenshareMinimized,
   userStatuses,
   setUserStatuses,
+  showProfileModal,
+  setShowProfileModal,
+  hasMoreMessages,
+  setHasMoreMessages,
+  loadingMoreMessages,
+  setLoadingMoreMessages,
+  isLoadingMessages,
+  setIsLoadingMessages,
 
   // Refs
   socketRef,

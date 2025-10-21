@@ -84,7 +84,11 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
      title="Chats"
      onClick={() => handleTabClick('chats')}
     >
-     <i className="fas fa-comment-dots"></i>
+     <img
+      src="/resources/icons/chats.svg"
+      alt="Chats"
+      className="nav-icon nav-icon-chats"
+     />
     </button>
    </div>
 
