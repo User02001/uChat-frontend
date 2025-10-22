@@ -51,6 +51,9 @@ export const useAppLogic = () => {
  const [userStatuses, setUserStatuses] = useState({}); // Track user statuses (online/away/offline)
  const [showProfileModal, setShowProfileModal] = useState(null);
  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+ const [callPosition, setCallPosition] = useState({ x: 20, y: 20 });
+ const [isDragging, setIsDragging] = useState(false);
+ const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
  const activityTimeoutRef = useRef(null);
 
  // Refs for keeping state in sync
@@ -139,9 +142,10 @@ export const useAppLogic = () => {
     socket.emit("join_chat", { contact_id: currentActiveContact.id });
    }
 
-   // IMMEDIATELY request fresh contacts data and online status
+   // Immediately refresh data and mark this session as active
    socket.emit("request_contacts_update");
    socket.emit("request_online_users");
+   emitActivity(); // <-- ping activity on connect so status shows ONLINE right away
   });
 
   socket.on("online_users_update", (data) => {
@@ -249,7 +253,7 @@ export const useAppLogic = () => {
      });
      setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
     }
-   }, 200); // 500ms artificial delay
+   }, 200); // 200ms artificial delay
   });
 
   socket.on("desktop_notification", (data) => {
@@ -1179,6 +1183,12 @@ export const useAppLogic = () => {
   setLoadingMoreMessages,
   isLoadingMessages,
   setIsLoadingMessages,
+  callPosition,
+  setCallPosition,
+  isDragging,
+  setIsDragging,
+  dragOffset,
+  setDragOffset,
 
   // Refs
   socketRef,

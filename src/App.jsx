@@ -60,6 +60,9 @@ const App = () => {
   screenshareMinimized, setScreenshareMinimized,
   userStatuses, setUserStatuses,
   showProfileModal, setShowProfileModal,
+  callPosition, setCallPosition,
+  isDragging, setIsDragging,
+  dragOffset, setDragOffset,
 
   // Refs
   socketRef,
@@ -87,6 +90,60 @@ const App = () => {
   loadLastContact,
   handleMessageNotification,
  } = useAppLogic();
+
+ const handleDragStart = (e) => {
+  const isTouchEvent = e.type === 'touchstart';
+  const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+  const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  setDragOffset({
+   x: clientX - rect.left,
+   y: clientY - rect.top
+  });
+  setIsDragging(true);
+ };
+
+ const handleDragMove = useCallback((e) => {
+  if (!isDragging) return;
+
+  const isTouchEvent = e.type === 'touchmove';
+  const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+  const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+
+  const newX = clientX - dragOffset.x;
+  const newY = clientY - dragOffset.y;
+
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
+  const elementWidth = 380;
+  const elementHeight = 300;
+
+  const clampedX = Math.max(0, Math.min(newX, windowWidth - elementWidth));
+  const clampedY = Math.max(0, Math.min(newY, windowHeight - elementHeight));
+
+  setCallPosition({ x: clampedX, y: clampedY });
+ }, [isDragging, dragOffset]);
+
+ const handleDragEnd = () => {
+  setIsDragging(false);
+ };
+
+ useEffect(() => {
+  if (isDragging) {
+   window.addEventListener('mousemove', handleDragMove);
+   window.addEventListener('mouseup', handleDragEnd);
+   window.addEventListener('touchmove', handleDragMove);
+   window.addEventListener('touchend', handleDragEnd);
+
+   return () => {
+    window.removeEventListener('mousemove', handleDragMove);
+    window.removeEventListener('mouseup', handleDragEnd);
+    window.removeEventListener('touchmove', handleDragMove);
+    window.removeEventListener('touchend', handleDragEnd);
+   };
+  }
+ }, [isDragging, handleDragMove]);
 
  // Expose a safe quick-reply bridge for the Electron main process
  useEffect(() => {
@@ -120,7 +177,6 @@ const App = () => {
   startCall,
   answerCall,
   endCall,
-  setupSocketListeners,
   audioEnabled,
   enableAudio,
   screenshareState,
@@ -129,7 +185,26 @@ const App = () => {
   startScreenshare,
   answerScreenshare,
   endScreenshare,
- } = useCalls(socketRef, setError);
+ } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
+
+ // Auto-hide call UI after 4 seconds
+ useEffect(() => {
+  if ((callState.isOutgoing || callState.isActive) && !callState.isIncoming && !callMinimized) {
+   const timer = setTimeout(() => {
+    const header = document.querySelector('.modern-call-header');
+    const controls = document.querySelector('.modern-call-controls-wrapper');
+    const localVideo = document.querySelector('.modern-local-video');
+
+    if (header && controls) {
+     header.classList.add('hidden');
+     controls.classList.add('hidden');
+     if (localVideo) localVideo.classList.add('ui-hidden');
+    }
+   }, 4000);
+
+   return () => clearTimeout(timer);
+  }
+ }, [callState.isOutgoing, callState.isActive, callState.isIncoming, callMinimized]);
 
  // Show verification banner for unverified users
  useEffect(() => {
@@ -248,6 +323,40 @@ const App = () => {
     .catch((e) => console.log("Local video play error:", e));
   }
  }, [callState.localStream, callState.isActive, callState.isIncoming]);
+
+ // Re-assign video streams when minimized state changes
+ useEffect(() => {
+  // Re-assign local stream
+  if (callState.localStream && localVideoRef.current) {
+   localVideoRef.current.srcObject = callState.localStream;
+   localVideoRef.current.muted = true;
+   localVideoRef.current.play().catch(console.error);
+  }
+
+  // Re-assign remote stream
+  if (callState.remoteStream && remoteVideoRef.current) {
+   remoteVideoRef.current.srcObject = callState.remoteStream;
+   remoteVideoRef.current.muted = false;
+   remoteVideoRef.current.play().catch(console.error);
+  }
+ }, [callMinimized]);
+
+ // Re-assign screenshare streams when minimized state changes
+ useEffect(() => {
+  // Re-assign local screenshare
+  if (screenshareState.localStream && screenshareLocalVideoRef.current && screenshareState.isSharing) {
+   screenshareLocalVideoRef.current.srcObject = screenshareState.localStream;
+   screenshareLocalVideoRef.current.muted = true;
+   screenshareLocalVideoRef.current.play().catch(console.error);
+  }
+
+  // Re-assign remote screenshare
+  if (screenshareState.remoteStream && screenshareRemoteVideoRef.current && screenshareState.isViewing) {
+   screenshareRemoteVideoRef.current.srcObject = screenshareState.remoteStream;
+   screenshareRemoteVideoRef.current.muted = false;
+   screenshareRemoteVideoRef.current.play().catch(console.error);
+  }
+ }, [screenshareMinimized]);
 
  // Update document title and favicon based on active contact
  useEffect(() => {
@@ -1195,11 +1304,11 @@ const App = () => {
              ) : message.message_type === "image" ? (
               <div className="message-image">
                <img
-                  src={`${API_BASE_URL}${message.file_path}`}
-                  alt="Shared image"
-                  className="shared-image"
-                  onLoad={(e) => e.target.classList.add('loaded')}
-                />
+                 src={`${API_BASE_URL}${message.file_path}`}
+                 alt="Shared image"
+                 className="shared-image"
+                 onLoad={(e) => e.target.classList.add('loaded')}
+               />
               </div>
              ) : message.message_type === "file" ? (
               <div
@@ -1433,7 +1542,13 @@ const App = () => {
       )}
      </div>
 
-     {error && <div className="error-toast">{error}</div>}
+     {(error &&
+      !(typeof error === "string" &&
+       !callState.isActive &&
+       (error.toLowerCase().includes("call connection failed") ||
+        error.toLowerCase().includes("connection failed")))) && (
+       <div className="error-toast">{error}</div>
+      )}
 
      {callState.isIncoming && (
       <div className="incoming-call-notification">
@@ -1509,226 +1624,409 @@ const App = () => {
      )}
 
      {(screenshareState.isActive || screenshareState.isSharing) && (
-      <div
-       className={`call-overlay screenshare-overlay ${screenshareMinimized
-        ? "call-overlay-minimized-923847 screenshare-overlay-minimized-847392"
-        : ""
-        }`}
-      >
-       <div className="active-call">
-        <div className="call-status-overlay">
-         <h3>
-          {screenshareState.isSharing
-           ? `Sharing screen with ${screenshareState.contact?.username}`
-           : `Viewing ${screenshareState.contact?.username}'s screen`}
-         </h3>
-
-         {!screenshareMinimized && (
-          <button
-           className="minimize-call-btn"
-           onClick={() => setScreenshareMinimized(true)}
-           title="Minimize"
-          >
-           <i className="fas fa-minus"></i>
-          </button>
-         )}
-        </div>
-
-        {/* --- VIDEO --- */}
-        <div className="video-container">
-         {screenshareState.isViewing && (
-          <video
-           ref={screenshareRemoteVideoRef}
-           className="remote-video"
-           autoPlay
-           playsInline
-           controls={false}
-           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            backgroundColor: "#000",
-           }}
-          />
-         )}
-         {screenshareState.isSharing && (
-          <video
-           ref={screenshareLocalVideoRef}
-           className="local-video"
-           autoPlay
-           playsInline
-           muted
-           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            backgroundColor: "#000",
-           }}
-          />
-         )}
-        </div>
-
-        {/* --- CONTROLS --- */}
+      <>
+       {screenshareMinimized ? (
         <div
-         className={
-          screenshareMinimized
-           ? "call-controls-minimized-192837"
-           : "call-controls"
-         }
+         className="modern-minimized-screenshare"
+         style={{
+          left: `${callPosition.x}px`,
+          top: `${callPosition.y}px`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+         }}
+         onMouseDown={handleDragStart}
+         onTouchStart={handleDragStart}
         >
-         <button
-          className={
-           screenshareMinimized
-            ? "end-call-btn-minimized-482910"
-            : "end-call-btn"
-          }
-          onClick={endScreenshare}
-         ></button>
+         <div className="modern-minimized-header">
+          <div className="modern-minimized-info">
+           <div className="modern-minimized-screenshare-icon">
+            <i className="fas fa-desktop"></i>
+           </div>
+           <div className="modern-minimized-user">
+            <h4>{screenshareState.contact?.username}</h4>
+            <p>
+             {screenshareState.isSharing ? "Sharing Screen" : "Viewing Screen"}
+            </p>
+           </div>
+          </div>
+         </div>
 
-         {screenshareMinimized && (
+         <div className="modern-minimized-screenshare-preview">
+          {screenshareState.isViewing && (
+           <video
+            ref={screenshareRemoteVideoRef}
+            className="modern-minimized-screenshare-video"
+            autoPlay
+            playsInline
+           />
+          )}
+          {screenshareState.isSharing && (
+           <video
+            ref={screenshareLocalVideoRef}
+            className="modern-minimized-screenshare-video"
+            autoPlay
+            playsInline
+            muted
+           />
+          )}
+         </div>
+
+         <div className="modern-minimized-controls">
           <button
-           className="maximize-call-btn-573829"
-           onClick={() => setScreenshareMinimized(false)}
+           className="modern-minimized-btn modern-minimized-maximize"
+           onClick={(e) => {
+            e.stopPropagation();
+            setScreenshareMinimized(false);
+           }}
            title="Maximize"
           >
            <i className="fas fa-expand"></i>
           </button>
-         )}
+          <button
+           className="modern-minimized-btn modern-minimized-end"
+           onClick={(e) => {
+            e.stopPropagation();
+            endScreenshare();
+           }}
+           title="Stop sharing"
+          >
+           <i className="fas fa-times"></i>
+          </button>
+         </div>
         </div>
-       </div>
-      </div>
-     )}
+       ) : (
+        <div
+         className="modern-screenshare-overlay"
+         onClick={() => {
+          const controls = document.querySelector('.modern-screenshare-controls-wrapper');
+          if (controls) {
+           controls.classList.toggle('visible');
+           setTimeout(() => {
+            if (controls.classList.contains('visible')) {
+             controls.classList.remove('visible');
+            }
+           }, 3000);
+          }
+         }}
+        >
+         <div className="modern-screenshare-active">
+          <div className="modern-screenshare-header">
+           <div className="modern-screenshare-info">
+            <div className="modern-screenshare-icon">
+             <i className="fas fa-desktop"></i>
+            </div>
+            <div className="modern-screenshare-user">
+             <h3>
+              {screenshareState.isSharing
+               ? `Sharing with ${screenshareState.contact?.username}`
+               : screenshareState.contact?.username}
+             </h3>
+             <p>
+              {screenshareState.isSharing
+               ? "Screen Share Active"
+               : "Viewing Screen Share"}
+             </p>
+            </div>
+           </div>
+           <button
+            className="modern-screenshare-minimize-btn"
+            onClick={(e) => {
+             e.stopPropagation();
+             setScreenshareMinimized(true);
+            }}
+            title="Minimize"
+           >
+            <i className="fas fa-minus"></i>
+           </button>
+          </div>
 
+          <div className="modern-screenshare-container">
+           {screenshareState.isViewing && (
+            <video
+             ref={screenshareRemoteVideoRef}
+             className="modern-screenshare-video"
+             autoPlay
+             playsInline
+             controls={false}
+            />
+           )}
+           {screenshareState.isSharing && (
+            <video
+             ref={screenshareLocalVideoRef}
+             className="modern-screenshare-video"
+             autoPlay
+             playsInline
+             muted
+            />
+           )}
+          </div>
+
+          <div className="modern-screenshare-controls-wrapper visible">
+           <div className="modern-screenshare-controls">
+            <button
+             className="modern-screenshare-end-btn"
+             onClick={(e) => {
+              e.stopPropagation();
+              endScreenshare();
+             }}
+             title="Stop sharing"
+            >
+             <i className="fas fa-times"></i>
+            </button>
+           </div>
+          </div>
+         </div>
+        </div>
+       )}
+      </>
+     )}
      {(callState.isOutgoing || callState.isActive) &&
       !callState.isIncoming && (
-       <div
-        className={`call-overlay ${callState.type === "video" ? "video-call" : "audio-call"
-         } ${callMinimized ? "call-overlay-minimized-923847" : ""}`}
-       >
-        <div className="active-call">
-         {(callState.isOutgoing || callState.isActive) &&
-          callState.contact && (
-           <div
-            className={
-             callMinimized
-              ? "call-status-minimized-738291"
-              : "call-status-overlay"
-            }
-           >
-            <h3>
-             {callState.isOutgoing
-              ? `Calling ${callState.contact.username}...`
-              : callState.contact.username}
-            </h3>
-            {!callMinimized && (
-             <button
-              className="minimize-call-btn"
-              onClick={() => setCallMinimized(true)}
-              title="Minimize"
-             >
-              <i className="fas fa-minus"></i>
-             </button>
-            )}
+       <>
+        {callMinimized ? (
+         <div
+          className="modern-minimized-call"
+          style={{
+           left: `${callPosition.x}px`,
+           top: `${callPosition.y}px`,
+           cursor: isDragging ? 'grabbing' : 'grab'
+          }}
+          onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
+          onClick={(e) => {
+           if (!isDragging && isMobile) {
+            e.stopPropagation();
+            setCallMinimized(false);
+           }
+          }}
+         >
+          <div className="modern-minimized-header">
+           <div className="modern-minimized-info">
+            <img
+             src={
+              callState.contact?.avatar_url
+               ? `${API_BASE_URL}${callState.contact.avatar_url}`
+               : "/resources/default_avatar.png"
+             }
+             alt={callState.contact?.username}
+             className="modern-minimized-avatar"
+             draggable="false"
+            />
+            <div className="modern-minimized-user">
+             <h4>{callState.contact?.username}</h4>
+             <p>{callState.type === "video" ? "Video Call" : "Audio Call"}</p>
+            </div>
+           </div>
+          </div>
+
+          {callState.type === "video" ? (
+           <div className="modern-minimized-video">
+            <video
+             ref={remoteVideoRef}
+             className="modern-minimized-remote-video"
+             autoPlay
+             playsInline
+             muted={false}
+            />
+           </div>
+          ) : (
+           <div className="modern-minimized-audio">
+            <div className="modern-minimized-audio-wave"></div>
            </div>
           )}
 
-         {callState.type === "video" ? (
-          <div className="video-container">
-           <video
-            ref={remoteVideoRef}
-            className="remote-video"
-            autoPlay
-            playsInline
-            controls={false}
-            muted={false}
-            style={{
-             width: "100%",
-             height: "100%",
-             objectFit: "cover",
-            }}
-           />
-           <video
-            ref={localVideoRef}
-            className="local-video"
-            autoPlay
-            playsInline
-            controls={false}
-            muted={true}
-            style={{
-             transform: "scaleX(-1)",
-             width: "200px",
-             height: "150px",
-             position: "absolute",
-             top: "20px",
-             right: "20px",
-             borderRadius: "8px",
-             border: "2px solid white",
-            }}
-           />
-          </div>
-         ) : (
-          <div
-           className={
-            callMinimized
-             ? "call-overlay-audio-minimized-847392"
-             : "audio-call-ui"
-           }
-          >
-           <img
-            src={
-             callState.contact?.avatar_url
-              ? `${API_BASE_URL}${callState.contact.avatar_url}`
-              : "/resources/default_avatar.png"
-            }
-            alt={callState.contact?.username}
-            draggable="false"
-           />
-           <h3>{callState.contact?.username}</h3>
-           <p>Audio Call</p>
-           {/* Single audio element for remote stream */}
-           <audio
-            ref={remoteVideoRef}
-            autoPlay
-            muted={false}
-            style={{ display: "none" }}
-           />
-           {/* Local audio stream (usually not needed for UI) */}
-           <audio
-            ref={localVideoRef}
-            autoPlay
-            muted={true}
-            style={{ display: "none" }}
-           />
-          </div>
-         )}
-
-         <div
-          className={
-           callMinimized
-            ? "call-controls-minimized-192837"
-            : "call-controls"
-          }
-         >
-          <button
-           className={
-            callMinimized
-             ? "end-call-btn-minimized-482910"
-             : "end-call-btn"
-           }
-           onClick={endCall}
-          ></button>
-          {callMinimized && (
+          <div className="modern-minimized-controls">
            <button
-            className="maximize-call-btn-573829"
-            onClick={() => setCallMinimized(false)}
+            className="modern-minimized-btn modern-minimized-maximize"
+            onClick={(e) => {
+             e.stopPropagation();
+             setCallMinimized(false);
+            }}
             title="Maximize"
            >
             <i className="fas fa-expand"></i>
            </button>
-          )}
+           <button
+            className="modern-minimized-btn modern-minimized-end"
+            onClick={(e) => {
+             e.stopPropagation();
+             endCall();
+            }}
+            title="End call"
+           >
+            <i className="fas fa-phone"></i>
+           </button>
+          </div>
+
+          <audio
+           ref={callState.type === "audio" ? remoteVideoRef : null}
+           autoPlay
+           muted={false}
+           style={{ display: "none" }}
+          />
          </div>
-        </div>
-       </div>
+        ) : (
+         <div
+          className="modern-call-overlay"
+          onClick={(e) => {
+           // Prevent click if clicking on buttons
+           if (e.target.closest('button')) return;
+
+           const header = document.querySelector('.modern-call-header');
+           const controls = document.querySelector('.modern-call-controls-wrapper');
+           const localVideo = document.querySelector('.modern-local-video');
+
+           if (header && controls) {
+            const isCurrentlyHidden = header.classList.contains('hidden');
+
+            if (isCurrentlyHidden) {
+             header.classList.remove('hidden');
+             controls.classList.remove('hidden');
+             if (localVideo) localVideo.classList.remove('ui-hidden');
+
+             const hideTime = Date.now() + 4000;
+             header.setAttribute('data-hide-time', hideTime);
+
+             setTimeout(() => {
+              const currentHideTime = parseInt(header.getAttribute('data-hide-time'));
+              if (currentHideTime && Date.now() >= currentHideTime) {
+               header.classList.add('hidden');
+               controls.classList.add('hidden');
+               if (localVideo) localVideo.classList.add('ui-hidden');
+              }
+             }, 4000);
+            } else {
+             header.classList.add('hidden');
+             controls.classList.add('hidden');
+             if (localVideo) localVideo.classList.add('ui-hidden');
+            }
+           }
+          }}
+         >
+          <div className="modern-active-call">
+           <div className="modern-call-header hidden">
+            <div className="modern-call-info">
+             <img
+              src={
+               callState.contact?.avatar_url
+                ? `${API_BASE_URL}${callState.contact.avatar_url}`
+                : "/resources/default_avatar.png"
+              }
+              alt={callState.contact?.username}
+              className="modern-call-avatar"
+              draggable="false"
+             />
+             <div className="modern-call-user">
+              <h3>{callState.contact?.username}</h3>
+              <p>
+               {callState.isOutgoing
+                ? "Calling..."
+                : callState.type === "video"
+                 ? "Video Call"
+                 : "Audio Call"}
+              </p>
+             </div>
+            </div>
+            <button
+             className="modern-minimize-btn"
+             onClick={(e) => {
+              e.stopPropagation();
+              setCallMinimized(true);
+             }}
+             title="Minimize"
+            >
+             <i className="fas fa-minus"></i>
+            </button>
+           </div>
+
+           {callState.type === "video" ? (
+            <div className="modern-video-container">
+             <video
+              ref={remoteVideoRef}
+              className="modern-remote-video"
+              autoPlay
+              playsInline
+              controls={false}
+              muted={false}
+             />
+             <video
+              ref={localVideoRef}
+              className="modern-local-video"
+              autoPlay
+              playsInline
+              controls={false}
+              muted={true}
+             />
+            </div>
+           ) : (
+            <div className="modern-audio-call-ui">
+             <div className="modern-audio-avatar-wrapper">
+              <img
+               src={
+                callState.contact?.avatar_url
+                 ? `${API_BASE_URL}${callState.contact.avatar_url}`
+                 : "/resources/default_avatar.png"
+               }
+               alt={callState.contact?.username}
+               draggable="false"
+               className="modern-audio-avatar"
+              />
+              <div className="modern-audio-pulse"></div>
+             </div>
+             <h3>{callState.contact?.username}</h3>
+             <p>{callState.isOutgoing ? "Calling..." : "Audio Call"}</p>
+             <audio
+              ref={remoteVideoRef}
+              autoPlay
+              muted={false}
+              style={{ display: "none" }}
+             />
+             <audio
+              ref={localVideoRef}
+              autoPlay
+              muted={true}
+              style={{ display: "none" }}
+             />
+            </div>
+           )}
+
+           <div className="modern-call-controls-wrapper">
+            <div className="modern-call-controls">
+             <button
+              className="modern-control-btn modern-mute-btn"
+              onClick={(e) => {
+               e.stopPropagation();
+              }}
+              title="Mute"
+             >
+              <i className="fas fa-microphone"></i>
+             </button>
+             {callState.type === "video" && (
+              <button
+               className="modern-control-btn modern-camera-btn"
+               onClick={(e) => {
+                e.stopPropagation();
+               }}
+               title="Turn off camera"
+              >
+               <i className="fas fa-video"></i>
+              </button>
+             )}
+             <button
+              className="modern-end-call-btn"
+              onClick={(e) => {
+               e.stopPropagation();
+               endCall();
+              }}
+              title="End call"
+             >
+              <i className="fas fa-phone"></i>
+             </button>
+            </div>
+           </div>
+          </div>
+         </div>
+        )}
+       </>
       )}
      {showDownloadRecommendation && (
       <div className="download-recommendation-notification">
