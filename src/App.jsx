@@ -116,8 +116,9 @@ const App = () => {
 
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
-  const elementWidth = 380;
-  const elementHeight = 300;
+  const isMobileView = windowWidth <= 768;
+  const elementWidth = isMobileView ? 200 : 380;
+  const elementHeight = isMobileView ? 180 : 300;
 
   const clampedX = Math.max(0, Math.min(newX, windowWidth - elementWidth));
   const clampedY = Math.max(0, Math.min(newY, windowHeight - elementHeight));
@@ -185,11 +186,15 @@ const App = () => {
   startScreenshare,
   answerScreenshare,
   endScreenshare,
+  isMicMuted,
+  isCameraOff,
+  toggleMic,
+  toggleCamera
  } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
 
- // Auto-hide call UI after 4 seconds
+ // Auto-hide call UI after 4 seconds (only when call becomes active, not on mount)
  useEffect(() => {
-  if ((callState.isOutgoing || callState.isActive) && !callState.isIncoming && !callMinimized) {
+  if (callState.isActive && !callState.isIncoming && !callMinimized) {
    const timer = setTimeout(() => {
     const header = document.querySelector('.modern-call-header');
     const controls = document.querySelector('.modern-call-controls-wrapper');
@@ -204,7 +209,7 @@ const App = () => {
 
    return () => clearTimeout(timer);
   }
- }, [callState.isOutgoing, callState.isActive, callState.isIncoming, callMinimized]);
+ }, [callState.isActive, callState.isIncoming, callMinimized]);
 
  // Show verification banner for unverified users
  useEffect(() => {
@@ -1903,7 +1908,7 @@ const App = () => {
           }}
          >
           <div className="modern-active-call">
-           <div className="modern-call-header hidden">
+           <div className="modern-call-header">
             <div className="modern-call-info">
              <img
               src={
@@ -1992,23 +1997,25 @@ const App = () => {
            <div className="modern-call-controls-wrapper">
             <div className="modern-call-controls">
              <button
-              className="modern-control-btn modern-mute-btn"
+              className={`modern-control-btn modern-mute-btn ${isMicMuted ? 'muted' : ''}`}
               onClick={(e) => {
                e.stopPropagation();
+               toggleMic();
               }}
-              title="Mute"
+              title={isMicMuted ? "Unmute" : "Mute"}
              >
-              <i className="fas fa-microphone"></i>
+              <i className={`fas fa-microphone${isMicMuted ? '-slash' : ''}`}></i>
              </button>
              {callState.type === "video" && (
               <button
-               className="modern-control-btn modern-camera-btn"
+               className={`modern-control-btn modern-camera-btn ${isCameraOff ? 'camera-off' : ''}`}
                onClick={(e) => {
                 e.stopPropagation();
+                toggleCamera();
                }}
-               title="Turn off camera"
+               title={isCameraOff ? "Turn on camera" : "Turn off camera"}
               >
-               <i className="fas fa-video"></i>
+               <i className={`fas fa-video${isCameraOff ? '-slash' : ''}`}></i>
               </button>
              )}
              <button

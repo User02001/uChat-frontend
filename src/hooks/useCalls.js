@@ -28,6 +28,8 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
  const [audioEnabled, setAudioEnabled] = useState(false);
  const [ringtoneInitialized, setRingtoneInitialized] = useState(false);
+ const [isMicMuted, setIsMicMuted] = useState(false);
+ const [isCameraOff, setIsCameraOff] = useState(false);
  const peerRef = useRef(null);
  const localVideoRef = useRef(null);
  const remoteVideoRef = useRef(null);
@@ -756,7 +758,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
   } catch (error) {
    console.error('Failed to accept screenshare:', error);
-   setError('Failed to accept screenshare');
+   setError('You cannot screenshare from a phone');
   }
  };
 
@@ -953,6 +955,26 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   console.log('endScreenshare completed');
  };
  
+ const toggleMic = () => {
+  if (localStreamRef.current) {
+   const audioTrack = localStreamRef.current.getAudioTracks()[0];
+   if (audioTrack) {
+    audioTrack.enabled = !audioTrack.enabled;
+    setIsMicMuted(!audioTrack.enabled);
+   }
+  }
+ };
+
+ const toggleCamera = () => {
+  if (localStreamRef.current && callState.type === 'video') {
+   const videoTrack = localStreamRef.current.getVideoTracks()[0];
+   if (videoTrack) {
+    videoTrack.enabled = !videoTrack.enabled;
+    setIsCameraOff(!videoTrack.enabled);
+   }
+  }
+ };
+
  return {
   callState,
   localVideoRef,
@@ -968,7 +990,11 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   screenshareRemoteVideoRef,
   startScreenshare,
   answerScreenshare,
-  endScreenshare
+  endScreenshare,
+  isMicMuted,
+  isCameraOff,
+  toggleMic,
+  toggleCamera
  };
 };
 
