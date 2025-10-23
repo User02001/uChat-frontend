@@ -2,28 +2,77 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Peer from 'simple-peer';
 
 const ICE_SERVERS = [
+ // STUN servers (reliable)
  { urls: 'stun:stun.l.google.com:19302' },
  { urls: 'stun:stun1.l.google.com:19302' },
  { urls: 'stun:stun2.l.google.com:19302' },
+ { urls: 'stun:stun3.l.google.com:19302' },
+ { urls: 'stun:stun4.l.google.com:19302' },
+ { urls: 'stun:stun.ekiga.net' },
+ { urls: 'stun:stun.stunprotocol.org:3478' },
+
+ // Cloudflare TURN
  {
   urls: 'turn:turn.speed.cloudflare.com:50000',
   username: '921d10f57e8bad6db9e568c6cf774c4eee208592e4cff66601a18b3e9128bb791b7dc897f21a7a1eb78ab6a51d5598aa8ed10a3275c87888911a9f35ce2ad472',
   credential: 'aba9b169546eb6dcc7bfb1cdf34544cf95b5161d602e3b5fa7c8342b2e9802fb'
  },
+
+ // numb.viagenie.ca
  {
   urls: 'turn:numb.viagenie.ca',
   username: 'webrtc@live.com',
   credential: 'muazkh'
  },
+
+ // freestun.net
  {
   urls: 'turn:freestun.net:3478',
   username: 'free',
   credential: 'free'
  },
+
+ // turn.bistri.com
  {
   urls: 'turn:turn.bistri.com:80',
   username: 'homeo',
   credential: 'homeo'
+ },
+
+ // turn.anyfirewall.com
+ {
+  urls: 'turn:turn.anyfirewall.com:443?transport=tcp',
+  username: 'webrtc',
+  credential: 'webrtc'
+ },
+
+ // Old school ones that might still work
+ {
+  urls: 'turn:192.158.29.39:3478?transport=udp',
+  username: '28224511:1379330808',
+  credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA='
+ },
+ {
+  urls: 'turn:192.158.29.39:3478?transport=tcp',
+  username: '28224511:1379330808',
+  credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA='
+ },
+
+ // openrelay (broken but fuck it, include it anyway)
+ {
+  urls: 'turn:openrelay.metered.ca:80',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+ },
+ {
+  urls: 'turn:openrelay.metered.ca:80?transport=tcp',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+ },
+ {
+  urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
  }
 ];
 
