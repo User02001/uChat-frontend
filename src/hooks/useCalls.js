@@ -249,19 +249,38 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
   const socket = socketRef.current;
 
+  // Remove any existing listeners first to prevent duplicates
+  socket.off('incoming_call');
+  socket.off('call_accepted');
+  socket.off('call_rejected');
+  socket.off('webrtc_signal');
+  socket.off('call_ended');
+  socket.off('screenshare_incoming');
+  socket.off('screenshare_accepted');
+  socket.off('screenshare_rejected');
+  socket.off('screenshare_signal');
+  socket.off('screenshare_ended');
+
   // CALL LISTENERS
   socket.on('incoming_call', (data) => {
+   console.log('[CALLS] Incoming call received:', data);
    stopRingtone();
-   playRingtone();
 
-   setCallState(prev => ({
-    ...prev,
+   // Force state update to happen immediately
+   setCallState({
+    isActive: false,
     isIncoming: true,
-    contact: data.caller,
+    isOutgoing: false,
     type: data.type,
+    contact: data.caller,
+    localStream: null,
+    remoteStream: null,
     incomingOffer: data.offer,
-    callId: data.call_id  // ADD THIS
-   }));
+    callId: data.call_id
+   });
+
+   // Play ringtone after state is set
+   setTimeout(() => playRingtone(), 100);
   });
 
   socket.on('call_accepted', (data) => {
@@ -352,27 +371,20 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    endScreenshare(true);
   });
 
-  return () => {
-   socket.off('incoming_call');
-   socket.off('call_accepted');
-   socket.off('call_rejected');
-   socket.off('webrtc_signal');
-   socket.off('call_ended');
-   socket.off('screenshare_incoming');
-   socket.off('screenshare_accepted');
-   socket.off('screenshare_rejected');
-   socket.off('screenshare_signal');
-   socket.off('screenshare_ended');
-  };
- }, [socketRef, callState.contact, playRingtone, stopRingtone]);
+ }, [socketRef.current]);
 
- // Set up socket listeners when socket connects
+ // Set up socket listeners when socket connects - ONLY run once per socket connection
  useEffect(() => {
-  if (socketRef.current) {
-   const cleanup = setupSocketListeners();
-   return cleanup;
-  }
- }, [socketRef, setupSocketListeners]);
+  if (!socketRef.current) return;
+
+  console.log('[CALLS] Setting up socket listeners');
+  const cleanup = setupSocketListeners();
+
+  return () => {
+   console.log('[CALLS] Cleaning up socket listeners');
+   if (cleanup) cleanup();
+  };
+ }, [socketRef.current]);
 
  const startCall = async (contact, type) => {
   try {
