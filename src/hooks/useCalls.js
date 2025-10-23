@@ -1,6 +1,26 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Peer from 'simple-peer';
 
+const ICE_SERVERS = [
+ { urls: 'stun:stun.l.google.com:19302' },
+ { urls: 'stun:global.stun.twilio.com:3478' },
+ {
+  urls: 'turn:openrelay.metered.ca:80',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+ },
+ {
+  urls: 'turn:openrelay.metered.ca:80?transport=tcp',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+ },
+ {
+  urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+  username: 'openrelayproject',
+  credential: 'openrelayproject'
+ }
+];
+
 const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
  const [callState, setCallState] = useState({
   isActive: false,
@@ -157,20 +177,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    trickle: false,
    stream,
    config: {
-    iceServers: [
-     { urls: 'stun:stun.l.google.com:19302' },
-     { urls: 'stun:global.stun.twilio.com:3478' },
-     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-     },
-     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-     }
-    ]
+    iceServers: ICE_SERVERS
    }
   });
 
@@ -397,20 +404,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     trickle: false,
     stream,
     config: {
-     iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      {
-       urls: 'turn:openrelay.metered.ca:80',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      }
-     ]
+     iceServers: ICE_SERVERS
     }
    });
 
@@ -520,20 +514,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     trickle: false,
     stream,
     config: {
-     iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      {
-       urls: 'turn:openrelay.metered.ca:80',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      },
-      {
-       urls: 'turn:openrelay.metered.ca:443',
-       username: 'openrelayproject',
-       credential: 'openrelayproject'
-      }
-     ]
+     iceServers: ICE_SERVERS
     }
    });
 
@@ -712,10 +693,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     trickle: false,
     stream,
     config: {
-     iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
-     ]
+     iceServers: ICE_SERVERS
     }
    });
 
@@ -793,10 +771,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     initiator: false,
     trickle: false,
     config: {
-     iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
-     ]
+     iceServers: ICE_SERVERS
     }
    });
 
