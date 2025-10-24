@@ -61,7 +61,7 @@ body, html {
     --warning-border: #d69e2e;
 }
 
-.login-container {
+.loginContainer {
     min-height: 100vh;
     background: var(--bg-primary);
     display: flex;
@@ -72,7 +72,7 @@ body, html {
     transition: background 0.3s ease;
 }
 
-.login-card {
+.loginCard {
     background-color: var(--bg-secondary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow);
@@ -84,18 +84,18 @@ body, html {
     z-index: 2;
 }
 
-.login-header {
+.loginHeader {
     text-align: center;
     margin-bottom: 32px;
 }
 
-.logo-animation {
+.logoAnimation {
     width: 64px;
     height: 64px;
     margin: 0 auto 16px auto;
 }
 
-.login-header h1 {
+.loginHeader h1 {
     color: var(--text-primary);
     font-size: 24px;
     font-weight: 600;
@@ -103,14 +103,14 @@ body, html {
     transition: color 0.3s ease;
 }
 
-.login-header p {
+.loginHeader p {
     color: var(--text-secondary);
     font-size: 14px;
     margin: 0;
     transition: color 0.3s ease;
 }
 
-.login-form {
+.loginForm {
     margin-bottom: 24px;
 }
 
@@ -124,29 +124,29 @@ body, html {
     transition: all 0.3s ease;
 }
 
-.alert-error {
+.alertError {
     background-color: var(--error-bg);
     color: var(--error-text);
     border-color: var(--error-border);
 }
 
-.alert-success {
+.alertSuccess {
     background-color: var(--success-bg);
     color: var(--success-text);
     border-color: var(--success-border);
 }
 
-.alert-warning {
+.alertWarning {
     background-color: var(--warning-bg);
     color: var(--warning-text);
     border-color: var(--warning-border);
 }
 
-.input-group {
+.inputGroup {
     margin-bottom: 16px;
 }
 
-    .input-group label {
+    .inputGroup label {
         display: block;
         color: var(--text-primary);
         font-size: 14px;
@@ -155,7 +155,7 @@ body, html {
         transition: color 0.3s ease;
     }
 
-    .input-group input {
+    .inputGroup input {
         width: 100%;
         padding: 12px 16px;
         border: 1px solid var(--border);
@@ -167,19 +167,19 @@ body, html {
         transition: border-color 0.2s ease, background-color 0.3s ease, color 0.3s ease;
     }
 
-        .input-group input:focus {
+        .inputGroup input:focus {
             outline: none;
             border-color: var(--border-focus);
             box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1);
         }
 
-        .input-group input::placeholder {
+        .inputGroup input::placeholder {
             color: var(--text-secondary);
             transition: color 0.3s ease;
         }
 
 /* Verification code specific styling */
-.verification-input {
+.verificationInput {
     font-size: 18px !important;
     text-align: center;
     letter-spacing: 2px;
@@ -187,7 +187,7 @@ body, html {
     font-weight: 500;
 }
 
-.login-btn {
+.loginBtn {
     width: 100%;
     padding: 12px 16px;
     border: none;
@@ -200,18 +200,18 @@ body, html {
     overflow: hidden;
 }
 
-    .login-btn:disabled {
+    .loginBtn:disabled {
         opacity: 0.6;
         cursor: not-allowed;
     }
 
-    .login-btn.primary {
+    .loginBtn.primary {
         background: var(--button-primary);
         color: var(--button-primary-text);
         font-weight: 600;
     }
 
-        .login-btn.primary:hover:not(:disabled) {
+        .loginBtn.primary:hover:not(:disabled) {
             background: var(--button-primary-hover);
         }
 
@@ -241,13 +241,13 @@ body, html {
         transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-.oauth-buttons {
+.oauthButtons {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.oauth-btn {
+.oauthBtn {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid var(--border);
@@ -264,50 +264,50 @@ body, html {
     transition: border-color 0.2s ease, background-color 0.2s ease, color 0.3s ease;
 }
 
-    .oauth-btn:disabled {
+    .oauthBtn:disabled {
         opacity: 0.6;
         cursor: not-allowed;
     }
 
-    .oauth-btn:hover:not(:disabled) {
+    .oauthBtn:hover:not(:disabled) {
         border-color: var(--border-focus);
     }
 
-[data-theme="light"] .oauth-btn:hover:not(:disabled) {
+[data-theme="light"] .oauthBtn:hover:not(:disabled) {
     background-color: #f8f8f8;
 }
 
-[data-theme="dark"] .oauth-btn:hover:not(:disabled) {
+[data-theme="dark"] .oauthBtn:hover:not(:disabled) {
     background-color: #3c3c3c;
 }
 
-.login-footer {
+.loginFooter {
     text-align: center;
     border-top: 1px solid var(--border);
     padding-top: 24px;
     transition: border-color 0.3s ease;
 }
 
-    .login-footer p {
+    .loginFooter p {
         color: var(--text-secondary);
         font-size: 14px;
         margin: 0;
         transition: color 0.3s ease;
     }
 
-    .login-footer a {
+    .loginFooter a {
         color: var(--border-focus);
         text-decoration: none;
         font-weight: 500;
     }
 
-        .login-footer a:hover {
+        .loginFooter a:hover {
             text-decoration: underline;
             color: #f57c00;
         }
 
 /* Helper text styles */
-.helper-text {
+.helperText {
     font-size: 12px;
     color: var(--text-secondary);
     margin-top: 8px;
@@ -337,7 +337,7 @@ body, html {
 }
 
 /* Yellow aura background animation - ULTRA OPTIMIZED */
-.aura-background {
+.auraBackground {
     position: fixed !important;
     top: 15% !important;
     left: 20% !important;
@@ -370,12 +370,12 @@ body, html {
     }
 }
 
-.main-logo {
+.mainLogo {
     object-fit: contain;
     transform: translateY(15px);
 }
 
-.logo-container {
+.logoContainer {
     display: flex;
     justify-content: center;
     margin-top: -40px; /* 👈 pulls the logo upward, reduces top gap */
@@ -383,39 +383,39 @@ body, html {
 }
 
 /* Input autofill styling - clean glow without glitches */
-.input-group input:-webkit-autofill,
-.input-group input:-webkit-autofill:hover,
-.input-group input:-webkit-autofill:focus,
-.input-group input:-webkit-autofill:active {
+.inputGroup input:-webkit-autofill,
+.inputGroup input:-webkit-autofill:hover,
+.inputGroup input:-webkit-autofill:focus,
+.inputGroup input:-webkit-autofill:active {
     -webkit-box-shadow: 0 0 0 1000px var(--bg-secondary) inset !important;
     -webkit-text-fill-color: var(--text-primary) !important;
     border: 1px solid rgba(255, 193, 7, 0.5) !important;
     transition: all 0.3s ease !important;
 }
 
-    .input-group input:-webkit-autofill:focus {
+    .inputGroup input:-webkit-autofill:focus {
         border-color: var(--border-focus) !important;
         -webkit-box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1), 0 0 0 1000px var(--bg-secondary) inset !important;
     }
 
 /* Firefox autofill */
-.input-group input:-moz-autofill {
+.inputGroup input:-moz-autofill {
     background-color: var(--bg-secondary) !important;
     border: 1px solid rgba(255, 193, 7, 0.5) !important;
     color: var(--text-primary) !important;
 }
 
-    .input-group input:-moz-autofill:focus {
+    .inputGroup input:-moz-autofill:focus {
         border-color: var(--border-focus) !important;
         box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1) !important;
     }
 
 /* Terms checkbox styling */
-.terms-checkbox {
+.termsCheckbox {
     margin-bottom: 16px;
 }
 
-.checkbox-label {
+.checkboxLabel {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -423,13 +423,13 @@ body, html {
     user-select: none;
 }
 
-.checkbox-input {
+.checkboxInput {
     position: absolute;
     opacity: 0;
     cursor: pointer;
 }
 
-.checkbox-custom {
+.checkboxCustom {
     position: relative;
     width: 20px;
     height: 20px;
@@ -441,7 +441,7 @@ body, html {
     margin-top: 2px;
 }
 
-    .checkbox-custom::after {
+    .checkboxCustom::after {
         content: '';
         position: absolute;
         display: none;
@@ -454,37 +454,37 @@ body, html {
         transform: rotate(45deg);
     }
 
-.checkbox-input:checked ~ .checkbox-custom {
+.checkboxInput:checked ~ .checkboxCustom {
     background: var(--button-primary);
     border-color: #ff9800;
     animation: checkbox-pop 0.3s ease;
 }
 
-    .checkbox-input:checked ~ .checkbox-custom::after {
+    .checkboxInput:checked ~ .checkboxCustom::after {
         display: block;
         animation: checkmark-draw 0.3s ease;
     }
 
-.checkbox-label:hover .checkbox-custom {
+.checkboxLabel:hover .checkboxCustom {
     border-color: var(--border-focus);
     box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1);
 }
 
-.checkbox-text {
+.checkboxText {
     flex: 1;
     font-size: 13px;
     color: var(--text-secondary);
     line-height: 1.5;
 }
 
-.terms-link {
+.termsLink {
     color: var(--border-focus);
     text-decoration: none;
     font-weight: 500;
     transition: all 0.2s ease;
 }
 
-    .terms-link:hover {
+    .termsLink:hover {
         color: #f57c00;
         text-decoration: underline;
     }

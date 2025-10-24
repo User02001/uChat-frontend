@@ -12,38 +12,12 @@ const REACTIONS = [
 ];
 
 const Reaction = ({
-  messageId,
-  reactions = {},
-  onAddReaction,
-  onRemoveReaction,
-  currentUserId,
-  showPopup,
-  onClosePopup
+ messageId,
+ reactions = {},
+ onAddReaction,
+ onRemoveReaction,
+ currentUserId
 }) => {
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && showPopup) {
-        onClosePopup();
-      }
-    };
-    if (showPopup) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [showPopup, onClosePopup]);
-
-  const handleReactionClick = (reactionType) => {
-    const userReactions = reactions[reactionType]?.users || [];
-    const hasReacted = userReactions.includes(currentUserId);
-    if (hasReacted) {
-      onRemoveReaction(messageId, reactionType);
-    } else {
-      onAddReaction(messageId, reactionType);
-    }
-    onClosePopup();
-  };
-
   const getTooltipText = (reactionType) => {
     const reactionData = reactions[reactionType];
     if (!reactionData || !reactionData.users.length) return '';
@@ -69,27 +43,19 @@ const Reaction = ({
     ([_, data]) => data.users && data.users.length > 0
   );
 
-  return (
-    <>
-      {/* Reaction Modal */}
-      {showPopup && (
-        <div className="reaction-modal-overlay" onClick={onClosePopup}>
-          <div className="reaction-modal" onClick={(e) => e.stopPropagation()}>
-            {REACTIONS.map((reaction) => (
-              <button
-                key={reaction.type}
-                className={`reaction-option ${reaction.type}`}
-                onClick={() => handleReactionClick(reaction.type)}
-                title={reaction.label}
-              >
-                <i className={reaction.icon}></i>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+ const handleReactionClick = (reactionType) => {
+  const userReactions = reactions[reactionType]?.users || [];
+  const hasReacted = userReactions.includes(currentUserId);
+  if (hasReacted) {
+   onRemoveReaction(messageId, reactionType);
+  } else {
+   onAddReaction(messageId, reactionType);
+  }
+ };
 
-      {/* Display Active Reactions */}
+ return (
+  <>
+   {/* Display Active Reactions */}
       {activeReactions.length > 0 && (
         <div className="message-reactions">
           {activeReactions.map(([reactionType, data]) => {

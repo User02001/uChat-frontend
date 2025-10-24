@@ -36,6 +36,7 @@ export const useAppLogic = () => {
  const [isTyping, setIsTyping] = useState(false);
  const [messageReactions, setMessageReactions] = useState({});
  const [showReactionPopup, setShowReactionPopup] = useState(null);
+ const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
  const [socketConnected, setSocketConnected] = useState(false);
  const [reconnectAttempts, setReconnectAttempts] = useState(0);
  const [showGifPicker, setShowGifPicker] = useState(false);
@@ -54,6 +55,8 @@ export const useAppLogic = () => {
  const [callPosition, setCallPosition] = useState({ x: 20, y: 20 });
  const [isDragging, setIsDragging] = useState(false);
  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+ const [messageCache, setMessageCache] = useState({});
+ const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
  // Refs for keeping state in sync
@@ -214,7 +217,14 @@ export const useAppLogic = () => {
     setMessages((prev) => {
      const exists = prev.some((m) => m.id === message.id);
      if (exists) return prev;
-     return [...prev, message];
+     const updated = [...prev, message];
+
+     // Update cache
+     if (currentActiveContact) {
+      messageCacheRef.current[currentActiveContact.id] = updated.slice(-100);
+     }
+
+     return updated;
     });
    }
 
@@ -228,32 +238,36 @@ export const useAppLogic = () => {
   });
 
   socket.on("messages_loaded", (data) => {
-   const { messages: newMessages, has_more } = data;
+   const { messages: newMessages, has_more, contact_id } = data;
 
-   // Add 500ms delay before processing
-   setTimeout(() => {
-    setHasMoreMessages(has_more);
-    setLoadingMoreMessages(false);
-    setIsLoadingMessages(false);
+   setHasMoreMessages(has_more);
+   setLoadingMoreMessages(false);
+   setIsLoadingMessages(false);
 
-    if (newMessages.length > 0) {
-     setMessages((prev) => {
-      const combined = [...newMessages, ...prev];
-      const unique = combined.filter((msg, index, self) =>
-       index === self.findIndex((m) => m.id === msg.id)
-      );
-      return unique.sort((a, b) => a.id - b.id);
-     });
+   if (newMessages.length > 0) {
+    setMessages((prev) => {
+     const combined = [...newMessages, ...prev];
+     const unique = combined.filter((msg, index, self) =>
+      index === self.findIndex((m) => m.id === msg.id)
+     );
+     const sorted = unique.sort((a, b) => a.id - b.id);
 
-     const reactionsData = {};
-     newMessages.forEach((message) => {
-      if (message.reactions && Object.keys(message.reactions).length > 0) {
-       reactionsData[message.id] = message.reactions;
-      }
-     });
-     setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
-    }
-   }, 200); // 200ms artificial delay
+     // Update cache - keep last 100 messages per contact
+     if (contact_id) {
+      messageCacheRef.current[contact_id] = sorted.slice(-100);
+     }
+
+     return sorted;
+    });
+
+    const reactionsData = {};
+    newMessages.forEach((message) => {
+     if (message.reactions && Object.keys(message.reactions).length > 0) {
+      reactionsData[message.id] = message.reactions;
+     }
+    });
+    setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
+   }
   });
 
   socket.on("desktop_notification", (data) => {
@@ -393,11 +407,9 @@ export const useAppLogic = () => {
 
    if (response.ok) {
     const data = await response.json();
-    setTimeout(() => {
-     setContacts(data.contacts);
-     setOnlineUsers(data.online_users);
-     setContactsLoading(false);
-    }, 1000);
+    setContacts(data.contacts);
+    setOnlineUsers(data.online_users);
+    setContactsLoading(false);
    } else if (response.status === 401) {
     navigate("/login", { replace: true });
    }
@@ -407,18 +419,57 @@ export const useAppLogic = () => {
   }
  }, [navigate]);
 
- // Load messages for a specific contact with pagination
  const loadMessages = useCallback((contactId, beforeId = null) => {
-  if (!socketRef.current || !socketRef.current.connected || isLoadingMessages) return;
+  if (!socketRef.current) return;
 
-  setIsLoadingMessages(true);
+  // Load from cache INSTANTLY if available and it's initial load
+  if (!beforeId && messageCacheRef.current[contactId]) {
+   console.log('Loading from cache for contact:', contactId);
+   setMessages(messageCacheRef.current[contactId]);
 
-  socketRef.current.emit("load_messages", {
-   contact_id: contactId,
-   before_id: beforeId,
-   limit: 10
-  });
- }, [isLoadingMessages]);
+   // Still fetch in background to update (now defers if disconnected)
+   if (socketRef.current.connected) {
+    socketRef.current.emit("load_messages", {
+     contact_id: contactId,
+     before_id: null,
+     limit: 30
+    });
+   } else {
+    const onConnectOnce = () => {
+     socketRef.current.emit("load_messages", {
+      contact_id: contactId,
+      before_id: null,
+      limit: 30
+     });
+     socketRef.current.off("connect", onConnectOnce);
+    };
+    socketRef.current.on("connect", onConnectOnce);
+   }
+   return;
+  }
+
+  if (!beforeId) {
+   setIsLoadingMessages(true);
+  }
+
+  if (socketRef.current.connected) {
+   socketRef.current.emit("load_messages", {
+    contact_id: contactId,
+    before_id: beforeId,
+    limit: 30
+   });
+  } else {
+   const onConnectOnce = () => {
+    socketRef.current.emit("load_messages", {
+     contact_id: contactId,
+     before_id: beforeId,
+     limit: 30
+    });
+    socketRef.current.off("connect", onConnectOnce);
+   };
+   socketRef.current.on("connect", onConnectOnce);
+  }
+ }, []);
 
  const [hasMoreMessages, setHasMoreMessages] = useState(true);
  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
@@ -529,11 +580,9 @@ export const useAppLogic = () => {
        setShowChatContent(true);
       }, 100);
 
-      setTimeout(() => {
-       setMessages([]);
-       setHasMoreMessages(true);
-       loadMessages(contact.id, null);
-      }, 1000);
+      setMessages([]);
+      setHasMoreMessages(true);
+      loadMessages(contact.id, null);
      }, 350);
     } else {
      setActiveContact(contact);
@@ -866,7 +915,6 @@ export const useAppLogic = () => {
     });
 
     ipcRenderer.on("network-status-changed", (event, online) => {
-     console.log("Network status update:", online ? "ONLINE" : "OFFLINE");
      setIsOffline(!online);
     });
 
@@ -1149,6 +1197,8 @@ export const useAppLogic = () => {
   setMessageReactions,
   showReactionPopup,
   setShowReactionPopup,
+  reactionPopupPosition,
+  setReactionPopupPosition,
   socketConnected,
   setSocketConnected,
   reconnectAttempts,
@@ -1189,6 +1239,8 @@ export const useAppLogic = () => {
   setIsDragging,
   dragOffset,
   setDragOffset,
+  messageCache,
+  setMessageCache,
 
   // Refs
   socketRef,

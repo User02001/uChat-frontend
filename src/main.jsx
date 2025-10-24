@@ -11,6 +11,42 @@ const LoadingFallback = () => (
  </div>
 )
 
+//some random shit i dunno
+const imageUrl = "https://uchat.ufonic.xyz/resources/favicon.png";
+
+const warningStyle = [
+ "color: #fff",
+ "background: #a80000",
+ "font-weight: 900",
+ "font-size: 16px",
+ "padding: 6px 10px",
+ "border-radius: 4px",
+ "display: inline-block"
+].join(";");
+
+function showUChatWarning() {
+ const msg = "⚠️ WARNING. THIS IS THE CONSOLE WHICH IS ONLY USED BY DEVELOPERS. IF ANYONE TOLD YOU TO COPY AND PASTE A CODE HERE, DON'T DO IT. IT IS LIKELY AN ATTEMPT TO GAIN ACCESS TO YOUR ACCOUNT. YOU HAVE BEEN WARNED. ONLY PASTE A CODE HERE IF YOU KNOW WHAT YOU ARE DOING.";
+
+ // Use existing warningStyle if available, otherwise a reasonable fallback.
+ const style =
+  typeof warningStyle !== "undefined"
+   ? warningStyle
+   : [
+    "color: #fff",
+    "background: #a80000",
+    "font-weight: 900",
+    "font-size: 16px",
+    "padding: 6px 10px",
+    "border-radius: 4px",
+    "display: inline-block",
+   ].join(";");
+
+ console.log("%c" + msg, style);
+}
+
+// show immediately and re-show every 15s
+showUChatWarning();
+
 // Lazy load pages
 const App = lazy(() => import('./App.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))

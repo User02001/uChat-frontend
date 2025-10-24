@@ -1,5 +1,5 @@
 /* Call UI Styles */
-.call-overlay {
+.callOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -15,7 +15,7 @@
 }
 
 /* Modern Call UI Styles */
-.modern-call-overlay {
+.modernCallOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -39,7 +39,7 @@
     }
 }
 
-.modern-active-call {
+.modernActiveCall {
     width: 100%;
     height: 100%;
     position: relative;
@@ -49,7 +49,7 @@
     overflow: hidden;
 }
 
-.modern-call-header {
+.modernCallHeader {
     position: absolute;
     top: 0;
     left: 0;
@@ -65,11 +65,21 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-    .modern-call-header.hidden {
-        opacity: 0;
-        transform: translateY(-20px);
-        pointer-events: none;
-    }
+.modernCallHeaderHidden {
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+}
+
+.modernCallControlsWrapperHidden {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+}
+
+.modernLocalVideoHidden {
+    top: 20px;
+}
 
 @keyframes slideDownFade {
     from {
@@ -83,13 +93,13 @@
     }
 }
 
-.modern-call-info {
+.modernCallInfo {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
-.modern-call-avatar {
+.modernCallAvatar {
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -97,7 +107,7 @@
     object-fit: cover;
 }
 
-.modern-call-user h3 {
+.modernCallUser h3 {
     font-size: 18px;
     font-weight: 600;
     color: white;
@@ -105,14 +115,14 @@
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.modern-call-user p {
+.modernCallUser p {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     margin: 0;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.modern-minimize-btn {
+.modernMinimizeBtn {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -128,17 +138,17 @@
     transition: all 0.2s ease;
 }
 
-    .modern-minimize-btn:hover {
+    .modernMinimizeBtn:hover {
         background: rgba(255, 255, 255, 0.25);
         transform: scale(1.1);
     }
 
-    .modern-minimize-btn:active {
+    .modernMinimizeBtn:active {
         transform: scale(0.95);
     }
 
 @media (max-width: 768px) {
-    .modern-minimize-btn.modern-minimize-mobile-visible {
+    .modernMinimizeBtn.modernMinimizeMobileVisible {
         display: flex;
         width: 40px;
         height: 40px;
@@ -147,21 +157,21 @@
 }
 
 /* Video Container */
-.modern-video-container {
+.modernVideoContainer {
     width: 100%;
     height: 100%;
     position: relative;
     background: #000;
 }
 
-.modern-remote-video {
+.modernRemoteVideo {
     width: 100%;
     height: 100%;
     object-fit: cover;
     background: #000;
 }
 
-.modern-local-video {
+.modernLocalVideo {
     position: absolute;
     top: 80px;
     right: 24px;
@@ -177,17 +187,17 @@
     transition: top 0.3s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-    .modern-local-video:hover {
+    .modernLocalVideo:hover {
         border-color: rgba(255, 255, 255, 0.5);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
     }
 
-    .modern-local-video.ui-hidden {
+    .modernLocalVideo.uiHidden {
         top: 20px;
     }
 
 /* Audio Call UI */
-.modern-audio-call-ui {
+.modernAudioCallUi {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -198,12 +208,12 @@
     text-align: center;
 }
 
-.modern-audio-avatar-wrapper {
+.modernAudioAvatarWrapper {
     position: relative;
     margin-bottom: 40px;
 }
 
-.modern-audio-avatar {
+.modernAudioAvatar {
     width: 180px;
     height: 180px;
     border-radius: 50%;
@@ -214,7 +224,7 @@
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
 }
 
-.modern-audio-pulse {
+.modernAudioPulse {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -238,21 +248,21 @@
     }
 }
 
-.modern-audio-call-ui h3 {
+.modernAudioCallUi h3 {
     font-size: 32px;
     font-weight: 600;
     color: white;
     margin: 0 0 12px 0;
 }
 
-.modern-audio-call-ui p {
+.modernAudioCallUi p {
     font-size: 18px;
     color: rgba(255, 255, 255, 0.7);
     margin: 0;
 }
 
 /* Call Controls */
-.modern-call-controls-wrapper {
+.modernCallControlsWrapper {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -267,19 +277,13 @@
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-    .modern-call-controls-wrapper.hidden {
-        opacity: 0;
-        transform: translateY(20px);
-        pointer-events: none;
-    }
-
-.modern-call-controls {
+.modernCallControls {
     display: flex;
     gap: 20px;
     align-items: center;
 }
 
-.modern-control-btn {
+.modernControlBtn {
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -296,16 +300,16 @@
     position: relative;
 }
 
-    .modern-control-btn:hover {
+    .modernControlBtn:hover {
         background: rgba(255, 255, 255, 0.25);
         transform: scale(1.1);
     }
 
-    .modern-control-btn:active {
+    .modernControlBtn:active {
         transform: scale(0.95);
     }
 
-.modern-end-call-btn {
+.modernEndCallBtn {
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -321,40 +325,40 @@
     box-shadow: 0 4px 16px rgba(255, 71, 87, 0.4);
 }
 
-    .modern-end-call-btn:hover {
+    .modernEndCallBtn:hover {
         background: #ff3838;
         transform: scale(1.1);
         box-shadow: 0 6px 24px rgba(255, 71, 87, 0.6);
     }
 
-    .modern-end-call-btn:active {
+    .modernEndCallBtn:active {
         transform: scale(0.95);
     }
 
-    .modern-end-call-btn i {
+    .modernEndCallBtn i {
         transform: rotate(135deg);
     }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .modern-call-header {
+    .modernCallHeader {
         padding: 20px 16px;
     }
 
-    .modern-call-avatar {
+    .modernCallAvatar {
         width: 40px;
         height: 40px;
     }
 
-    .modern-call-user h3 {
+    .modernCallUser h3 {
         font-size: 16px;
     }
 
-    .modern-call-user p {
+    .modernCallUser p {
         font-size: 13px;
     }
 
-    .modern-local-video {
+    .modernLocalVideo {
         width: 120px;
         height: 160px;
         top: 70px;
@@ -363,45 +367,41 @@
         border-width: 2px;
     }
 
-        .modern-local-video.ui-hidden {
-            top: 16px;
-        }
-
-    .modern-audio-avatar {
+    .modernAudioAvatar {
         width: 140px;
         height: 140px;
         border-width: 3px;
     }
 
-    .modern-audio-pulse {
+    .modernAudioPulse {
         width: 140px;
         height: 140px;
         border-width: 2px;
     }
 
-    .modern-audio-call-ui h3 {
+    .modernAudioCallUi h3 {
         font-size: 26px;
     }
 
-    .modern-audio-call-ui p {
+    .modernAudioCallUi p {
         font-size: 16px;
     }
 
-    .modern-call-controls-wrapper {
+    .modernCallControlsWrapper {
         padding: 24px 16px;
     }
 
-    .modern-call-controls {
+    .modernCallControls {
         gap: 16px;
     }
 
-    .modern-control-btn {
+    .modernControlBtn {
         width: 52px;
         height: 52px;
         font-size: 18px;
     }
 
-    .modern-end-call-btn {
+    .modernEndCallBtn {
         width: 60px;
         height: 60px;
         font-size: 22px;
@@ -418,7 +418,7 @@
     }
 }
 
-.incoming-call {
+.incomingCall {
     background: var(--bg-secondary);
     border-radius: 24px;
     padding: 40px;
@@ -441,7 +441,7 @@
     }
 }
 
-.incoming-call img {
+.incomingCall img {
     width: 120px;
     height: 120px;
     border-radius: 50%;
@@ -450,26 +450,26 @@
     object-fit: cover;
 }
 
-.incoming-call h3 {
+.incomingCall h3 {
     font-size: 24px;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 8px;
 }
 
-.incoming-call p {
+.incomingCall p {
     font-size: 16px;
     color: var(--text-secondary);
     margin-bottom: 30px;
 }
 
-.call-actions {
+.callActions {
     display: flex;
     gap: 20px;
     justify-content: center;
 }
 
-.decline-btn, .accept-btn {
+.declineBtn, .acceptBtn {
     width: 70px;
     height: 70px;
     border: none;
@@ -483,41 +483,41 @@
     transition: all 0.2s ease;
 }
 
-.decline-btn {
+.declineBtn {
     background: #ff4757;
     color: white;
 }
 
-    .decline-btn:hover {
+    .declineBtn:hover {
         background: #ff3838;
         transform: scale(1.1);
     }
 
-    .decline-btn::before {
+    .declineBtn::before {
         content: '\f095';
         font-family: 'Font Awesome 6 Free';
         font-weight: 900;
         transform: rotate(135deg);
     }
 
-.accept-btn {
+.acceptBtn {
     background: #2ed573;
     color: white;
 }
 
-    .accept-btn:hover {
+    .acceptBtn:hover {
         background: #26d063;
         transform: scale(1.1);
     }
 
-    .accept-btn::before {
+    .acceptBtn::before {
         content: '\f095';
         font-family: 'Font Awesome 6 Free';
         font-weight: 900;
     }
 
 /* Active Call Styles */
-.active-call {
+.activeCall {
     width: 100%;
     height: 100%;
     position: relative;
@@ -526,21 +526,21 @@
     background: #000;
 }
 
-.video-container {
+.videoContainer {
     flex: 1;
     position: relative;
     overflow: hidden;
     background: #000;
 }
 
-.remote-video {
+.remoteVideo {
     width: 100%;
     height: 100%;
     object-fit: cover;
     background: #000;
 }
 
-.local-video {
+.localVideo {
     position: absolute;
     width: 200px;
     height: 150px;
@@ -549,7 +549,7 @@
     z-index: 10;
 }
 
-.call-status-overlay {
+.callStatusOverlay {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -561,14 +561,14 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-    .call-status-overlay h3 {
+    .callStatusOverlay h3 {
         font-size: 16px;
         font-weight: 500;
         color: white;
         margin: 0;
     }
 
-.audio-call-ui {
+.audioCallUi {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -579,7 +579,7 @@
     text-align: center;
 }
 
-    .audio-call-ui img {
+    .audioCallUi img {
         width: 160px;
         height: 160px;
         border-radius: 50%;
@@ -588,18 +588,18 @@
         object-fit: cover;
     }
 
-    .audio-call-ui h3 {
+    .audioCallUi h3 {
         font-size: 28px;
         font-weight: 600;
         margin-bottom: 8px;
     }
 
-    .audio-call-ui p {
+    .audioCallUi p {
         font-size: 18px;
         opacity: 0.8;
     }
 
-.call-controls {
+.callControls {
     position: absolute;
     bottom: 40px;
     left: 50%;
@@ -609,7 +609,7 @@
     z-index: 15;
 }
 
-.end-call-btn {
+.endCallBtn {
     width: 70px;
     height: 70px;
     border: none;
@@ -625,12 +625,12 @@
     transition: all 0.2s ease;
 }
 
-    .end-call-btn:hover {
+    .endCallBtn:hover {
         background: #ff3838;
         transform: scale(1.1);
     }
 
-    .end-call-btn::before {
+    .endCallBtn::before {
         content: '\f095';
         font-family: 'Font Awesome 6 Free';
         font-weight: 900;
@@ -638,13 +638,13 @@
     }
 
 /* Call Buttons in Header */
-.call-buttons {
+.callButtons {
     display: flex;
     gap: 12px;
     margin-left: auto;
 }
 
-.call-btn {
+.callBtn {
     width: 44px;
     height: 44px;
     border: 1px solid var(--border);
@@ -660,25 +660,25 @@
     position: relative;
 }
 
-    .call-btn:hover:not(:disabled) {
+    .callBtn:hover:not(:disabled) {
         background: var(--button-primary);
         color: white;
         transform: scale(1.1);
     }
 
-    .call-btn:disabled {
+    .callBtn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
     }
 
-.audio-call::before {
+.audioCall::before {
     content: '\f095';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
 }
 
-.video-call::before {
+.videoCall::before {
     content: '\f03d';
     font-family: 'Font Awesome 6 Free';
     font-weight: 900;
@@ -686,88 +686,73 @@
 
 /* Mobile Call UI */
 @media (max-width: 768px) {
-    .incoming-call {
+    .incomingCall {
         padding: 30px 20px;
         border-radius: 16px;
     }
 
-        .incoming-call img {
+        .incomingCall img {
             width: 100px;
             height: 100px;
         }
 
-        .incoming-call h3 {
+        .incomingCall h3 {
             font-size: 22px;
         }
 
-    .call-actions {
+    .callActions {
         gap: 30px;
     }
 
-    .decline-btn, .accept-btn {
+    .declineBtn, .acceptBtn {
         width: 80px;
         height: 80px;
         font-size: 28px;
     }
 
-    .local-video {
+    .localVideo {
         width: 120px;
         height: 160px;
         top: 20px;
         right: 15px;
     }
 
-    .audio-call-ui img {
+    .audioCallUi img {
         width: 140px;
         height: 140px;
         margin-bottom: 20px;
     }
 
-    .audio-call-ui h3 {
+    .audioCallUi h3 {
         font-size: 24px;
     }
 
-    .audio-call-ui p {
+    .audioCallUi p {
         font-size: 16px;
     }
 
-    .call-controls {
+    .callControls {
         bottom: 30px;
     }
 
-    .end-call-btn {
+    .endCallBtn {
         width: 80px;
         height: 80px;
         font-size: 28px;
     }
 
-    .call-buttons {
-        gap: 10px;
-        margin-right: -5px;
+    .callButtons {
+        gap: 8px;
     }
 
-    .call-btn {
-        width: 42px;
-        height: 42px;
-        font-size: 17px;
-        background: transparent;
-        border: none;
-        color: #ffa500;
+    .callBtn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
     }
-
-        .call-btn:hover:not(:disabled) {
-            background: rgba(128, 128, 128, 0.3);
-            color: #ffa500;
-            transform: none;
-        }
-
-        .call-btn:active:not(:disabled) {
-            background: rgba(128, 128, 128, 0.5);
-            transform: scale(0.95);
-        }
 }
 
-.active-call-status {
+.activeCallStatus {
     position: absolute;
     top: 30px;
     left: 50%;
@@ -781,7 +766,7 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-    .active-call-status h3 {
+    .activeCallStatus h3 {
         font-size: 18px;
         font-weight: 600;
         color: white;
@@ -789,19 +774,19 @@
         letter-spacing: 0.3px;
     }
 
-    .active-call-status p {
+    .activeCallStatus p {
         font-size: 14px;
         color: rgba(255, 255, 255, 0.8);
         margin: 0;
         font-weight: 500;
     }
 
-.outgoing-call-status {
+.outgoingCallStatus {
     text-align: center;
     color: white;
 }
 
-    .outgoing-call-status img {
+    .outgoingCallStatus img {
         width: 120px;
         height: 120px;
         border-radius: 50%;
@@ -810,25 +795,25 @@
         object-fit: cover;
     }
 
-    .outgoing-call-status h3 {
+    .outgoingCallStatus h3 {
         font-size: 24px;
         font-weight: 600;
         margin-bottom: 8px;
     }
 
-    .outgoing-call-status p {
+    .outgoingCallStatus p {
         font-size: 16px;
         opacity: 0.9;
         margin: 0;
     }
 
 /* Hide the pseudo icon inside active/full call layouts */
-.video-call::before {
+.videoCall::before {
     display: none;
 }
 
 /* Modern Screenshare UI */
-.modern-screenshare-overlay {
+.modernScreenshareOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -842,7 +827,7 @@
     animation: modernCallFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.modern-screenshare-active {
+.modernScreenshareActive {
     width: 100%;
     height: 100%;
     position: relative;
@@ -852,7 +837,7 @@
     overflow: hidden;
 }
 
-.modern-screenshare-header {
+.modernScreenshareHeader {
     position: absolute;
     top: 0;
     left: 0;
@@ -866,13 +851,13 @@
     animation: slideDownFade 0.4s ease;
 }
 
-.modern-screenshare-info {
+.modernScreenshareInfo {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
-.modern-screenshare-icon {
+.modernScreenshareIcon {
     width: 48px;
     height: 48px;
     border-radius: 50%;
@@ -885,7 +870,7 @@
     font-size: 20px;
 }
 
-.modern-screenshare-user h3 {
+.modernScreenshareUser h3 {
     font-size: 18px;
     font-weight: 600;
     color: white;
@@ -893,14 +878,14 @@
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.modern-screenshare-user p {
+.modernScreenshareUser p {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     margin: 0;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.modern-screenshare-minimize-btn {
+.modernScreenshareMinimizeBtn {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -916,16 +901,16 @@
     transition: all 0.2s ease;
 }
 
-    .modern-screenshare-minimize-btn:hover {
+    .modernScreenshareMinimizeBtn:hover {
         background: rgba(255, 255, 255, 0.25);
         transform: scale(1.1);
     }
 
-    .modern-screenshare-minimize-btn:active {
+    .modernScreenshareMinimizeBtn:active {
         transform: scale(0.95);
     }
 
-.modern-screenshare-container {
+.modernScreenshareContainer {
     width: 100%;
     height: 100%;
     display: flex;
@@ -936,7 +921,7 @@
     box-sizing: border-box;
 }
 
-.modern-screenshare-video {
+.modernScreenshareVideo {
     max-width: 100%;
     max-height: 100%;
     width: auto;
@@ -947,7 +932,7 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-.modern-screenshare-controls-wrapper {
+.modernScreenshareControlsWrapper {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -963,19 +948,19 @@
     pointer-events: none;
 }
 
-    .modern-screenshare-controls-wrapper.visible {
+    .modernScreenshareControlsWrapper.visible {
         opacity: 1;
         transform: translateY(0);
         pointer-events: all;
     }
 
-.modern-screenshare-controls {
+.modernScreenshareControls {
     display: flex;
     gap: 20px;
     align-items: center;
 }
 
-.modern-screenshare-end-btn {
+.modernScreenshareEndBtn {
     width: 64px;
     height: 64px;
     border-radius: 50%;
@@ -991,54 +976,54 @@
     box-shadow: 0 4px 16px rgba(255, 71, 87, 0.4);
 }
 
-    .modern-screenshare-end-btn:hover {
+    .modernScreenshareEndBtn:hover {
         background: #ff3838;
         transform: scale(1.1);
         box-shadow: 0 6px 24px rgba(255, 71, 87, 0.6);
     }
 
-    .modern-screenshare-end-btn:active {
+    .modernScreenshareEndBtn:active {
         transform: scale(0.95);
     }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .modern-screenshare-header {
+    .modernScreenshareHeader {
         padding: 20px 16px;
     }
 
-    .modern-screenshare-icon {
+    .modernScreenshareIcon {
         width: 40px;
         height: 40px;
         font-size: 18px;
     }
 
-    .modern-screenshare-user h3 {
+    .modernScreenshareUser h3 {
         font-size: 16px;
     }
 
-    .modern-screenshare-user p {
+    .modernScreenshareUser p {
         font-size: 13px;
     }
 
-    .modern-screenshare-minimize-btn {
+    .modernScreenshareMinimizeBtn {
         width: 40px;
         height: 40px;
         font-size: 14px;
     }
 
-    .modern-screenshare-container {
+    .modernScreenshareContainer {
         padding: 12px;
     }
 
-    .modern-screenshare-controls-wrapper {
+    .modernScreenshareControlsWrapper {
         padding: 24px 16px;
         opacity: 1;
         transform: translateY(0);
         pointer-events: all;
     }
 
-    .modern-screenshare-end-btn {
+    .modernScreenshareEndBtn {
         width: 60px;
         height: 60px;
         font-size: 22px;
@@ -1046,8 +1031,8 @@
 }
 
 /* Modern Minimized Call/Screenshare UI */
-.modern-minimized-call,
-.modern-minimized-screenshare {
+.modernMinimizedCall,
+.modernMinimizedScreenshare {
     position: fixed;
     width: 380px;
     background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
@@ -1061,29 +1046,29 @@
     backdrop-filter: blur(20px);
 }
 
-    .modern-minimized-call:hover,
-    .modern-minimized-screenshare:hover {
+    .modernMinimizedCall:hover,
+    .modernMinimizedScreenshare:hover {
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.2);
     }
 
-    .modern-minimized-call:active,
-    .modern-minimized-screenshare:active {
+    .modernMinimizedCall:active,
+    .modernMinimizedScreenshare:active {
         transform: scale(0.98);
     }
 
-.modern-minimized-header {
+.modernMinimizedHeader {
     padding: 16px 20px;
     background: rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.modern-minimized-info {
+.modernMinimizedInfo {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.modern-minimized-avatar {
+.modernMinimizedAvatar {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -1092,7 +1077,7 @@
     flex-shrink: 0;
 }
 
-.modern-minimized-screenshare-icon {
+.modernMinimizedScreenshareIcon {
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -1106,12 +1091,12 @@
     flex-shrink: 0;
 }
 
-.modern-minimized-user {
+.modernMinimizedUser {
     flex: 1;
     min-width: 0;
 }
 
-    .modern-minimized-user h4 {
+    .modernMinimizedUser h4 {
         font-size: 15px;
         font-weight: 600;
         color: white;
@@ -1121,7 +1106,7 @@
         text-overflow: ellipsis;
     }
 
-    .modern-minimized-user p {
+    .modernMinimizedUser p {
         font-size: 12px;
         color: rgba(255, 255, 255, 0.6);
         margin: 0;
@@ -1130,7 +1115,7 @@
         text-overflow: ellipsis;
     }
 
-.modern-minimized-video {
+.modernMinimizedVideo {
     width: 100%;
     height: 200px;
     background: #000;
@@ -1138,13 +1123,13 @@
     overflow: hidden;
 }
 
-.modern-minimized-remote-video {
+.modernMinimizedRemoteVideo {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-.modern-minimized-audio {
+.modernMinimizedAudio {
     width: 100%;
     height: 200px;
     background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
@@ -1155,7 +1140,7 @@
     overflow: hidden;
 }
 
-.modern-minimized-audio-wave {
+.modernMinimizedAudioWave {
     width: 100px;
     height: 4px;
     background: rgba(255, 152, 0, 0.3);
@@ -1164,7 +1149,7 @@
     overflow: hidden;
 }
 
-    .modern-minimized-audio-wave::before {
+    .modernMinimizedAudioWave::before {
         content: '';
         position: absolute;
         top: 0;
@@ -1185,7 +1170,7 @@
     }
 }
 
-.modern-minimized-screenshare-preview {
+.modernMinimizedScreensharePreview {
     width: 100%;
     height: 200px;
     background: #000;
@@ -1195,14 +1180,14 @@
     overflow: hidden;
 }
 
-.modern-minimized-screenshare-video {
+.modernMinimizedScreenshareVideo {
     width: 100%;
     height: 100%;
     object-fit: contain;
     background: #000;
 }
 
-.modern-minimized-controls {
+.modernMinimizedControls {
     padding: 14px 20px;
     display: flex;
     gap: 10px;
@@ -1211,7 +1196,7 @@
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.modern-minimized-btn {
+.modernMinimizedBtn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -1225,85 +1210,85 @@
     flex-shrink: 0;
 }
 
-.modern-minimized-maximize {
+.modernMinimizedMaximize {
     background: rgba(255, 255, 255, 0.1);
     color: white;
 }
 
-    .modern-minimized-maximize:hover {
+    .modernMinimizedMaximize:hover {
         background: rgba(255, 255, 255, 0.2);
         transform: scale(1.1);
     }
 
-.modern-minimized-end {
+.modernMinimizedEnd {
     background: #ff4757;
     color: white;
 }
 
-    .modern-minimized-end:hover {
+    .modernMinimizedEnd:hover {
         background: #ff3838;
         transform: scale(1.1);
     }
 
-    .modern-minimized-end i {
+    .modernMinimizedEnd i {
         transform: rotate(135deg);
     }
 
-.modern-minimized-btn:active {
+.modernMinimizedBtn:active {
     transform: scale(0.95) !important;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .modern-minimized-call,
-    .modern-minimized-screenshare {
+    .modernMinimizedCall,
+    .modernMinimizedScreenshare {
         width: 200px;
         border-radius: 12px;
         cursor: pointer;
     }
 
-    .modern-minimized-header {
+    .modernMinimizedHeader {
         padding: 8px 10px;
     }
 
-    .modern-minimized-avatar,
-    .modern-minimized-screenshare-icon {
+    .modernMinimizedAvatar,
+    .modernMinimizedScreenshareIcon {
         width: 32px;
         height: 32px;
         font-size: 14px;
     }
 
-    .modern-minimized-user h4 {
+    .modernMinimizedUser h4 {
         font-size: 12px;
     }
 
-    .modern-minimized-user p {
+    .modernMinimizedUser p {
         font-size: 10px;
     }
 
-    .modern-minimized-video,
-    .modern-minimized-audio,
-    .modern-minimized-screenshare-preview {
+    .modernMinimizedVideo,
+    .modernMinimizedAudio,
+    .modernMinimizedScreensharePreview {
         height: 110px;
     }
 
-    .modern-minimized-controls {
+    .modernMinimizedControls {
         display: none;
     }
 
-    .modern-minimized-audio-wave {
+    .modernMinimizedAudioWave {
         width: 60px;
         height: 2px;
     }
 }
 
 /* Prevent text selection while dragging */
-.modern-minimized-call *,
-.modern-minimized-screenshare * {
+.modernMinimizedCall *,
+.modernMinimizedScreenshare * {
     pointer-events: none;
 }
 
-.modern-minimized-call button,
-.modern-minimized-screenshare button {
+.modernMinimizedCall button,
+.modernMinimizedScreenshare button {
     pointer-events: all;
 }

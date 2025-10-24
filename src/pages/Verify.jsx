@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import './Login.css';
+import styles from './Login.module.css';
 import { API_BASE_URL } from '../config';
 
 const Verify = () => {
@@ -180,11 +180,11 @@ const Verify = () => {
  };
 
  return (
-  <div className="login-container">
-   <div className="aura-background"></div>
-   <div className="login-card">
-    <div className="login-header">
-     <div className="logo-container" style={{
+  <div className={styles.loginContainer}>
+   <div className={styles.auraBackground}></div>
+   <div className={styles.loginCard}>
+    <div className={styles.loginHeader}>
+     <div className={styles.logoContainer} style={{
       display: 'flex',
       justifyContent: 'center',
       marginBottom: '24px'
@@ -192,7 +192,7 @@ const Verify = () => {
       <img
        src="/resources/main-logo.svg"
        alt="uChat Logo"
-       className="main-logo"
+       className={styles.mainLogo}
        style={{
         width: '80px',
         height: '80px',
@@ -203,29 +203,29 @@ const Verify = () => {
      </div>
      <h1>Verify Your Email</h1>
      <p>We've sent a 7-digit code to <strong>{email}</strong> in order to verify that you actually own this email.</p>
-     <p className="helper-text">
+     <p className={styles.helperText}>
       Check your spam folder if you don't see the email in your inbox.
      </p>
-     <p className="helper-text">
+     <p className={styles.helperText}>
       Email may take 5 or more minutes to arrive.
      </p>
     </div>
 
-    <div className="login-form">
+    <div className={styles.loginForm}>
      {error && (
-      <div className="alert alert-error">
+      <div className={`${styles.alert} ${styles.alertError}`}>
        {error}
       </div>
      )}
 
      {success && (
-      <div className="alert alert-success">
+      <div className={`${styles.alert} ${styles.alertSuccess}`}>
        {success}
       </div>
      )}
 
      <form onSubmit={handleVerification}>
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="verificationCode">
         <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
         Verification Code
@@ -239,7 +239,7 @@ const Verify = () => {
          onChange={handleInputChange}
          placeholder="Enter 7-digit code"
          maxLength="7"
-         className="verification-input"
+         className={styles.verificationInput}
          autoComplete="one-time-code"
          required
          style={{ paddingLeft: '40px' }}
@@ -255,7 +255,7 @@ const Verify = () => {
        </div>
       </div>
 
-      <button type="submit" className="login-btn primary" disabled={loading}>
+      <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading}>
        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-envelope-open'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Verifying...' : 'Verify Email'}
       </button>
@@ -263,7 +263,7 @@ const Verify = () => {
       <button
        type="button"
        onClick={() => navigate('/chat')}
-       className="oauth-btn"
+       className={styles.oauthBtn}
        style={{ marginTop: '12px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
       >
        <i className="fas fa-arrow-right" style={{ marginRight: '8px' }}></i>
@@ -271,13 +271,13 @@ const Verify = () => {
       </button>
      </form>
 
-     <div className="divider">
+     <div className={styles.divider}>
       <span>didn't receive the code?</span>
      </div>
 
      <button
       onClick={handleResendCode}
-      className="oauth-btn"
+      className={styles.oauthBtn}
       disabled={loading}
       style={{ marginBottom: '0' }}
      >
@@ -286,7 +286,7 @@ const Verify = () => {
      </button>
     </div>
 
-    <div className="login-footer">
+    <div className={styles.loginFooter}>
      <p>Remember your password? <a href="/login">Back to Login</a></p>
     </div>
    </div>

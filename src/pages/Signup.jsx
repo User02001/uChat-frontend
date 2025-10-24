@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Login.css'; // Using the same CSS file for consistent styling
+import styles from './Login.module.css'; // Changed to CSS Module import
 import { API_BASE_URL } from '../config';
 
 const Signup = () => {
@@ -123,11 +123,11 @@ const Signup = () => {
  };
 
  return (
-  <div className="login-container">
-   <div className="aura-background"></div>
-   <div className="login-card">
-    <div className="login-header">
-     <div className="logo-container" style={{
+  <div className={styles.loginContainer}>
+   <div className={styles.auraBackground}></div>
+   <div className={styles.loginCard}>
+    <div className={styles.loginHeader}>
+     <div className={styles.logoContainer} style={{
       display: 'flex',
       justifyContent: 'center',
       marginBottom: '24px'
@@ -135,7 +135,7 @@ const Signup = () => {
       <img
        src="/resources/main-logo.svg"
        alt="uChat Logo"
-       className="main-logo"
+       className={styles.mainLogo}
        style={{
         width: '80px',
         height: '80px',
@@ -154,7 +154,7 @@ const Signup = () => {
      </p>
     </div>
 
-    <div className="login-form">
+    <div className={styles.loginForm}>
      {error && (
       <div style={{
        backgroundColor: 'var(--error-bg, #fee)',
@@ -174,7 +174,7 @@ const Signup = () => {
      )}
 
      <form onSubmit={handleEmailSignup}>
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="username">
         <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
         Display Name
@@ -201,7 +201,7 @@ const Signup = () => {
        </div>
       </div>
 
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="email">
         <i className="fas fa-envelope" style={{ marginRight: '8px' }}></i>
         Email
@@ -228,7 +228,7 @@ const Signup = () => {
        </div>
       </div>
 
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="handle">
         <i className="fas fa-hashtag" style={{ marginRight: '8px' }}></i>
         Handle
@@ -255,7 +255,7 @@ const Signup = () => {
        </div>
       </div>
 
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="password">
         <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
         Password
@@ -300,7 +300,7 @@ const Signup = () => {
        </div>
       </div>
 
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="confirmPassword">
         <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
         Confirm Password
@@ -345,39 +345,39 @@ const Signup = () => {
        </div>
       </div>
 
-      <div className="terms-checkbox">
-       <label className="checkbox-label">
+      <div className={styles.termsCheckbox}>
+       <label className={styles.checkboxLabel}>
         <input
          type="checkbox"
          checked={agreedToTerms}
          onChange={(e) => setAgreedToTerms(e.target.checked)}
-         className="checkbox-input"
+         className={styles.checkboxInput}
         />
-        <span className="checkbox-custom"></span>
-        <span className="checkbox-text">
+        <span className={styles.checkboxCustom}></span>
+        <span className={styles.checkboxText}>
          By creating an uChat account, I agree to follow the{' '}
-         <a href="/terms" target="_blank" className="terms-link">
+         <a href="/terms" target="_blank" className={styles.termsLink}>
           Terms & Conditions
          </a>
          {' '}as well as the{' '}
-         <a href="/privacy" target="_blank" className="terms-link">
+         <a href="/privacy" target="_blank" className={styles.termsLink}>
           Privacy Policy
          </a>.
         </span>
        </label>
       </div>
-      <button type="submit" className="login-btn primary" disabled={loading || !agreedToTerms}>
+      <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading || !agreedToTerms}>
        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-user-plus'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Creating Account...' : 'Create Account'}
       </button>
      </form>
 
-     <div className="divider">
+     <div className={styles.divider}>
       <span>or sign up with</span>
      </div>
 
-     <div className="oauth-buttons">
-      <button onClick={handleGoogleSignup} className="oauth-btn google" disabled={loading}>
+     <div className={styles.oauthButtons}>
+      <button onClick={handleGoogleSignup} className={`${styles.oauthBtn} ${styles.google}`} disabled={loading}>
        <img
         src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
         alt="Google"
@@ -390,7 +390,7 @@ const Signup = () => {
      </div>
     </div>
 
-    <div className="login-footer">
+    <div className={styles.loginFooter}>
      <p>
       Already have an account?
       <a href="/login">

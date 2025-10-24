@@ -97,66 +97,7 @@
         transform: scale(0.9);
     }
 
-/* Message hover reply button */
-.message-reply-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: #141414;
-    color: var(--text-secondary);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    box-shadow: 0 2px 8px var(--shadow);
-    opacity: 0;
-    transition: all 0.2s ease;
-    z-index: 5;
-}
-
-/* Position based on message bubble */
-.message.sent .message-bubble {
-    position: relative;
-}
-
-.message.received .message-bubble {
-    position: relative;
-}
-
-.message.sent .message-reply-btn {
-    left: -44px;
-}
-
-.message.received .message-reply-btn {
-    right: -44px;
-}
-
-.message:hover .message-reply-btn {
-    opacity: 1;
-}
-
-.message-reply-btn:hover {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.message-reply-btn:active {
-    transform: translateY(-50%) scale(0.9);
-}
-
-/* Adjust message positioning for reply button */
-.message {
-    position: relative;
-    margin-bottom: 8px;
-}
-
-/* Reply bubble click cursor */
+/* Reply bubble inside messages */
 .reply-inside {
     padding: 8px 12px 6px 12px;
     border: 1px solid var(--border);
@@ -220,7 +161,7 @@
     line-height: 1.3;
     word-break: break-word;
     display: -webkit-box;
-    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -235,24 +176,7 @@
     color: var(--text-primary);
 }
 
-/* Remove any conflicting reply styles */
-.reply-original {
-    display: none;
-}
-
-.reply-original-header {
-    display: none;
-}
-
-.reply-original-sender {
-    display: none;
-}
-
-.reply-original-content {
-    display: none;
-}
-
-/* Message highlight animation - smooth opacity-based highlighting */
+/* Message highlight animation */
 .message-content.message-highlighted,
 .message-bubble.message-highlighted .message-content {
     position: relative;
@@ -274,7 +198,7 @@
     }
 
 .message.sent .message-bubble.message-highlighted .message-content::before {
-    background-color: #10b981; /* Bright green */
+    background-color: #10b981;
 }
 
 [data-theme="dark"] .message.sent .message-bubble.message-highlighted .message-content::before {
@@ -287,24 +211,11 @@
     }
 }
 
+/* Mobile Styles */
 @media (max-width: 768px) {
     .reply-preview {
         padding: 10px 12px;
         gap: 10px;
-    }
-
-    .message.sent .message-reply-btn {
-        left: -36px;
-    }
-
-    .message.received .message-reply-btn {
-        right: -36px;
-    }
-
-    .message-reply-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
     }
 
     .reply-info {
@@ -336,15 +247,10 @@
     }
 }
 
-/* Dark theme adjustments */
+/* Dark Theme */
 [data-theme="dark"] .reply-preview {
     background: var(--bg-tertiary);
     border-color: var(--border);
-}
-
-[data-theme="dark"] .message-reply-btn {
-    background: var(--bg-tertiary);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .reply-inside {

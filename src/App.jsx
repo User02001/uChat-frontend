@@ -7,6 +7,7 @@ import useCalls from "./hooks/useCalls";
 import MessagesSkeleton from "./components/MessagesSkeleton";
 import ContactsSkeleton from "./components/ContactsSkeleton";
 import Reaction from "./components/Reaction";
+import ReactionMore from "./components/ReactionMore";
 import "./pages/downloads-recommend.css";
 import DeleteModal from "./components/DeleteModal";
 import "./index.css";
@@ -15,6 +16,7 @@ import UnverifiedModal from "./components/UnverifiedModal";
 import linkify from "./hooks/linkify.jsx";
 import Gifs from "./components/Gifs";
 import ProfileModal from "./components/ProfileModal";
+import MessageOptions from "./components/MessageOptions";
 
 const App = () => {
 
@@ -46,6 +48,7 @@ const App = () => {
   isTyping, setIsTyping,
   messageReactions, setMessageReactions,
   showReactionPopup, setShowReactionPopup,
+  reactionPopupPosition, setReactionPopupPosition,
   socketConnected, setSocketConnected,
   reconnectAttempts, setReconnectAttempts,
   showGifPicker, setShowGifPicker,
@@ -63,6 +66,8 @@ const App = () => {
   callPosition, setCallPosition,
   isDragging, setIsDragging,
   dragOffset, setDragOffset,
+  messageCache, setMessageCache,
+  isLoadingMessages, setIsLoadingMessages,
 
   // Refs
   socketRef,
@@ -169,6 +174,83 @@ const App = () => {
    };
   }
  }, [socketRef, initializeSocket]);
+
+ // Handle socket reconnection and sync
+ useEffect(() => {
+  if (!socketRef.current) return;
+
+  const handleReconnect = () => {
+   console.log('[SYNC] Socket reconnected - syncing state...');
+
+   // Immediately sync full state
+   socketRef.current.emit('sync_state', {
+    active_contact_id: activeContact?.id
+   });
+
+   // Request contacts refresh
+   socketRef.current.emit('request_contacts_update');
+
+   // Request online users
+   socketRef.current.emit('request_online_users');
+
+   // If we have an active contact, reload their messages
+   if (activeContact) {
+    loadMessages(activeContact.id);
+   }
+  };
+
+  const handleMessagesSnced = (data) => {
+   if (data.contact_id === activeContact?.id) {
+    setMessages(data.messages);
+    console.log('[SYNC] Messages synced for active contact');
+   }
+  };
+
+  const handleForceContactsRefresh = () => {
+   console.log('[SYNC] Forced contacts refresh');
+   loadContacts();
+  };
+
+  socketRef.current.on('reconnect', handleReconnect);
+  socketRef.current.on('messages_synced', handleMessagesSnced);
+  socketRef.current.on('force_contacts_refresh', handleForceContactsRefresh);
+
+  return () => {
+   if (socketRef.current) {
+    socketRef.current.off('reconnect', handleReconnect);
+    socketRef.current.off('messages_synced', handleMessagesSnced);
+    socketRef.current.off('force_contacts_refresh', handleForceContactsRefresh);
+   }
+  };
+ }, [activeContact, loadMessages, loadContacts]);
+
+ // Handle page visibility changes - refresh when coming back
+ useEffect(() => {
+  const handleVisibilityChange = () => {
+   if (!document.hidden && socketRef.current && socketRef.current.connected) {
+    console.log('[SYNC] Page became visible - refreshing state');
+
+    // Sync state via socket only
+    socketRef.current.emit('sync_state', {
+     active_contact_id: activeContact?.id
+    });
+
+    // Use socket events instead of API call
+    socketRef.current.emit('request_online_users');
+
+    // Reload only if user isn't reading up the history
+    if (activeContact && !userScrollLockRef.current) {
+     loadMessages(activeContact.id);
+    }
+   }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+   document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
+ }, [activeContact, loadMessages]);
 
  const {
   callState,
@@ -626,19 +708,34 @@ const App = () => {
  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
  const previousScrollHeight = useRef(0);
 
+ // Lock auto-scroll when user scrolls up; release it after user returns near bottom
+ const userScrollLockRef = useRef(false);
+ const clearLockTimeoutRef = useRef(null);
+
  const handleScroll = useCallback(() => {
   const container = messagesContainerRef.current;
-  if (!container || loadingMoreMessages || !hasMoreMessages || !activeContact) return;
+  if (!container || !activeContact) return;
 
-  const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+  const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
 
-  if (isNearBottom) {
-   setShouldScrollToBottom(true);
-  } else {
-   setShouldScrollToBottom(false);
+  // Hysteresis: lock when far from bottom, unlock only when truly at bottom
+  const LOCK_AT = 200;   // px away from bottom -> engage lock
+  const UNLOCK_AT = 8;   // px from bottom      -> release lock
+
+  if (distanceFromBottom > LOCK_AT) {
+   if (!userScrollLockRef.current) {
+    userScrollLockRef.current = true;
+    setShouldScrollToBottom(false);
+   }
+  } else if (distanceFromBottom <= UNLOCK_AT) {
+   if (userScrollLockRef.current) {
+    userScrollLockRef.current = false;
+    setShouldScrollToBottom(true);
+   }
   }
 
-  if (container.scrollTop < 50 && messages.length > 0) {
+  // Upward pagination
+  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 5 && messages.length > 0) {
    const oldestMessage = messages[0];
    if (oldestMessage) {
     setLoadingMoreMessages(true);
@@ -646,55 +743,66 @@ const App = () => {
     loadMessages(activeContact.id, oldestMessage.id);
    }
   }
- }, [loadingMoreMessages, hasMoreMessages, messages, activeContact, loadMessages]);
+ }, [activeContact, messages, hasMoreMessages, loadingMoreMessages, loadMessages]);
 
- // Auto-scroll to bottom when new messages arrive (but not when loading more)
+
+ // Auto-scroll to bottom ONLY if user is near bottom or the last message is mine.
+ // Prevents random jumps during pagination and other UI updates.
+ const lastMessageIdRef = useRef(null);
+
  useEffect(() => {
-  if (shouldScrollToBottom && !loadingMoreMessages) {
-   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-   };
-   scrollToBottom();
-   const timeouts = [100, 300, 500, 1000].map((delay) =>
-    setTimeout(scrollToBottom, delay)
-   );
-   return () => timeouts.forEach(clearTimeout);
-  }
- }, [messages, shouldScrollToBottom, loadingMoreMessages]);
+  if (!messages || messages.length === 0) return;
 
- // Restore scroll position after loading more messages
+  const container = messagesContainerRef.current;
+  if (!container) return;
+
+  // 1) After upward pagination (prepend), restore the previous viewport
+  if (!loadingMoreMessages && previousScrollHeight.current) {
+   const delta = container.scrollHeight - previousScrollHeight.current;
+   container.scrollTop = container.scrollTop + delta;
+   previousScrollHeight.current = 0;
+   return; // don't also auto-scroll this tick
+  }
+
+  // 2) Normal append behavior with “near bottom” + lock protection
+  const lastMsg = messages[messages.length - 1];
+  const isMine = user && lastMsg && lastMsg.sender_id === user.id;
+
+  const prevLastId = lastMessageIdRef.current;
+  const newLastId = lastMsg?.id ?? null;
+  const lastChanged = prevLastId !== newLastId;
+  lastMessageIdRef.current = newLastId;
+
+  const nearBottom =
+   container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+
+  // 3) First batch for a chat: if the view hasn't been touched (scrollTop === 0)
+  // and we’re not paginating, force-bottom exactly once.
+  const initialBatch =
+   (prevLastId == null || container.scrollTop === 0) &&
+   !userScrollLockRef.current &&
+   !loadingMoreMessages;
+
+  const canAutoScroll =
+   initialBatch || (lastChanged && (isMine || (nearBottom && !userScrollLockRef.current)));
+
+  if (canAutoScroll) {
+   requestAnimationFrame(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+   });
+  }
+ }, [messages, user, loadingMoreMessages]);
+
  useEffect(() => {
   if (!loadingMoreMessages && previousScrollHeight.current > 0) {
    const container = messagesContainerRef.current;
    if (container) {
-    // Wait for images to load before adjusting scroll
-    const images = container.querySelectorAll('img[src*="/static/uploads"]');
-
-    if (images.length === 0) {
-     // No images, adjust immediately
+    requestAnimationFrame(() => {
      const newScrollHeight = container.scrollHeight;
      const scrollDiff = newScrollHeight - previousScrollHeight.current;
      container.scrollTop += scrollDiff;
      previousScrollHeight.current = 0;
-    } else {
-     // Wait for all images to load
-     const imagePromises = Array.from(images).map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(resolve => {
-       img.onload = resolve;
-       img.onerror = resolve; // Also resolve on error to prevent hanging
-       // Timeout fallback
-       setTimeout(resolve, 1000);
-      });
-     });
-
-     Promise.all(imagePromises).then(() => {
-      const newScrollHeight = container.scrollHeight;
-      const scrollDiff = newScrollHeight - previousScrollHeight.current;
-      container.scrollTop += scrollDiff;
-      previousScrollHeight.current = 0;
-     });
-    }
+    });
    }
   }
  }, [loadingMoreMessages]);
@@ -1197,12 +1305,25 @@ const App = () => {
          ref={messagesContainerRef}
          onScroll={handleScroll}
         >
-         {loadingMoreMessages && (
+         {isLoadingMessages && messages.length === 0 && (
           <div style={{
            display: 'flex',
+           alignItems: 'center',
            justifyContent: 'center',
-           padding: '20px',
+           height: '100%',
            color: 'var(--text-secondary)'
+          }}>
+           <div className="loading-spinner"></div>
+          </div>
+         )}
+         {loadingMoreMessages && (
+          <div style={{
+           position: 'absolute',
+           top: '10px',
+           left: '50%',
+           transform: 'translateX(-50%)',
+           zIndex: 10,
+           pointerEvents: 'none'
           }}>
            <div className="loading-spinner" style={{
             width: '24px',
@@ -1213,206 +1334,217 @@ const App = () => {
            }}></div>
           </div>
          )}
-         {messages.length === 0 && isMobile ? (
-          <MessagesSkeleton />
-         ) : messages.length === 0 ? (
+         {messages.length === 0 ? (
           <div className="empty-messages">
            <p>Start a conversation with {activeContact.username}</p>
           </div>
          ) : (
-          // Only showing the relevant message rendering section that needs to be changed:
+          messages.map((message, index) => {
+           const prevMessage = messages[index - 1];
+           const nextMessage = messages[index + 1];
 
-          messages.map((message) => (
-           <div
-            id={`message-${message.id}`}
-            key={message.id}
-            className={`message ${message.sender_id === user.id ? "sent" : "received"
-             } ${message.reply_to ? "reply" : ""}`}
-           >
-            {message.sender_id !== user.id && (
-             <div className="message-avatar-container">
-              <img
-               src={
-                activeContact.avatar_url
-                 ? `${API_BASE_URL}${activeContact.avatar_url}`
-                 : "/resources/default_avatar.png"
+           const isSameSenderAsPrev = prevMessage && prevMessage.sender_id === message.sender_id && !prevMessage.deleted && !message.deleted;
+           const isSameSenderAsNext = nextMessage && nextMessage.sender_id === message.sender_id && !nextMessage.deleted && !message.deleted;
+
+           const isGrouped = !message.deleted && (isSameSenderAsPrev || isSameSenderAsNext);
+           const isFirstInGroup = isGrouped && !isSameSenderAsPrev;
+           const isLastInGroup = isGrouped && !isSameSenderAsNext;
+           const isMiddleInGroup = isGrouped && !isFirstInGroup && !isLastInGroup;
+
+           let groupClass = '';
+           if (isGrouped) {
+            if (isFirstInGroup) groupClass = 'opener';
+            else if (isLastInGroup) groupClass = 'closer';
+            else groupClass = 'middle';
+           }
+
+           const showAvatar = message.sender_id !== user.id && (!isGrouped || isLastInGroup);
+
+           return (
+            <div
+             id={`message-${message.id}`}
+             key={message.id}
+             className={`message ${message.sender_id === user.id ? "sent" : "received"} ${message.reply_to ? "reply" : ""} ${groupClass ? `in-group ${groupClass}` : ''}`}
+             onTouchStart={(e) => {
+              const touch = e.touches[0];
+              const startTime = Date.now();
+              const startY = touch.clientY;
+
+              const handleTouchEnd = (endEvent) => {
+               const duration = Date.now() - startTime;
+               const endTouch = endEvent.changedTouches[0];
+               const moveY = Math.abs(endTouch.clientY - startY);
+
+               if (duration >= 400 && moveY < 10) {
+                const bubble = e.currentTarget.querySelector('.message-bubble');
+                if (bubble) {
+                 bubble.setAttribute('data-show-title', 'true');
+                 setTimeout(() => {
+                  bubble.setAttribute('data-show-title', 'false');
+                 }, 2000);
+                }
                }
-               alt={activeContact.username}
-               className="message-avatar"
-               onClick={(e) => {
-                e.stopPropagation();
-                setShowProfileModal(activeContact);
-               }}
-               draggable="false"
-              />
-              <div
-               className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-                onlineUsers.includes(activeContact.id) ? "online" : "offline"
-                }`}
-              ></div>
-             </div>
-            )}
-            <div className="message-bubble">
-             {message.original_message && (
-              <div
-               className="reply-inside"
-               onClick={() =>
-                !message.original_message.deleted &&
-                scrollToMessage(message.original_message.id)
-               }
-               style={
-                message.original_message.deleted
-                 ? { cursor: "default" }
-                 : { cursor: "pointer" }
-               }
-              >
-               <span className="reply-sender-inside">
-                {message.original_message.sender_id === user.id
-                 ? "You"
-                 : message.original_message.sender_username}
-               </span>
-               <span className="reply-content-inside">
-                {message.original_message.deleted ? (
-                 <em
-                  style={{
-                   color: "var(--text-muted)",
-                   fontStyle: "italic",
-                  }}
-                 >
-                  This message has been DELETED
-                 </em>
-                ) : (
-                 (() => {
-                  const orig =
-                   message.original_message?.content || "";
-                  const truncated =
-                   orig.length > 40
-                    ? orig.substring(0, 40) + "..."
-                    : orig;
-                  return linkify(truncated);
-                 })()
-                )}
-               </span>
+
+               document.removeEventListener('touchend', handleTouchEnd);
+              };
+
+              document.addEventListener('touchend', handleTouchEnd);
+             }}
+            >
+             {message.sender_id !== user.id && (
+              <div className="message-avatar-container" style={!showAvatar ? { visibility: 'hidden' } : {}}>
+               <img
+                src={
+                 activeContact.avatar_url
+                  ? `${API_BASE_URL}${activeContact.avatar_url}`
+                  : "/resources/default_avatar.png"
+                }
+                alt={activeContact.username}
+                className="message-avatar"
+                onClick={(e) => {
+                 e.stopPropagation();
+                 setShowProfileModal(activeContact);
+                }}
+                draggable="false"
+               />
+               <div
+                className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+                 onlineUsers.includes(activeContact.id) ? "online" : "offline"
+                 }`}
+               ></div>
               </div>
              )}
+             <div
+              className="message-bubble"
+              title={new Date(message.timestamp + "Z").toLocaleString()}
+              data-show-title="false"
+             >
+              {message.original_message && (
+               <div
+                className="reply-inside"
+                onClick={() =>
+                 !message.original_message.deleted &&
+                 scrollToMessage(message.original_message.id)
+                }
+                style={
+                 message.original_message.deleted
+                  ? { cursor: "default" }
+                  : { cursor: "pointer" }
+                }
+               >
+                <span className="reply-sender-inside">
+                 {message.original_message.sender_id === user.id
+                  ? "You"
+                  : message.original_message.sender_username}
+                </span>
+                <span className="reply-content-inside">
+                 {message.original_message.deleted ? (
+                  <em
+                   style={{
+                    color: "var(--text-muted)",
+                    fontStyle: "italic",
+                   }}
+                  >
+                   This message has been DELETED
+                  </em>
+                 ) : (
+                  (() => {
+                   const orig =
+                    message.original_message?.content || "";
+                   const truncated =
+                    orig.length > 40
+                     ? orig.substring(0, 40) + "..."
+                     : orig;
+                   return linkify(truncated);
+                  })()
+                 )}
+                </span>
+               </div>
+              )}
 
-             {/* Message content based on type */}
-             {/* Deleted-aware message rendering */}
-             {message.deleted ? (
-              <div className="deleted-message">
-               <em>
-                {message.sender_id === user.id
-                 ? "You have DELETED this message."
-                 : "This message has been DELETED."}
-               </em>
-              </div>
-             ) : message.message_type === "image" ? (
-              <div className="message-image">
-               <img
+              {message.deleted ? (
+               <div className="deleted-message">
+                <em>
+                 {message.sender_id === user.id
+                  ? "You have DELETED this message."
+                  : "This message has been DELETED."}
+                </em>
+               </div>
+              ) : message.message_type === "image" ? (
+               <div className="message-image">
+                <img
                  src={`${API_BASE_URL}${message.file_path}`}
                  alt="Shared image"
                  className="shared-image"
-                 onLoad={(e) => e.target.classList.add('loaded')}
-               />
-              </div>
-             ) : message.message_type === "file" ? (
-              <div
-               className="message-file"
-               onClick={() =>
-                window.open(
-                 `${API_BASE_URL}${message.file_path}`,
-                 "_blank"
-                )
-               }
-              >
-               <div className="file-icon">
-                <i
-                 className={getFileIcon(message.file_type)}
-                ></i>
+                 onLoad={(e) => {
+                  e.target.classList.add('loaded');
+                 }}
+                />
                </div>
-               <div className="file-info">
-                <div className="file-name">
-                 {message.file_name}
-                </div>
-                <div className="file-size">
-                 {formatFileSize(message.file_size)}
-                </div>
-               </div>
-               <div className="file-download">
-                <i className="fas fa-download"></i>
-               </div>
-              </div>
-             ) : (
-              <div className="message-content">
-               {linkify(message.content)}
-              </div>
-             )}
-
-             <Reaction
-              messageId={message.id}
-              reactions={messageReactions[message.id] || {}}
-              onAddReaction={handleAddReaction}
-              onRemoveReaction={handleRemoveReaction}
-              currentUserId={user.id}
-              showPopup={showReactionPopup === message.id}
-              onClosePopup={() => setShowReactionPopup(null)}
-             />
-             <div className="message-time">
-              {(() => {
-               const messageTime = new Date(
-                message.timestamp + "Z"
-               );
-               const now = new Date();
-               const diffMs = now - messageTime;
-               const diffMinutes = Math.floor(diffMs / 60000);
-
-               if (diffMinutes < 1) {
-                return "Just now";
-               } else {
-                return messageTime.toLocaleTimeString([], {
-                 hour: "numeric",
-                 minute: "2-digit",
-                 hour12: true,
-                });
-               }
-              })()}
-             </div>
-            </div>
-            {!message.deleted && (
-             <>
-              <button
-               className="message-reply-btn"
-               onClick={() => handleReplyToMessage(message)}
-               title="Reply to this message"
-              >
-               <i className="fas fa-reply"></i>
-              </button>
-              <button
-               className="message-reaction-btn"
-               onClick={() =>
-                setShowReactionPopup(
-                 showReactionPopup === message.id
-                  ? null
-                  : message.id
-                )
-               }
-               title="React to this message"
-              >
-               <i className="fas fa-smile"></i>
-              </button>
-              {message.sender_id === user.id && (
-               <button
-                className="message-delete-btn"
-                onClick={() => setDeleteConfirm(message)}
-                title="Delete message"
+              ) : message.message_type === "file" ? (
+               <div
+                className="message-file"
+                onClick={() =>
+                 window.open(
+                  `${API_BASE_URL}${message.file_path}`,
+                  "_blank"
+                 )
+                }
                >
-                <i className="fas fa-trash"></i>
-               </button>
+                <div className="file-icon">
+                 <i
+                  className={getFileIcon(message.file_type)}
+                 ></i>
+                </div>
+                <div className="file-info">
+                 <div className="file-name">
+                  {message.file_name}
+                 </div>
+                 <div className="file-size">
+                  {formatFileSize(message.file_size)}
+                 </div>
+                </div>
+                <div className="file-download">
+                 <i className="fas fa-download"></i>
+                </div>
+               </div>
+              ) : (
+               <div className="message-content">
+                {linkify(message.content)}
+               </div>
               )}
-             </>
-            )}
-           </div>
-          ))
+
+              <Reaction
+               messageId={message.id}
+               reactions={messageReactions[message.id] || {}}
+               onAddReaction={handleAddReaction}
+               onRemoveReaction={handleRemoveReaction}
+               currentUserId={user.id}
+              />
+              {/* time moved to bubble title (hover/hold) */}
+             </div>
+             <MessageOptions
+              message={message}
+              isOwnMessage={message.sender_id === user.id}
+              onReply={handleReplyToMessage}
+              onReact={(e, messageId) => {
+               e.stopPropagation();
+               const rect = e.currentTarget.getBoundingClientRect();
+               const buttonRect = e.target.closest('.react-btn').getBoundingClientRect();
+               setReactionPopupPosition({
+                x: buttonRect.left + buttonRect.width / 2,
+                y: buttonRect.top
+               });
+               setShowReactionPopup(
+                showReactionPopup === messageId ? null : messageId
+               );
+              }}
+              onDelete={setDeleteConfirm}
+              isDeleted={message.deleted}
+             />
+            </div>
+           );
+          })
          )}
 
          <div ref={messagesEndRef} />
@@ -2141,6 +2273,14 @@ const App = () => {
      }}
      lastMessage={showProfileModal?.lastMessage}
      lastMessageSenderId={showProfileModal?.lastSenderId}
+    />
+   )}
+   {showReactionPopup && (
+    <ReactionMore
+     messageId={showReactionPopup}
+     onAddReaction={handleAddReaction}
+     onClose={() => setShowReactionPopup(null)}
+     position={reactionPopupPosition}
     />
    )}
   </div>

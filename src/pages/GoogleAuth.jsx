@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import './Login.css'; // Reusing the same CSS for consistent styling
+import styles from './Login.module.css';
 import { API_BASE_URL } from '../config';
 
 const GoogleAuth = () => {
@@ -138,11 +138,11 @@ const GoogleAuth = () => {
 
  if (!userInfo) {
   return (
-   <div className="login-container">
-    <div className="aura-background"></div>
-    <div className="login-card">
-     <div className="login-header">
-      <div className="logo-container" style={{
+   <div className={styles.loginContainer}>
+    <div className={styles.auraBackground}></div>
+    <div className={styles.loginCard}>
+     <div className={styles.loginHeader}>
+      <div className={styles.logoContainer} style={{
        display: 'flex',
        justifyContent: 'center',
        marginBottom: '24px'
@@ -150,7 +150,7 @@ const GoogleAuth = () => {
        <img
         src="/resources/main-logo.svg"
         alt="uChat Logo"
-        className="main-logo"
+        className={styles.mainLogo}
         style={{
          width: '80px',
          height: '80px',
@@ -170,11 +170,11 @@ const GoogleAuth = () => {
  }
 
  return (
-  <div className="login-container">
-   <div className="aura-background"></div>
-   <div className="login-card">
-    <div className="login-header">
-     <div className="logo-container" style={{
+  <div className={styles.loginContainer}>
+   <div className={styles.auraBackground}></div>
+   <div className={styles.loginCard}>
+    <div className={styles.loginHeader}>
+     <div className={styles.logoContainer} style={{
       display: 'flex',
       justifyContent: 'center',
       marginBottom: '24px'
@@ -182,7 +182,7 @@ const GoogleAuth = () => {
       <img
        src="/resources/main-logo.svg"
        alt="uChat Logo"
-       className="main-logo"
+       className={styles.mainLogo}
        style={{
         width: '80px',
         height: '80px',
@@ -216,7 +216,7 @@ const GoogleAuth = () => {
      </div>
     </div>
 
-    <div className="login-form">
+    <div className={styles.loginForm}>
      {error && (
       <div style={{
        backgroundColor: 'var(--error-bg, #fee)',
@@ -236,7 +236,7 @@ const GoogleAuth = () => {
      )}
 
      <form onSubmit={handleSetupComplete}>
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="username">
         <i className="fas fa-user" style={{ marginRight: '8px' }}></i>
         Display Name
@@ -263,7 +263,7 @@ const GoogleAuth = () => {
        </div>
       </div>
 
-      <div className="input-group">
+      <div className={styles.inputGroup}>
        <label htmlFor="handle">
         <i className="fas fa-hashtag" style={{ marginRight: '8px' }}></i>
         Handle
@@ -299,14 +299,14 @@ const GoogleAuth = () => {
        </small>
       </div>
 
-      <button type="submit" className="login-btn primary" disabled={loading}>
+      <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading}>
        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
        {loading ? 'Setting up...' : 'Complete Setup'}
       </button>
      </form>
     </div>
 
-    <div className="login-footer">
+    <div className={styles.loginFooter}>
      <p>
       <i className="fas fa-shield-alt" style={{ marginRight: '8px', opacity: 0.7 }}></i>
       Your Google account is securely connected

@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import fs from 'fs'
 
-// https://vitejs.dev/config/
 export default defineConfig({
  plugins: [
   react(),
@@ -16,6 +15,14 @@ export default defineConfig({
    protocolImports: true,
   })
  ],
+ css: {
+  modules: {
+   generateScopedName:
+    process.env.NODE_ENV === 'production'
+     ? '_[hash:base64:6]'  // Production: gibberish
+     : '[name]__[local]__[hash:base64:3]', // Dev: readable
+  }
+ },
  define: {
   global: 'globalThis',
   __dirname: JSON.stringify('/'),
@@ -33,7 +40,6 @@ export default defineConfig({
   outDir: 'dist-obfuscated',
  },
  server: {
-  // Only use HTTPS in development when the SSL files exist
   ...(process.env.NODE_ENV !== 'production' &&
    fs.existsSync('../uChat-backend/server.key') &&
    fs.existsSync('../uChat-backend/server.crt')

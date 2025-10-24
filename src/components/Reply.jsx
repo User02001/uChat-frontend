@@ -18,7 +18,7 @@ const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
     </div>
     <div className="reply-info">
      <div className="reply-header">
-      <span className="reply-text">Replying to:</span>
+      <span className="reply-text">Replying to</span>
       <span className="reply-sender">
        {replyingTo.sender_id === replyingTo.currentUserId ? 'Yourself' : activeContact?.username}
       </span>

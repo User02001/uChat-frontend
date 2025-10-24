@@ -1,0 +1,124 @@
+/* Message Options Container */
+.message-options {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 5;
+}
+    /* Position based on message ownership */
+    .message-options.own-message {
+        right: calc(100% + 12px);
+    }
+
+    .message-options.other-message {
+        left: calc(100% + 12px);
+    }
+    /* Show on message hover - extended hit area */
+    .message:hover .message-options,
+    .message-options:hover {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    /* Add invisible horizontal hover strip covering gap and chat area */
+    .message-options::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        bottom: -10px;
+        width: 10vw;
+        z-index: -1;
+        pointer-events: auto;
+    }
+
+    .message-options.own-message::before {
+        right: -12px;
+        transform: translateX(0);
+    }
+
+    .message-options.other-message::before {
+        left: -12px;
+        transform: translateX(0);
+    }
+
+/* Individual Option Buttons */
+.message-option-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    box-shadow: 0 2px 8px var(--shadow);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+    .message-option-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        transform: scale(1.1);
+    }
+
+    .message-option-btn:active {
+        transform: scale(0.9);
+    }
+
+/* Specific button colors */
+.reply-btn:hover {
+    color: var(--button-primary);
+}
+
+.react-btn:hover {
+    color: #f59e0b;
+}
+
+.delete-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+    .message-options.own-message {
+        margin-left: -8px;
+    }
+
+    .message-options.other-message {
+        margin-right: -8px;
+    }
+
+    .message-option-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .message-options {
+        gap: 4px;
+    }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .message-option-btn {
+    background: #1f1f1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+    [data-theme="dark"] .message-option-btn:hover {
+        background: #2a2a2a;
+    }
+
+[data-theme="dark"] .delete-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
