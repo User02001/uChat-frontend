@@ -2,13 +2,13 @@ import React, { useEffect } from 'react';
 import './Reaction.css';
 
 const REACTIONS = [
-  { type: 'like', icon: 'fas fa-thumbs-up', label: 'Like' },
-  { type: 'love', icon: 'fas fa-heart', label: 'Love' },
-  { type: 'happy', icon: 'fas fa-smile', label: 'Happy' },
-  { type: 'sad', icon: 'fas fa-frown', label: 'Sad' },
-  { type: 'angry', icon: 'fas fa-angry', label: 'Angry' },
-  { type: 'dislike', icon: 'fas fa-thumbs-down', label: 'Dislike' },
-  { type: 'skull', icon: 'fas fa-skull', label: 'Dead' }
+ { type: 'like', emoji: '👍', label: 'Like' },
+ { type: 'love', emoji: '❤️', label: 'Love' },
+ { type: 'happy', emoji: '😂', label: 'Happy' },
+ { type: 'sad', emoji: '😢', label: 'Sad' },
+ { type: 'angry', emoji: '😡', label: 'Angry' },
+ { type: 'dislike', emoji: '👎', label: 'Dislike' },
+ { type: 'skull', emoji: '💀', label: 'Dead' }
 ];
 
 const Reaction = ({
@@ -70,9 +70,7 @@ const Reaction = ({
                 onClick={() => handleReactionClick(reactionType)}
                 data-tooltip={getTooltipText(reactionType)}
               >
-                <span className="reaction-icon">
-                  <i className={reaction.icon}></i>
-                </span>
+                <span className="reaction-icon">{reaction.emoji}</span>
                 <span className="reaction-count">{data.count}</span>
               </div>
             );

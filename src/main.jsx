@@ -1,19 +1,10 @@
 import { StrictMode, lazy, Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
-import './index.css'
+import styles from './index.module.css'
 
-// Create a styled loading fallback using CSS classes
-const LoadingFallback = () => (
- <div className="app-loading">
-  <div className="loading-spinner"></div>
-  <p>Loading...</p>
- </div>
-)
-
-//some random shit i dunno
+// Warning message
 const imageUrl = "https://uchat.ufonic.xyz/resources/favicon.png";
-
 const warningStyle = [
  "color: #fff",
  "background: #a80000",
@@ -26,8 +17,6 @@ const warningStyle = [
 
 function showUChatWarning() {
  const msg = "⚠️ WARNING. THIS IS THE CONSOLE WHICH IS ONLY USED BY DEVELOPERS. IF ANYONE TOLD YOU TO COPY AND PASTE A CODE HERE, DON'T DO IT. IT IS LIKELY AN ATTEMPT TO GAIN ACCESS TO YOUR ACCOUNT. YOU HAVE BEEN WARNED. ONLY PASTE A CODE HERE IF YOU KNOW WHAT YOU ARE DOING.";
-
- // Use existing warningStyle if available, otherwise a reasonable fallback.
  const style =
   typeof warningStyle !== "undefined"
    ? warningStyle
@@ -40,7 +29,6 @@ function showUChatWarning() {
     "border-radius: 4px",
     "display: inline-block",
    ].join(";");
-
  console.log("%c" + msg, style);
 }
 
@@ -76,7 +64,7 @@ const AppRoutes = () => {
  }, [location.pathname, navigationType])
 
  return (
-  <Suspense fallback={<LoadingFallback />}>
+  <Suspense>
    <Routes key={location.pathname + location.search}>
     <Route path="/login" element={<Login key="login" />} />
     <Route path="/signup" element={<Signup key="signup" />} />

@@ -8,15 +8,18 @@ import MessagesSkeleton from "./components/MessagesSkeleton";
 import ContactsSkeleton from "./components/ContactsSkeleton";
 import Reaction from "./components/Reaction";
 import ReactionMore from "./components/ReactionMore";
-import "./pages/downloads-recommend.css";
 import DeleteModal from "./components/DeleteModal";
-import "./index.css";
-import "./pages/calls.css";
+import VerificationModal from "./components/VerificationModal";
 import UnverifiedModal from "./components/UnverifiedModal";
 import linkify from "./hooks/linkify.jsx";
 import Gifs from "./components/Gifs";
 import ProfileModal from "./components/ProfileModal";
 import MessageOptions from "./components/MessageOptions";
+import styles from "./index.module.css";
+import "./pages/downloads-recommend.css";
+import "./pages/calls.css";
+import MediaViewer from "./components/MediaViewer";
+import VideoPlayer from "./components/VideoPlayer";
 
 const App = () => {
 
@@ -68,6 +71,7 @@ const App = () => {
   dragOffset, setDragOffset,
   messageCache, setMessageCache,
   isLoadingMessages, setIsLoadingMessages,
+  showMediaViewer, setShowMediaViewer,
 
   // Refs
   socketRef,
@@ -182,18 +186,13 @@ const App = () => {
   const handleReconnect = () => {
    console.log('[SYNC] Socket reconnected - syncing state...');
 
-   // Immediately sync full state
    socketRef.current.emit('sync_state', {
     active_contact_id: activeContact?.id
    });
 
-   // Request contacts refresh
    socketRef.current.emit('request_contacts_update');
-
-   // Request online users
    socketRef.current.emit('request_online_users');
 
-   // If we have an active contact, reload their messages
    if (activeContact) {
     loadMessages(activeContact.id);
    }
@@ -202,12 +201,10 @@ const App = () => {
   const handleMessagesSnced = (data) => {
    if (data.contact_id === activeContact?.id) {
     setMessages(data.messages);
-    console.log('[SYNC] Messages synced for active contact');
    }
   };
 
   const handleForceContactsRefresh = () => {
-   console.log('[SYNC] Forced contacts refresh');
    loadContacts();
   };
 
@@ -228,17 +225,12 @@ const App = () => {
  useEffect(() => {
   const handleVisibilityChange = () => {
    if (!document.hidden && socketRef.current && socketRef.current.connected) {
-    console.log('[SYNC] Page became visible - refreshing state');
-
-    // Sync state via socket only
     socketRef.current.emit('sync_state', {
      active_contact_id: activeContact?.id
     });
 
-    // Use socket events instead of API call
     socketRef.current.emit('request_online_users');
 
-    // Reload only if user isn't reading up the history
     if (activeContact && !userScrollLockRef.current) {
      loadMessages(activeContact.id);
     }
@@ -274,7 +266,7 @@ const App = () => {
   toggleCamera
  } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
 
- // Auto-hide call UI after 4 seconds (only when call becomes active, not on mount)
+ // Auto-hide call UI after 4 seconds
  useEffect(() => {
   if (callState.isActive && !callState.isIncoming && !callMinimized) {
    const timer = setTimeout(() => {
@@ -293,20 +285,13 @@ const App = () => {
   }
  }, [callState.isActive, callState.isIncoming, callMinimized]);
 
- // Show verification banner for unverified users
+ // Show verification modal for unverified users
  useEffect(() => {
   if (user && !user.is_verified) {
    setShowVerificationBanner(true);
-   document.body.classList.add("with-verification-banner");
   } else {
    setShowVerificationBanner(false);
-   document.body.classList.remove("with-verification-banner");
   }
-
-  // Add cleanup function to remove the class when component unmounts
-  return () => {
-   document.body.classList.remove("with-verification-banner");
-  };
  }, [user]);
 
  // Handle screenshare local video setup
@@ -316,10 +301,7 @@ const App = () => {
    screenshareLocalVideoRef.current &&
    screenshareState.isSharing
   ) {
-   console.log(
-    "Setting up local screenshare video:",
-    screenshareState.localStream.id
-   );
+   console.log("Setting up local screenshare video:", screenshareState.localStream.id);
    screenshareLocalVideoRef.current.srcObject = screenshareState.localStream;
    screenshareLocalVideoRef.current.muted = true;
    screenshareLocalVideoRef.current.autoplay = true;
@@ -333,7 +315,7 @@ const App = () => {
  // Add this function to handle dismissing the recommendation (session only)
  const dismissDownloadRecommendation = () => {
   setShowDownloadRecommendation(false);
-  setSessionDismissed(true); // Only dismiss for this session
+  setSessionDismissed(true);
  };
 
  // Add this function to handle "I already have it" checkbox
@@ -350,16 +332,15 @@ const App = () => {
    const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
 
    if (isInView) {
-    // Find the element to highlight - could be .message-bubble, .message-content, or .deleted-message
     const targetElement =
-     messageElement.querySelector(".message-bubble") ||
-     messageElement.querySelector(".deleted-message") ||
-     messageElement.querySelector(".message-content");
+     messageElement.querySelector(`.${styles.messageBubble}`) ||
+     messageElement.querySelector(`.${styles.deletedMessage}`) ||
+     messageElement.querySelector(`.${styles.messageContent}`);
 
     if (targetElement) {
-     targetElement.classList.add("message-highlighted");
+     targetElement.classList.add('message-highlighted');
      setTimeout(() => {
-      targetElement.classList.remove("message-highlighted");
+      targetElement.classList.remove('message-highlighted');
      }, 800);
     }
    } else {
@@ -373,14 +354,14 @@ const App = () => {
      clearTimeout(scrollTimeout);
      scrollTimeout = setTimeout(() => {
       const targetElement =
-       messageElement.querySelector(".message-bubble") ||
-       messageElement.querySelector(".deleted-message") ||
-       messageElement.querySelector(".message-content");
+       messageElement.querySelector(`.${styles.messageBubble}`) ||
+       messageElement.querySelector(`.${styles.deletedMessage}`) ||
+       messageElement.querySelector(`.${styles.messageContent}`);
 
       if (targetElement) {
-       targetElement.classList.add("message-highlighted");
+       targetElement.classList.add('message-highlighted');
        setTimeout(() => {
-        targetElement.classList.remove("message-highlighted");
+        targetElement.classList.remove('message-highlighted');
        }, 800);
       }
 
@@ -396,10 +377,7 @@ const App = () => {
  // Handle local video setup for both caller and receiver
  useEffect(() => {
   if (callState.localStream && localVideoRef.current) {
-   console.log(
-    "Setting up local video from useEffect:",
-    callState.localStream.id
-   );
+   console.log("Setting up local video from useEffect:", callState.localStream.id);
    localVideoRef.current.srcObject = callState.localStream;
    localVideoRef.current.muted = true;
    localVideoRef.current.autoplay = true;
@@ -413,14 +391,12 @@ const App = () => {
 
  // Re-assign video streams when minimized state changes
  useEffect(() => {
-  // Re-assign local stream
   if (callState.localStream && localVideoRef.current) {
    localVideoRef.current.srcObject = callState.localStream;
    localVideoRef.current.muted = true;
    localVideoRef.current.play().catch(console.error);
   }
 
-  // Re-assign remote stream
   if (callState.remoteStream && remoteVideoRef.current) {
    remoteVideoRef.current.srcObject = callState.remoteStream;
    remoteVideoRef.current.muted = false;
@@ -430,14 +406,12 @@ const App = () => {
 
  // Re-assign screenshare streams when minimized state changes
  useEffect(() => {
-  // Re-assign local screenshare
   if (screenshareState.localStream && screenshareLocalVideoRef.current && screenshareState.isSharing) {
    screenshareLocalVideoRef.current.srcObject = screenshareState.localStream;
    screenshareLocalVideoRef.current.muted = true;
    screenshareLocalVideoRef.current.play().catch(console.error);
   }
 
-  // Re-assign remote screenshare
   if (screenshareState.remoteStream && screenshareRemoteVideoRef.current && screenshareState.isViewing) {
    screenshareRemoteVideoRef.current.srcObject = screenshareState.remoteStream;
    screenshareRemoteVideoRef.current.muted = false;
@@ -532,21 +506,16 @@ const App = () => {
  // Get file icon based on extension
  const getFileIcon = (fileType) => {
   const iconMap = {
-   // Documents
    pdf: "fas fa-file-pdf",
    doc: "fas fa-file-word",
    docx: "fas fa-file-word",
    txt: "fas fa-file-alt",
    rtf: "fas fa-file-alt",
-
-   // Archives
    zip: "fas fa-file-archive",
    rar: "fas fa-file-archive",
    "7z": "fas fa-file-archive",
    tar: "fas fa-file-archive",
    gz: "fas fa-file-archive",
-
-   // Media
    mp4: "fas fa-file-video",
    avi: "fas fa-file-video",
    mkv: "fas fa-file-video",
@@ -556,17 +525,11 @@ const App = () => {
    wav: "fas fa-file-audio",
    flac: "fas fa-file-audio",
    aac: "fas fa-file-audio",
-
-   // Spreadsheets
    xlsx: "fas fa-file-excel",
    xls: "fas fa-file-excel",
    csv: "fas fa-file-csv",
-
-   // Presentations
    pptx: "fas fa-file-powerpoint",
    ppt: "fas fa-file-powerpoint",
-
-   // Code files
    js: "fas fa-file-code",
    html: "fas fa-file-code",
    css: "fas fa-file-code",
@@ -575,13 +538,10 @@ const App = () => {
    cpp: "fas fa-file-code",
    c: "fas fa-file-code",
    php: "fas fa-file-code",
-
-   // Executables
    exe: "fas fa-cog",
    msi: "fas fa-cog",
    app: "fas fa-cog",
    deb: "fas fa-cog",
-
    default: "fas fa-file",
   };
   return iconMap[fileType?.toLowerCase()] || iconMap.default;
@@ -708,7 +668,6 @@ const App = () => {
  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
  const previousScrollHeight = useRef(0);
 
- // Lock auto-scroll when user scrolls up; release it after user returns near bottom
  const userScrollLockRef = useRef(false);
  const clearLockTimeoutRef = useRef(null);
 
@@ -718,9 +677,8 @@ const App = () => {
 
   const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
 
-  // Hysteresis: lock when far from bottom, unlock only when truly at bottom
-  const LOCK_AT = 200;   // px away from bottom -> engage lock
-  const UNLOCK_AT = 8;   // px from bottom      -> release lock
+  const LOCK_AT = 200;
+  const UNLOCK_AT = 8;
 
   if (distanceFromBottom > LOCK_AT) {
    if (!userScrollLockRef.current) {
@@ -734,7 +692,6 @@ const App = () => {
    }
   }
 
-  // Upward pagination
   if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 5 && messages.length > 0) {
    const oldestMessage = messages[0];
    if (oldestMessage) {
@@ -745,9 +702,6 @@ const App = () => {
   }
  }, [activeContact, messages, hasMoreMessages, loadingMoreMessages, loadMessages]);
 
-
- // Auto-scroll to bottom ONLY if user is near bottom or the last message is mine.
- // Prevents random jumps during pagination and other UI updates.
  const lastMessageIdRef = useRef(null);
 
  useEffect(() => {
@@ -756,15 +710,13 @@ const App = () => {
   const container = messagesContainerRef.current;
   if (!container) return;
 
-  // 1) After upward pagination (prepend), restore the previous viewport
   if (!loadingMoreMessages && previousScrollHeight.current) {
    const delta = container.scrollHeight - previousScrollHeight.current;
    container.scrollTop = container.scrollTop + delta;
    previousScrollHeight.current = 0;
-   return; // don't also auto-scroll this tick
+   return;
   }
 
-  // 2) Normal append behavior with “near bottom” + lock protection
   const lastMsg = messages[messages.length - 1];
   const isMine = user && lastMsg && lastMsg.sender_id === user.id;
 
@@ -776,15 +728,10 @@ const App = () => {
   const nearBottom =
    container.scrollHeight - container.scrollTop - container.clientHeight < 80;
 
-  // 3) First batch for a chat: if the view hasn't been touched (scrollTop === 0)
-  // and we’re not paginating, force-bottom exactly once.
-  const initialBatch =
-   (prevLastId == null || container.scrollTop === 0) &&
-   !userScrollLockRef.current &&
-   !loadingMoreMessages;
+  const initialBatch = prevLastId == null && !userScrollLockRef.current && !loadingMoreMessages;
 
   const canAutoScroll =
-   initialBatch || (lastChanged && (isMine || (nearBottom && !userScrollLockRef.current)));
+   initialBatch || (lastChanged && isMine && !userScrollLockRef.current) || (lastChanged && nearBottom && !userScrollLockRef.current);
 
   if (canAutoScroll) {
    requestAnimationFrame(() => {
@@ -792,20 +739,6 @@ const App = () => {
    });
   }
  }, [messages, user, loadingMoreMessages]);
-
- useEffect(() => {
-  if (!loadingMoreMessages && previousScrollHeight.current > 0) {
-   const container = messagesContainerRef.current;
-   if (container) {
-    requestAnimationFrame(() => {
-     const newScrollHeight = container.scrollHeight;
-     const scrollDiff = newScrollHeight - previousScrollHeight.current;
-     container.scrollTop += scrollDiff;
-     previousScrollHeight.current = 0;
-    });
-   }
-  }
- }, [loadingMoreMessages]);
 
  // Reset scroll behavior when changing contacts
  useEffect(() => {
@@ -816,43 +749,32 @@ const App = () => {
 
  if (loading) {
   return (
-   <div className="app-loading">
-    <div className="loading-spinner"></div>
+   <div className={styles.appLoading}>
+    <div className={styles.loadingSpinner}></div>
     <p>Loading uChat...</p>
    </div>
   );
  }
-
  return (
-  <div
-   className={`app-container ${isMobile && showMobileChat ? "mobile-chat-open" : ""
-    }`}
-  >
-   <>
-    {showVerificationBanner && (
-     <div className="verification-banner">
-      <i className="fas fa-exclamation-triangle"></i>
-      You are {""}
-      <a href="/help" className="unverified-link">
-       unverified!
-      </a>
-      <a href="/verify" className="verification-link">
-       Verify your email now
-      </a>
-     </div>
-    )}
+  <>
+   {showVerificationBanner && (
+    <VerificationModal
+     onClose={() => setShowVerificationBanner(false)}
+    />
+   )}
 
+   <div
+    className={`${styles.appContainer} ${isMobile && showMobileChat ? "mobile-chat-open" : ""} ${showVerificationBanner ? "with-banner" : ""}`}
+   >
     <div
-     className={
-      showVerificationBanner ? "app-content with-banner" : "app-content"
-     }
+     className={`${styles.appContent} ${showVerificationBanner ? "with-banner" : ""}`}
     >
      <Sidebar showMobileChat={showMobileChat} showMobileSearch={showMobileSearch} onLogout={handleLogout} />
 
-     <div className="sidebar">
-      <div className="sidebar-header">
-       <div className="user-profile">
-        <div className="contact-avatar-container">
+     <div className={styles.sidebar}>
+      <div className={styles.sidebarHeader}>
+       <div className={styles.userProfile}>
+        <div className={styles.contactAvatarContainer}>
          <img
           src={
            user?.avatar_url
@@ -860,43 +782,44 @@ const App = () => {
             : "/resources/default_avatar.png"
           }
           alt="Profile"
-          className="profile-avatar"
+          className={styles.profileAvatar}
           onClick={() => setShowProfileModal(user)}
           style={{ cursor: 'pointer' }}
           draggable="false"
+          title="View Your Own Profile"
          />
          <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
         </div>
-        <div className="user-info">
-         <span className="username">{user?.username}</span>
-         <span className="handle">@{user?.handle}</span>
+        <div className={styles.userInfo}>
+         <span className={styles.username}>{user?.username}</span>
+         <span className={styles.handle}>@{user?.handle}</span>
         </div>
         <button
-         className="user-menu-btn"
+         className={styles.userMenuBtn}
          onClick={() => setShowUserMenu(!showUserMenu)}
         >
          ⋮
         </button>
         {showUserMenu && (
-         <div className="user-menu">
+         <div className={styles.userMenu}>
           <button onClick={handleLogout}>Logout</button>
          </div>
         )}
        </div>
 
-       <div className="search-section">
-        <div className="search-input-container">
+       <div className={styles.searchSection}>
+        <div className={styles.searchInputContainer}>
          <input
           type="text"
           placeholder="Search users..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setShowSearch(true)}
-          className="search-input"
+          className={styles.searchInput}
          />
          {showSearch && (
           <button
-           className="search-close"
+           className={styles.searchClose}
            onClick={() => {
             setSearchExiting(true);
             setTimeout(() => {
@@ -913,9 +836,9 @@ const App = () => {
         </div>
 
         {showSearch && searchResults.length > 0 && (
-         <div className="search-results">
+         <div className={styles.searchResults}>
           {searchResults.map((result) => (
-           <div key={result.id} className="search-result">
+           <div key={result.id} className={styles.searchResult}>
             <img
              src={
               result.avatar_url
@@ -923,18 +846,18 @@ const App = () => {
                : "/resources/default_avatar.png"
              }
              alt={result.username}
-             className="search-avatar"
+             className={styles.searchAvatar}
             />
-            <div className="search-user-info">
-             <span className="search-username">
+            <div className={styles.searchUserInfo}>
+             <span className={styles.searchUsername}>
               {result.username}
              </span>
-             <span className="search-handle">
+             <span className={styles.searchHandle}>
               @{result.handle}
              </span>
             </div>
             <button
-             className="add-contact-btn"
+             className={styles.addContactBtn}
              onClick={() => addContact(result.id)}
             >
              Add
@@ -946,19 +869,19 @@ const App = () => {
        </div>
       </div>
 
-      <div className="mobile-header">
-       <div className="mobile-logo">
+      <div className={styles.mobileHeader}>
+       <div className={styles.mobileLogo}>
         <img
          draggable="false"
          src="/resources/favicon.png"
          alt="uChat Logo"
-         className="mobile-logo-icon"
+         className={styles.mobileLogoIcon}
         />
-        <span className="mobile-logo-text">uChat</span>
+        <span className={styles.mobileLogoText}>uChat</span>
        </div>
-       <div className="mobile-header-actions">
+       <div className={styles.mobileHeaderActions}>
         <div
-         className="contact-avatar-container"
+         className={styles.contactAvatarContainer}
          onClick={() => setShowUserMenu(!showUserMenu)}
         >
          <img
@@ -969,19 +892,19 @@ const App = () => {
           }
           alt="Profile"
           draggable="false"
-          className="mobile-avatar"
+          className={styles.mobileAvatar}
          />
          <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
         </div>
        </div>
        {showUserMenu && (
-        <div className="user-menu mobile-user-menu">
+        <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
          <button onClick={handleLogout}>Logout</button>
         </div>
        )}
       </div>
 
-      <div className="mobile-search-trigger">
+      <div className={styles.mobileSearchTrigger}>
        <button
         type="button"
         onClick={(e) => {
@@ -1010,30 +933,29 @@ const App = () => {
 
       {showMobileSearch && (
        <div
-        className={`mobile-search-overlay ${searchExiting ? "exiting" : "entering"
-         }`}
+        className={`${styles.mobileSearchOverlay} ${searchExiting ? "exiting" : "entering"}`}
        >
-        <div className="mobile-search-header">
+        <div className={styles.mobileSearchHeader}>
          <button
-          className="mobile-search-back"
+          className={styles.mobileSearchBack}
           onClick={closeMobileSearch}
          ></button>
-         <div className="search-input-container">
+         <div className={styles.searchInputContainer}>
           <input
            type="text"
            placeholder="Search users..."
            value={searchQuery}
            onChange={(e) => setSearchQuery(e.target.value)}
-           className="mobile-search-input"
+           className={styles.mobileSearchInput}
            autoFocus
           />
          </div>
         </div>
-        <div className="mobile-search-content">
+        <div className={styles.mobileSearchContent}>
          {searchResults.length > 0 ? (
-          <div className="search-results">
+          <div className={styles.searchResults}>
            {searchResults.map((result) => (
-            <div key={result.id} className="search-result">
+            <div key={result.id} className={styles.searchResult}>
              <img
               draggable="false"
               src={
@@ -1042,18 +964,18 @@ const App = () => {
                 : "/resources/default_avatar.png"
               }
               alt={result.username}
-              className="search-avatar"
+              className={styles.searchAvatar}
              />
-             <div className="search-user-info">
-              <span className="search-username">
+             <div className={styles.searchUserInfo}>
+              <span className={styles.searchUsername}>
                {result.username}
               </span>
-              <span className="search-handle">
+              <span className={styles.searchHandle}>
                @{result.handle}
               </span>
              </div>
              <button
-              className="add-contact-btn"
+              className={styles.addContactBtn}
               onClick={() => {
                addContact(result.id);
                setShowMobileSearch(false);
@@ -1067,11 +989,11 @@ const App = () => {
            ))}
           </div>
          ) : searchQuery.trim() ? (
-          <div className="no-search-results">
+          <div className={styles.noSearchResults}>
            <p>No users found</p>
           </div>
          ) : (
-          <div className="search-placeholder">
+          <div className={styles.searchPlaceholder}>
            <p>Start typing to search for users...</p>
           </div>
          )}
@@ -1079,11 +1001,11 @@ const App = () => {
        </div>
       )}
 
-      <div className="contacts-list">
+      <div className={styles.contactsList}>
        {contactsLoading ? (
         <ContactsSkeleton />
        ) : contacts.length === 0 ? (
-        <div className="empty-contacts">
+        <div className={styles.emptyContacts}>
          <p>No contacts yet</p>
          <p>Search for users to start chatting</p>
         </div>
@@ -1091,11 +1013,10 @@ const App = () => {
         contacts.map((contact) => (
          <div
           key={contact.id}
-          className={`contact-item ${activeContact?.id === contact.id ? "active" : ""
-           }`}
+          className={`${styles.contactItem} ${activeContact?.id === contact.id ? styles.contactItemActive : ""}`}
           onClick={() => selectContact(contact)}
          >
-          <div className="contact-avatar-container">
+          <div className={styles.contactAvatarContainer}>
            <img
             src={
              contact.avatar_url
@@ -1108,8 +1029,9 @@ const App = () => {
              setShowProfileModal(contact);
             }}
             style={{ cursor: 'pointer' }}
-            className="contact-avatar"
+            className={styles.contactAvatar}
             draggable="false"
+            title={`View ${contact.username}'s Profile`}
            />
            <div
             className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
@@ -1117,15 +1039,15 @@ const App = () => {
              }`}
            ></div>
           </div>
-          <div className="contact-info">
-           <div className="contact-main">
-            <span className="contact-name">
+          <div className={styles.contactInfo}>
+           <div className={styles.contactMain}>
+            <span className={styles.contactName}>
              {contact.username}
              {!contact.is_verified && (
               <img
                src="/resources/icons/unverified.svg"
                alt="Unverified"
-               className="unverified-icon"
+               className={styles.unverifiedIcon}
                onClick={(e) => {
                 e.stopPropagation();
                 setShowUnverifiedModal(contact.username);
@@ -1134,7 +1056,7 @@ const App = () => {
               />
              )}
             </span>
-            <span className="contact-time">
+            <span className={styles.contactTime}>
              {contact.lastMessageTime
               ? (() => {
                const now = new Date();
@@ -1158,7 +1080,6 @@ const App = () => {
                  hour12: true,
                 });
 
-               // Mobile: show only time relative format (e.g., "3d")
                if (window.innerWidth <= 768) {
                 if (isToday) {
                  return timeString;
@@ -1172,7 +1093,6 @@ const App = () => {
                 }
                }
 
-               // Desktop: show full format
                if (isToday) {
                 return `Today at ${timeString}`;
                } else if (isYesterday) {
@@ -1188,8 +1108,8 @@ const App = () => {
             </span>
            </div>
            <span
-            className={`contact-preview ${contact.unread && activeContact?.id !== contact.id
-             ? "unread"
+            className={`${styles.contactPreview} ${contact.unread && activeContact?.id !== contact.id
+             ? styles.contactPreviewUnread
              : ""
              }`}
            >
@@ -1211,20 +1131,19 @@ const App = () => {
       </div>
      </div>
 
-     <div className="chat-container">
+     <div className={styles.chatContainer}>
       {activeContact ? (
        <>
         <div
-         className={`chat-header ${isMobile ? (showChatContent ? "fade-in" : "fade-out") : ""
-          }`}
+         className={`${styles.chatHeader} ${isMobile ? (showChatContent ? styles.fadeIn : styles.fadeOut) : ""}`}
         >
          {isMobile && (
           <button
-           className="mobile-back-btn"
+           className={styles.mobileBackBtn}
            onClick={handleBackToContacts}
           ></button>
          )}
-         <div className="contact-avatar-container">
+         <div className={styles.contactAvatarContainer}>
           <img
            draggable="false"
            src={
@@ -1235,24 +1154,25 @@ const App = () => {
            alt={activeContact.username}
            onClick={() => setShowProfileModal(activeContact)}
            style={{ cursor: 'pointer' }}
-           className="chat-avatar"
+           className={styles.chatAvatar}
+           title={`View ${activeContact.username}'s Profile`}
           />
-          <div
-           className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-            onlineUsers.includes(activeContact.id) ? "online" : "offline"
-            }`}
-          ></div>
+         <div
+          className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+           onlineUsers.includes(activeContact.id) ? "online" : "offline"
+           }`}
+         ></div>
          </div>
-         <div className="chat-user-info">
-          <div className="chat-username-container">
-           <span className="chat-username">
+         <div className={styles.chatUserInfo}>
+          <div className={styles.chatUsernameContainer}>
+           <span className={styles.chatUsername}>
             {activeContact.username}
            </span>
            {!activeContact.is_verified && (
             <img
              src="/resources/icons/unverified.svg"
              alt="Unverified"
-             className="unverified-icon"
+             className={styles.unverifiedIcon}
              onClick={() =>
               setShowUnverifiedModal(activeContact.username)
              }
@@ -1261,12 +1181,12 @@ const App = () => {
            )}
            {!(isMobile && showMobileChat) && (
             <>
-             <span className="chat-aka">aka</span>
-             <span className="chat-handle">@{activeContact.handle}</span>
+             <span className={styles.chatAka}>aka</span>
+             <span className={styles.chatHandle}>@{activeContact.handle}</span>
             </>
            )}
           </div>
-          <span className="chat-status">
+          <span className={styles.chatStatus}>
            {userStatuses[activeContact.id] === "online"
             ? "Available Now"
             : userStatuses[activeContact.id] === "away"
@@ -1301,7 +1221,7 @@ const App = () => {
         </div>
 
         <div
-         className="messages-container"
+         className={styles.messagesContainer}
          ref={messagesContainerRef}
          onScroll={handleScroll}
         >
@@ -1313,7 +1233,7 @@ const App = () => {
            height: '100%',
            color: 'var(--text-secondary)'
           }}>
-           <div className="loading-spinner"></div>
+           <div className={styles.loadingSpinner}></div>
           </div>
          )}
          {loadingMoreMessages && (
@@ -1325,7 +1245,7 @@ const App = () => {
            zIndex: 10,
            pointerEvents: 'none'
           }}>
-           <div className="loading-spinner" style={{
+           <div className={styles.loadingSpinner} style={{
             width: '24px',
             height: '24px',
             border: '3px solid var(--border)',
@@ -1335,8 +1255,8 @@ const App = () => {
           </div>
          )}
          {messages.length === 0 ? (
-          <div className="empty-messages">
-           <p>Start a conversation with {activeContact.username}</p>
+          <div className={styles.emptyMessages}>
+           <p>This is the beginning of your chat with {activeContact.username}. Say hi!</p>
           </div>
          ) : (
           messages.map((message, index) => {
@@ -1364,7 +1284,7 @@ const App = () => {
             <div
              id={`message-${message.id}`}
              key={message.id}
-             className={`message ${message.sender_id === user.id ? "sent" : "received"} ${message.reply_to ? "reply" : ""} ${groupClass ? `in-group ${groupClass}` : ''}`}
+             className={`${styles.message} ${message.sender_id === user.id ? "sent" : "received"} ${message.reply_to ? "reply" : ""} ${groupClass ? `in-group ${groupClass}` : ''}`}
              onTouchStart={(e) => {
               const touch = e.touches[0];
               const startTime = Date.now();
@@ -1376,7 +1296,7 @@ const App = () => {
                const moveY = Math.abs(endTouch.clientY - startY);
 
                if (duration >= 400 && moveY < 10) {
-                const bubble = e.currentTarget.querySelector('.message-bubble');
+                const bubble = e.currentTarget.querySelector(`.${styles.messageBubble}`);
                 if (bubble) {
                  bubble.setAttribute('data-show-title', 'true');
                  setTimeout(() => {
@@ -1392,7 +1312,7 @@ const App = () => {
              }}
             >
              {message.sender_id !== user.id && (
-              <div className="message-avatar-container" style={!showAvatar ? { visibility: 'hidden' } : {}}>
+              <div className={styles.messageAvatarContainer} style={!showAvatar ? { visibility: 'hidden' } : {}}>
                <img
                 src={
                  activeContact.avatar_url
@@ -1400,12 +1320,13 @@ const App = () => {
                   : "/resources/default_avatar.png"
                 }
                 alt={activeContact.username}
-                className="message-avatar"
+                className={styles.messageAvatar}
                 onClick={(e) => {
                  e.stopPropagation();
                  setShowProfileModal(activeContact);
                 }}
                 draggable="false"
+                title="View Profile"
                />
                <div
                 className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
@@ -1415,7 +1336,7 @@ const App = () => {
               </div>
              )}
              <div
-              className="message-bubble"
+              className={styles.messageBubble}
               title={new Date(message.timestamp + "Z").toLocaleString()}
               data-show-title="false"
              >
@@ -1463,7 +1384,7 @@ const App = () => {
               )}
 
               {message.deleted ? (
-               <div className="deleted-message">
+               <div className={styles.deletedMessage}>
                 <em>
                  {message.sender_id === user.id
                   ? "You have DELETED this message."
@@ -1471,47 +1392,130 @@ const App = () => {
                 </em>
                </div>
               ) : message.message_type === "image" ? (
-               <div className="message-image">
+               <div
+                className={styles.messageImage}
+                onClick={() => setShowMediaViewer({
+                 url: message.file_path,
+                 name: message.file_name || 'Image',
+                 type: 'image'
+                })}
+                style={{ cursor: 'pointer' }}
+               >
                 <img
                  src={`${API_BASE_URL}${message.file_path}`}
                  alt="Shared image"
-                 className="shared-image"
+                 className={styles.sharedImage}
                  onLoad={(e) => {
                   e.target.classList.add('loaded');
                  }}
                 />
                </div>
-              ) : message.message_type === "file" ? (
-               <div
-                className="message-file"
-                onClick={() =>
-                 window.open(
-                  `${API_BASE_URL}${message.file_path}`,
-                  "_blank"
-                 )
-                }
-               >
-                <div className="file-icon">
-                 <i
-                  className={getFileIcon(message.file_type)}
-                 ></i>
+               ) : message.message_type === "file" ? (
+                (() => {
+                 const fileType = message.file_type?.toLowerCase();
+                 const isVideo = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'].includes(fileType);
+                 const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(fileType);
+
+                  if (isVideo) {
+                   return (
+                    <div className={styles.messageVideo}>
+                     <VideoPlayer
+                      src={`${API_BASE_URL}${message.file_path}`}
+                      inChat={true}
+                      onExpand={() => setShowMediaViewer({
+                       url: message.file_path,
+                       name: message.file_name,
+                       type: 'video'
+                      })}
+                     />
+                    </div>
+                   );
+                  }
+
+                 if (isAudio) {
+                  return (
+                   <div
+                    className={styles.messageAudio}
+                    onClick={() => setShowMediaViewer({
+                     url: message.file_path,
+                     name: message.file_name,
+                     type: 'audio'
+                    })}
+                    style={{ cursor: 'pointer' }}
+                   >
+                    <div className={styles.audioIcon}>
+                     <i className="fas fa-music"></i>
+                    </div>
+                    <div className={styles.audioInfo}>
+                     <div className={styles.audioName}>
+                      {message.file_name}
+                     </div>
+                     <div className={styles.audioSize}>
+                      {formatFileSize(message.file_size)}
+                     </div>
+                    </div>
+                    <div className={styles.audioPlay}>
+                     <i className="fas fa-play"></i>
+                    </div>
+                   </div>
+                  );
+                 }
+
+                 return (
+                  <div
+                   className={styles.messageFile}
+                   onClick={() =>
+                    window.open(
+                     `${API_BASE_URL}${message.file_path}`,
+                     "_blank"
+                    )
+                   }
+                  >
+                   <div className={styles.fileIcon}>
+                    <i
+                     className={getFileIcon(message.file_type)}
+                    ></i>
+                   </div>
+                   <div className={styles.fileInfo}>
+                    <div className={styles.fileName}>
+                     {message.file_name}
+                    </div>
+                    <div className={styles.fileSize}>
+                     {formatFileSize(message.file_size)}
+                    </div>
+                   </div>
+                   <div className={styles.fileDownload}>
+                    <i className="fas fa-download"></i>
+                   </div>
+                  </div>
+                 );
+                })()
+               ) : (
+               message.content &&
+                message.content.match(/\.(gif)(\?.*)?$/i) ? (
+                <div 
+                  className={styles.messageImage}
+                  onClick={() => setShowMediaViewer({
+                    url: message.content.startsWith("http") ? message.content : message.content,
+                    name: 'GIF',
+                    type: 'image'
+                  })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img
+                    src={message.content.startsWith("http")
+                      ? message.content
+                      : `${API_BASE_URL}${message.content}`}
+                    alt="Shared GIF"
+                    className={styles.sharedImage}
+                    onLoad={(e) => e.target.classList.add('loaded')}
+                  />
                 </div>
-                <div className="file-info">
-                 <div className="file-name">
-                  {message.file_name}
-                 </div>
-                 <div className="file-size">
-                  {formatFileSize(message.file_size)}
-                 </div>
+               ) : (
+                <div className={styles.messageContent}>
+                 {linkify(message.content)}
                 </div>
-                <div className="file-download">
-                 <i className="fas fa-download"></i>
-                </div>
-               </div>
-              ) : (
-               <div className="message-content">
-                {linkify(message.content)}
-               </div>
+               )
               )}
 
               <Reaction
@@ -1521,7 +1525,6 @@ const App = () => {
                onRemoveReaction={handleRemoveReaction}
                currentUserId={user.id}
               />
-              {/* time moved to bubble title (hover/hold) */}
              </div>
              <MessageOptions
               message={message}
@@ -1589,15 +1592,13 @@ const App = () => {
         </div>
 
         <div
-         className={`message-input-area ${dragOver ? "drag-over" : ""
-          } ${isMobile ? (showChatContent ? "fade-in" : "fade-out") : ""
-          }`}
+         className={`${styles.messageInputArea} ${dragOver ? styles.dragOver : ""} ${isMobile ? (showChatContent ? styles.fadeIn : styles.fadeOut) : ""}`}
          onDragOver={handleDragOver}
          onDragLeave={handleDragLeave}
          onDrop={handleDrop}
         >
          {typingUsers.has(activeContact?.id) && (
-          <div className="typing-indicator-floating">
+          <div className={styles.typingIndicatorFloating}>
            <span>{activeContact.username} is typing...</span>
           </div>
          )}
@@ -1610,7 +1611,7 @@ const App = () => {
           onSubmit={
            isOffline ? (e) => e.preventDefault() : sendMessage
           }
-          className="message-input-container"
+          className={styles.messageInputContainer}
          >
           <input
            type="file"
@@ -1622,7 +1623,7 @@ const App = () => {
           />
           <button
            type="button"
-           className="attachment-button"
+           className={styles.attachmentButton}
            onClick={() => fileInputRef.current?.click()}
            title={isOffline ? "Offline - can't send files" : "Attach file"}
            disabled={isOffline}
@@ -1631,7 +1632,7 @@ const App = () => {
           </button>
           <button
            type="button"
-           className="gif-button"
+           className={styles.gifButton}
            onClick={() => setShowGifPicker(true)}
            title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
@@ -1648,7 +1649,7 @@ const App = () => {
              ? "You're offline - can't send messages"
              : "What u thinkin?"
            }
-           className="message-input"
+           className={styles.messageInput}
            autoComplete="off"
            autoCapitalize="sentences"
            autoCorrect="on"
@@ -1661,7 +1662,7 @@ const App = () => {
           />
           <button
            type="submit"
-           className="send-button"
+           className={styles.sendButton}
            disabled={!messageText.trim() || isOffline}
           >
            <img src="/resources/icons/send.svg" alt="Send" draggable="false" />
@@ -1670,7 +1671,7 @@ const App = () => {
         </div>
        </>
       ) : !isMobile ? (
-       <div className="no-chat-selected">
+       <div className={styles.noChatSelected}>
         <h2>Welcome to uChat</h2>
         <p>Select a contact to start chatting</p>
        </div>
@@ -1684,13 +1685,13 @@ const App = () => {
        !callState.isActive &&
        (error.toLowerCase().includes("call connection failed") ||
         error.toLowerCase().includes("connection failed")))) && (
-       <div className="error-toast">{error}</div>
+       <div className={styles.errorToast}>{error}</div>
       )}
 
      {callState.isIncoming && (
-      <div className="incoming-call-notification">
-       <div className="incoming-call-content">
-        <div className="incoming-call-info">
+      <div className={styles.incomingCallNotification}>
+       <div className={styles.incomingCallContent}>
+        <div className={styles.incomingCallInfo}>
          <img
           draggable="false"
           src={
@@ -1699,9 +1700,9 @@ const App = () => {
             : "/resources/default_avatar.png"
           }
           alt={callState.contact?.username}
-          className="incoming-call-avatar"
+          className={styles.incomingCallAvatar}
          />
-         <div className="incoming-call-text">
+         <div className={styles.incomingCallText}>
           <h4>{callState.contact?.username}</h4>
           <p>
            Incoming {callState.type === "video" ? "video" : "audio"}{" "}
@@ -1709,14 +1710,14 @@ const App = () => {
           </p>
          </div>
         </div>
-        <div className="incoming-call-actions">
+        <div className={styles.incomingCallActions}>
          <button
-          className="decline-btn-small"
+          className={styles.declineBtnSmall}
           onClick={() => answerCall(false)}
           title="Decline"
          ></button>
          <button
-          className="accept-btn-small"
+          className={styles.acceptBtnSmall}
           onClick={() => answerCall(true)}
           title="Accept"
          ></button>
@@ -1726,9 +1727,9 @@ const App = () => {
      )}
 
      {screenshareState.isIncoming && (
-      <div className="incoming-call-notification">
-       <div className="incoming-call-content">
-        <div className="incoming-call-info">
+      <div className={styles.incomingCallNotification}>
+       <div className={styles.incomingCallContent}>
+        <div className={styles.incomingCallInfo}>
          <img
           draggable="false"
           src={
@@ -1737,21 +1738,21 @@ const App = () => {
             : "/resources/default_avatar.png"
           }
           alt={screenshareState.contact?.username}
-          className="incoming-call-avatar"
+          className={styles.incomingCallAvatar}
          />
-         <div className="incoming-call-text">
+         <div className={styles.incomingCallText}>
           <h4>{screenshareState.contact?.username}</h4>
           <p>Wants to share their screen</p>
          </div>
         </div>
-        <div className="incoming-call-actions">
+        <div className={styles.incomingCallActions}>
          <button
-          className="decline-btn-small"
+          className={styles.declineBtnSmall}
           onClick={() => answerScreenshare(false)}
           title="Decline"
          ></button>
          <button
-          className="accept-btn-small"
+          className={styles.acceptBtnSmall}
           onClick={() => answerScreenshare(true)}
           title="Accept"
          ></button>
@@ -2005,7 +2006,6 @@ const App = () => {
          <div
           className="modern-call-overlay"
           onClick={(e) => {
-           // Prevent click if clicking on buttons
            if (e.target.closest('button')) return;
 
            const header = document.querySelector('.modern-call-header');
@@ -2225,7 +2225,7 @@ const App = () => {
       />
      </audio>
     </div>
-   </>
+   </div>
    {showGifPicker && (
     <Gifs
      onSelectGif={(gifUrl) => {
@@ -2283,7 +2283,13 @@ const App = () => {
      position={reactionPopupPosition}
     />
    )}
-  </div>
+   {showMediaViewer && (
+    <MediaViewer
+     media={showMediaViewer}
+     onClose={() => setShowMediaViewer(null)}
+    />
+   )}
+  </>
  );
 };
 

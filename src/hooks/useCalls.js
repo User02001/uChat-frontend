@@ -376,12 +376,9 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
  // Set up socket listeners when socket connects - ONLY run once per socket connection
  useEffect(() => {
   if (!socketRef.current) return;
-
-  console.log('[CALLS] Setting up socket listeners');
   const cleanup = setupSocketListeners();
 
   return () => {
-   console.log('[CALLS] Cleaning up socket listeners');
    if (cleanup) cleanup();
   };
  }, [socketRef.current]);

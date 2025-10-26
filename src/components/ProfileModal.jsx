@@ -135,6 +135,7 @@ const ProfileModal = ({
         src="/resources/icons/unverified.svg"
         alt="Unverified"
         className="profile-modal-unverified-icon-pm"
+        draggable="false"
        />
       )}
      </h2>
@@ -146,7 +147,7 @@ const ProfileModal = ({
         onClick={() => {
          onOpenChat?.(user); // open the chat for this user
         }}
-        title="Open chat"
+        title="DM This User"
        >
         <svg
          width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -243,6 +244,7 @@ const ProfileModal = ({
         src={user.is_verified ? "/resources/icons/verified.svg" : "/resources/icons/unverified.svg"}
         alt={user.is_verified ? "Verified" : "Unverified"}
         className="profile-modal-info-icon-img-pm"
+        draggable="false"
        />
        <div className="profile-modal-info-content-pm">
         <span className="profile-modal-info-label-pm">Verification Status</span>

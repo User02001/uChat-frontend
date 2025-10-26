@@ -56,6 +56,7 @@ export const useAppLogic = () => {
  const [isDragging, setIsDragging] = useState(false);
  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
  const [messageCache, setMessageCache] = useState({});
+ const [showMediaViewer, setShowMediaViewer] = useState(null);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -136,7 +137,6 @@ export const useAppLogic = () => {
   socketRef.current = socket;
 
   socket.on("connect", () => {
-   console.log("Socket connected!");
    setSocketConnected(true);
    setReconnectAttempts(0);
 
@@ -164,8 +164,6 @@ export const useAppLogic = () => {
   });
 
   socket.on("user_status", (data) => {
-   console.log("User status update received:", data);
-
    // Update user statuses map
    setUserStatuses((prev) => ({
     ...prev,
@@ -1241,6 +1239,8 @@ export const useAppLogic = () => {
   setDragOffset,
   messageCache,
   setMessageCache,
+  showMediaViewer,
+  setShowMediaViewer,
 
   // Refs
   socketRef,

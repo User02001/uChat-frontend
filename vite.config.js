@@ -19,8 +19,8 @@ export default defineConfig({
   modules: {
    generateScopedName:
     process.env.NODE_ENV === 'production'
-     ? '_[hash:base64:6]'  // Production: gibberish
-     : '[name]__[local]__[hash:base64:3]', // Dev: readable
+     ? '_[hash:base64:6]'
+     : '[name]__[local]__[hash:base64:3]',
   }
  },
  define: {
