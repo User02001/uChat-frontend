@@ -14,6 +14,7 @@
     "@daily-co/daily-react": "^0.23.2",
     "buffer": "^6.0.3",
     "livekit-client": "^2.15.12",
+    "lottie-web": "^5.13.0",
     "peerjs": "^1.5.5",
     "process": "^0.11.10",
     "react": "^19.1.1",

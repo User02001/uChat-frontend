@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import lottie from 'lottie-web';
 import { useAppLogic } from "./hooks/useAppLogic";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
@@ -221,19 +222,11 @@ const App = () => {
   };
  }, [activeContact, loadMessages, loadContacts]);
 
- // Handle page visibility changes - refresh when coming back
+ // Handle page visibility changes - NO SCROLL TAMPERING
  useEffect(() => {
   const handleVisibilityChange = () => {
    if (!document.hidden && socketRef.current && socketRef.current.connected) {
-    socketRef.current.emit('sync_state', {
-     active_contact_id: activeContact?.id
-    });
-
     socketRef.current.emit('request_online_users');
-
-    if (activeContact && !userScrollLockRef.current) {
-     loadMessages(activeContact.id);
-    }
    }
   };
 
@@ -242,7 +235,7 @@ const App = () => {
   return () => {
    document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
- }, [activeContact, loadMessages]);
+ }, [activeContact]);
 
  const {
   callState,
@@ -284,6 +277,51 @@ const App = () => {
    return () => clearTimeout(timer);
   }
  }, [callState.isActive, callState.isIncoming, callMinimized]);
+
+ // Intersection Observer for lazy loading images
+ const [visibleMessages, setVisibleMessages] = useState(new Set());
+ const observerRef = useRef(null);
+
+ useEffect(() => {
+  observerRef.current = new IntersectionObserver(
+   (entries) => {
+    entries.forEach((entry) => {
+     if (entry.isIntersecting) {
+      const messageId = entry.target.dataset.messageId;
+      if (messageId) {
+       setVisibleMessages((prev) => new Set([...prev, parseInt(messageId)]));
+      }
+     }
+    });
+   },
+   {
+    root: messagesContainerRef.current,
+    rootMargin: '200px',
+    threshold: 0.01,
+   }
+  );
+
+  return () => {
+   if (observerRef.current) {
+    observerRef.current.disconnect();
+   }
+  };
+ }, []);
+
+ useEffect(() => {
+  if (!observerRef.current) return;
+
+  const messageElements = messagesContainerRef.current?.querySelectorAll('[data-message-id]');
+  messageElements?.forEach((el) => {
+   observerRef.current.observe(el);
+  });
+
+  return () => {
+   if (observerRef.current) {
+    observerRef.current.disconnect();
+   }
+  };
+ }, [messages]);
 
  // Show verification modal for unverified users
  useEffect(() => {
@@ -733,30 +771,84 @@ const App = () => {
   const canAutoScroll =
    initialBatch || (lastChanged && isMine && !userScrollLockRef.current) || (lastChanged && nearBottom && !userScrollLockRef.current);
 
-  if (canAutoScroll) {
-   requestAnimationFrame(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-   });
+  if (canAutoScroll || initialBatch) {
+   // Aggressive scroll to bottom
+   const scrollToActualBottom = () => {
+    const container = messagesContainerRef.current;
+    if (container) {
+     container.scrollTop = container.scrollHeight;
+    }
+   };
+
+   // Scroll immediately
+   scrollToActualBottom();
+
+   // Keep scrolling as images load
+   setTimeout(scrollToActualBottom, 50);
+   setTimeout(scrollToActualBottom, 100);
+   setTimeout(scrollToActualBottom, 200);
+   setTimeout(scrollToActualBottom, 500);
   }
  }, [messages, user, loadingMoreMessages]);
 
- // Reset scroll behavior when changing contacts
+ // Reset scroll tracking when switching contacts
  useEffect(() => {
+  lastMessageIdRef.current = null;
+  userScrollLockRef.current = false;
   setShouldScrollToBottom(true);
   setHasMoreMessages(true);
   previousScrollHeight.current = 0;
- }, [activeContact]);
+ }, [activeContact?.id]);
 
- if (loading) {
-  return (
-   <div className={styles.appLoading}>
-    <div className={styles.loadingSpinner}></div>
-    <p>Loading uChat...</p>
-   </div>
-  );
- }
+ const splashRef = useRef(null);
+ const animRef = useRef(null);
+
+ useEffect(() => {
+  if (loading && splashRef.current && !animRef.current) {
+   animRef.current = lottie.loadAnimation({
+    container: splashRef.current,
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: '/splash.json'
+   });
+
+   return () => {
+    if (animRef.current) {
+     animRef.current.destroy();
+     animRef.current = null;
+    }
+   };
+  }
+ }, [loading]);
+
  return (
   <>
+   {loading && (
+    <div className={styles.appLoading} style={{
+     position: 'fixed',
+     top: 0,
+     left: 0,
+     right: 0,
+     bottom: 0,
+     zIndex: 999999,
+     pointerEvents: 'all'
+    }}>
+     <div ref={splashRef} className={styles.loadingSpinner}></div>
+     <div className={styles.splashBranding}>
+      <p className={styles.splashBrandingText}>Made by</p>
+      <div className={styles.splashBrandingLogo}>
+       <img
+        src="/resources/icons/ufonic.svg"
+        alt="UFOnic"
+        className={styles.splashBrandingIcon}
+        draggable="false"
+       />
+       <span className={styles.splashBrandingName}>UFOnic</span>
+      </div>
+     </div>
+    </div>
+   )}
    {showVerificationBanner && (
     <VerificationModal
      onClose={() => setShowVerificationBanner(false)}
@@ -1225,7 +1317,7 @@ const App = () => {
          ref={messagesContainerRef}
          onScroll={handleScroll}
         >
-         {isLoadingMessages && messages.length === 0 && (
+         {isLoadingMessages === true && messages.length === 0 && (
           <div style={{
            display: 'flex',
            alignItems: 'center',
@@ -1234,6 +1326,11 @@ const App = () => {
            color: 'var(--text-secondary)'
           }}>
            <div className={styles.loadingSpinner}></div>
+          </div>
+         )}
+         {isLoadingMessages === false && messages.length === 0 && (
+          <div className={styles.emptyMessages}>
+           <p>This is the beginning of your chat with {activeContact.username}. Say hi!</p>
           </div>
          )}
          {loadingMoreMessages && (
@@ -1254,11 +1351,7 @@ const App = () => {
            }}></div>
           </div>
          )}
-         {messages.length === 0 ? (
-          <div className={styles.emptyMessages}>
-           <p>This is the beginning of your chat with {activeContact.username}. Say hi!</p>
-          </div>
-         ) : (
+         {messages.length > 0 && (
           messages.map((message, index) => {
            const prevMessage = messages[index - 1];
            const nextMessage = messages[index + 1];
@@ -1284,6 +1377,7 @@ const App = () => {
             <div
              id={`message-${message.id}`}
              key={message.id}
+             data-message-id={message.id}
              className={`${styles.message} ${message.sender_id === user.id ? "sent" : "received"} ${message.reply_to ? "reply" : ""} ${groupClass ? `in-group ${groupClass}` : ''}`}
              onTouchStart={(e) => {
               const touch = e.touches[0];
@@ -1399,16 +1493,44 @@ const App = () => {
                  name: message.file_name || 'Image',
                  type: 'image'
                 })}
-                style={{ cursor: 'pointer' }}
+                style={{
+                 cursor: 'pointer',
+                 aspectRatio: '16 / 9',
+                 maxWidth: '300px',
+                 width: '100%',
+                 background: 'var(--bg-tertiary)',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 borderRadius: '12px',
+                 overflow: 'hidden'
+                }}
                >
-                <img
-                 src={`${API_BASE_URL}${message.file_path}`}
-                 alt="Shared image"
-                 className={styles.sharedImage}
-                 onLoad={(e) => {
-                  e.target.classList.add('loaded');
-                 }}
-                />
+                {visibleMessages.has(message.id) ? (
+                 <img
+                  src={`${API_BASE_URL}${message.file_path}`}
+                  alt="Shared image"
+                  className={styles.sharedImage}
+                  style={{
+                   width: '100%',
+                   height: '100%',
+                   objectFit: 'cover',
+                   opacity: 0,
+                   transition: 'opacity 0.2s'
+                  }}
+                  onLoad={(e) => {
+                   e.target.classList.add('loaded');
+                   e.target.style.opacity = '1';
+                   const naturalRatio = e.target.naturalWidth / e.target.naturalHeight;
+                   e.target.parentElement.style.aspectRatio = naturalRatio;
+                  }}
+                  onError={(e) => {
+                   e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px;">Failed to load</div>';
+                  }}
+                 />
+                ) : (
+                 <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>📷</div>
+                )}
                </div>
                ) : message.message_type === "file" ? (
                 (() => {
@@ -1418,16 +1540,33 @@ const App = () => {
 
                   if (isVideo) {
                    return (
-                    <div className={styles.messageVideo}>
-                     <VideoPlayer
-                      src={`${API_BASE_URL}${message.file_path}`}
-                      inChat={true}
-                      onExpand={() => setShowMediaViewer({
-                       url: message.file_path,
-                       name: message.file_name,
-                       type: 'video'
-                      })}
-                     />
+                    <div className={styles.messageVideo} style={{
+                     aspectRatio: '16 / 9',
+                     maxWidth: '400px',
+                     width: '100%',
+                     background: 'var(--bg-tertiary)',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     borderRadius: '12px',
+                     overflow: 'hidden'
+                    }}>
+                     {visibleMessages.has(message.id) ? (
+                      <VideoPlayer
+                       src={`${API_BASE_URL}${message.file_path}`}
+                       inChat={true}
+                       onExpand={() => setShowMediaViewer({
+                        url: message.file_path,
+                        name: message.file_name,
+                        type: 'video'
+                       })}
+                      />
+                     ) : (
+                      <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
+                       <i className="fas fa-video" style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}></i>
+                       <div>🎥 Video</div>
+                      </div>
+                     )}
                     </div>
                    );
                   }
@@ -1490,32 +1629,60 @@ const App = () => {
                   </div>
                  );
                 })()
+               ) : message.content &&
+              message.content.match(/\.(gif)(\?.*)?$/i) ? (
+              <div
+               className={styles.messageImage}
+               onClick={() => setShowMediaViewer({
+                url: message.content.startsWith("http") ? message.content : message.content,
+                name: 'GIF',
+                type: 'image'
+               })}
+               style={{
+                cursor: 'pointer',
+                aspectRatio: '1 / 1',
+                maxWidth: '250px',
+                width: '100%',
+                background: 'var(--bg-tertiary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '12px',
+                overflow: 'hidden'
+               }}
+              >
+               {visibleMessages.has(message.id) ? (
+                <img
+                 src={message.content.startsWith("http")
+                  ? message.content
+                  : `${API_BASE_URL}${message.content}`}
+                 alt="Shared GIF"
+                 className={styles.sharedImage}
+                 style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  opacity: 0,
+                  transition: 'opacity 0.2s'
+                 }}
+                 onLoad={(e) => {
+                  e.target.classList.add('loaded');
+                  e.target.style.opacity = '1';
+                  const naturalRatio = e.target.naturalWidth / e.target.naturalHeight;
+                  e.target.parentElement.style.aspectRatio = naturalRatio;
+                 }}
+                 onError={(e) => {
+                  e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px;">Failed to load</div>';
+                 }}
+                />
                ) : (
-               message.content &&
-                message.content.match(/\.(gif)(\?.*)?$/i) ? (
-                <div 
-                  className={styles.messageImage}
-                  onClick={() => setShowMediaViewer({
-                    url: message.content.startsWith("http") ? message.content : message.content,
-                    name: 'GIF',
-                    type: 'image'
-                  })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img
-                    src={message.content.startsWith("http")
-                      ? message.content
-                      : `${API_BASE_URL}${message.content}`}
-                    alt="Shared GIF"
-                    className={styles.sharedImage}
-                    onLoad={(e) => e.target.classList.add('loaded')}
-                  />
-                </div>
-               ) : (
-                <div className={styles.messageContent}>
-                 {linkify(message.content)}
-                </div>
-               )
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>GIF</div>
+               )}
+               </div>
+              ) : (
+               <div className={styles.messageContent}>
+                {linkify(message.content)}
+               </div>
               )}
 
               <Reaction

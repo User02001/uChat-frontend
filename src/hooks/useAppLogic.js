@@ -51,7 +51,7 @@ export const useAppLogic = () => {
  const [screenshareMinimized, setScreenshareMinimized] = useState(false);
  const [userStatuses, setUserStatuses] = useState({}); // Track user statuses (online/away/offline)
  const [showProfileModal, setShowProfileModal] = useState(null);
- const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+ const [isLoadingMessages, setIsLoadingMessages] = useState(null);
  const [callPosition, setCallPosition] = useState({ x: 20, y: 20 });
  const [isDragging, setIsDragging] = useState(false);
  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -103,14 +103,17 @@ export const useAppLogic = () => {
     setUser(data.user);
     initializeSocket();
     loadContacts();
+
+    // Delay to let splash animation play fully
+    setTimeout(() => {
+     setLoading(false);
+    }, 1300);
    } else {
     navigate("/login", { replace: true });
    }
   } catch (error) {
    console.error("Auth check failed:", error);
    navigate("/login", { replace: true });
-  } finally {
-   setLoading(false);
   }
  }, [navigate]);
 
@@ -238,11 +241,16 @@ export const useAppLogic = () => {
   socket.on("messages_loaded", (data) => {
    const { messages: newMessages, has_more, contact_id } = data;
 
+   if (socketRef.current._loadingTimer) {
+    clearTimeout(socketRef.current._loadingTimer);
+    socketRef.current._loadingTimer = null;
+   }
+
    setHasMoreMessages(has_more);
    setLoadingMoreMessages(false);
-   setIsLoadingMessages(false);
 
    if (newMessages.length > 0) {
+    setIsLoadingMessages(null);
     setMessages((prev) => {
      const combined = [...newMessages, ...prev];
      const unique = combined.filter((msg, index, self) =>
@@ -265,6 +273,8 @@ export const useAppLogic = () => {
      }
     });
     setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
+   } else {
+    setIsLoadingMessages(false);
    }
   });
 
@@ -420,12 +430,11 @@ export const useAppLogic = () => {
  const loadMessages = useCallback((contactId, beforeId = null) => {
   if (!socketRef.current) return;
 
-  // Load from cache INSTANTLY if available and it's initial load
   if (!beforeId && messageCacheRef.current[contactId]) {
    console.log('Loading from cache for contact:', contactId);
    setMessages(messageCacheRef.current[contactId]);
+   setIsLoadingMessages(false);
 
-   // Still fetch in background to update (now defers if disconnected)
    if (socketRef.current.connected) {
     socketRef.current.emit("load_messages", {
      contact_id: contactId,
@@ -447,7 +456,15 @@ export const useAppLogic = () => {
   }
 
   if (!beforeId) {
-   setIsLoadingMessages(true);
+   if (socketRef.current._loadingTimer) {
+    clearTimeout(socketRef.current._loadingTimer);
+   }
+
+   const loadingTimer = setTimeout(() => {
+    setIsLoadingMessages(true);
+   }, 1500);
+
+   socketRef.current._loadingTimer = loadingTimer;
   }
 
   if (socketRef.current.connected) {
@@ -543,23 +560,33 @@ export const useAppLogic = () => {
      )
     );
 
+    // CLEAR MESSAGES FIRST - IMPORTANT!
+    setMessages([]);
+    setHasMoreMessages(true);
+
     if (isMobile) {
      setActiveContact(null);
-     setMessages([]);
      setShowChatContent(false);
      setShowMobileChat(true);
 
      setTimeout(() => {
       setActiveContact(contact);
-      saveLastContact(contact);
+
+      if (!isMobile && contact) {
+       localStorage.setItem(
+        "lastSelectedContact",
+        JSON.stringify({
+         id: contact.id,
+         username: contact.username,
+         avatar_url: contact.avatar_url,
+        })
+       );
+      }
       setTypingUsers(new Set());
-      setIsTyping(false);
 
       if (socketRef.current && socketRef.current.connected) {
        socketRef.current.emit("join_chat", { contact_id: contact.id });
-       socketRef.current.emit("mark_as_read", {
-        contact_id: contact.id,
-       });
+       socketRef.current.emit("mark_as_read", { contact_id: contact.id });
       } else if (socketRef.current) {
        initializeSocket();
        setTimeout(() => {
@@ -578,14 +605,20 @@ export const useAppLogic = () => {
        setShowChatContent(true);
       }, 100);
 
-      setMessages([]);
-      setHasMoreMessages(true);
       loadMessages(contact.id, null);
      }, 350);
     } else {
      setActiveContact(contact);
-     saveLastContact(contact);
-     setMessages([]);
+     if (!isMobile && contact) {
+      localStorage.setItem(
+       "lastSelectedContact",
+       JSON.stringify({
+        id: contact.id,
+        username: contact.username,
+        avatar_url: contact.avatar_url,
+       })
+      );
+     }
      setTypingUsers(new Set());
 
      if (socketRef.current && socketRef.current.connected) {
@@ -603,8 +636,6 @@ export const useAppLogic = () => {
       }, 500);
      }
 
-     setMessages([]);
-     setHasMoreMessages(true);
      loadMessages(contact.id, null);
     }
    }
@@ -1040,17 +1071,8 @@ export const useAppLogic = () => {
    }
   }, 10000);
 
-  const handleVisibility = () => {
-   if (document.visibilityState === "visible") {
-    syncContacts();
-   }
-  };
-
-  document.addEventListener("visibilitychange", handleVisibility);
-
   return () => {
    clearInterval(interval);
-   document.removeEventListener("visibilitychange", handleVisibility);
   };
  }, []);
 
