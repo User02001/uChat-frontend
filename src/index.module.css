@@ -1097,6 +1097,11 @@ body, html {
     will-change: scroll-position;
     overflow-anchor: none;
     position: relative;
+    transition: opacity 0.15s ease-in;
+}
+
+.messagesContainerHidden {
+    opacity: 0 !important;
 }
 
     .messagesContainer::-webkit-scrollbar {
@@ -1139,6 +1144,11 @@ body, html {
     position: relative;
     margin-bottom: 2px;
     width: fit-content;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .message:global(.sent) {
@@ -1206,6 +1216,11 @@ body, html {
     position: relative;
     width: fit-content;
     align-self: inherit;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .message:global(.sent) .messageBubble {
@@ -1220,6 +1235,11 @@ body, html {
     word-break: break-word;
     font-weight: 400;
     margin-bottom: 0;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .messageBubble:has(:global(.messageContent)) {

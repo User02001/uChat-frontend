@@ -7,6 +7,7 @@ export const useAppLogic = () => {
  const navigate = useNavigate();
  const socketRef = useRef(null);
  const messagesEndRef = useRef(null);
+ const messagesContainerRef = useRef(null);
  const typingTimeoutRef = useRef(null);
  const reconnectTimeoutRef = useRef(null);
  const fileInputRef = useRef(null);
@@ -57,6 +58,8 @@ export const useAppLogic = () => {
  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
  const [messageCache, setMessageCache] = useState({});
  const [showMediaViewer, setShowMediaViewer] = useState(null);
+ const [showMessageOptionsPhone, setShowMessageOptionsPhone] = useState(null);
+ const [messagesContainerVisible, setMessagesContainerVisible] = useState(true);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -101,7 +104,7 @@ export const useAppLogic = () => {
    if (response.ok) {
     const data = await response.json();
     setUser(data.user);
-    initializeSocket();
+    initializeSocket(messagesContainerRef);
     loadContacts();
 
     // Delay to let splash animation play fully
@@ -118,7 +121,7 @@ export const useAppLogic = () => {
  }, [navigate]);
 
  // Initialize Socket.IO connection
- const initializeSocket = useCallback(() => {
+ const initializeSocket = useCallback((messagesContainerRefParam) => {
   if (socketRef.current) {
    socketRef.current.removeAllListeners();
    socketRef.current.off();
@@ -247,10 +250,13 @@ export const useAppLogic = () => {
    }
 
    setHasMoreMessages(has_more);
+
+   const wasLoadingMore = loadingMoreMessages;
    setLoadingMoreMessages(false);
 
    if (newMessages.length > 0) {
     setIsLoadingMessages(null);
+
     setMessages((prev) => {
      const combined = [...newMessages, ...prev];
      const unique = combined.filter((msg, index, self) =>
@@ -261,6 +267,17 @@ export const useAppLogic = () => {
      // Update cache - keep last 100 messages per contact
      if (contact_id) {
       messageCacheRef.current[contact_id] = sorted.slice(-100);
+     }
+
+     // If initial load, scroll instantly before showing
+     if (prev.length === 0 && !wasLoadingMore && messagesContainerRefParam?.current) {
+      messagesContainerRefParam.current.style.opacity = '0';
+      messagesContainerRefParam.current.scrollTop = messagesContainerRefParam.current.scrollHeight;
+      setTimeout(() => {
+       if (messagesContainerRefParam.current) {
+        messagesContainerRefParam.current.style.opacity = '1';
+       }
+      }, 100);
      }
 
      return sorted;
@@ -588,7 +605,7 @@ export const useAppLogic = () => {
        socketRef.current.emit("join_chat", { contact_id: contact.id });
        socketRef.current.emit("mark_as_read", { contact_id: contact.id });
       } else if (socketRef.current) {
-       initializeSocket();
+       initializeSocket(messagesContainerRef);
        setTimeout(() => {
         if (socketRef.current) {
          socketRef.current.emit("join_chat", {
@@ -625,7 +642,7 @@ export const useAppLogic = () => {
       socketRef.current.emit("join_chat", { contact_id: contact.id });
       socketRef.current.emit("mark_as_read", { contact_id: contact.id });
      } else if (socketRef.current) {
-      initializeSocket();
+      initializeSocket(messagesContainerRef);
       setTimeout(() => {
        if (socketRef.current) {
         socketRef.current.emit("join_chat", { contact_id: contact.id });
@@ -1022,26 +1039,26 @@ export const useAppLogic = () => {
   const handleVisibilityChange = () => {
    if (document.visibilityState === "visible") {
     if (socketRef.current && !socketRef.current.connected) {
-     initializeSocket();
+     initializeSocket(messagesContainerRef);
     }
    }
   };
 
   const handleFocus = () => {
    if (socketRef.current && !socketRef.current.connected) {
-    initializeSocket();
+    initializeSocket(messagesContainerRef);
    }
   };
 
   const handleOnline = () => {
-   initializeSocket();
+   initializeSocket(messagesContainerRef);
   };
 
   const heartbeat = setInterval(() => {
    if (socketRef.current && socketRef.current.connected) {
     socketRef.current.volatile.emit("ping");
    } else if (socketRef.current && !socketRef.current.connected) {
-    initializeSocket();
+    initializeSocket(messagesContainerRef);
    }
   }, 15000);
 
@@ -1263,10 +1280,15 @@ export const useAppLogic = () => {
   setMessageCache,
   showMediaViewer,
   setShowMediaViewer,
+  showMessageOptionsPhone,
+  setShowMessageOptionsPhone,
+  messagesContainerVisible,
+  setMessagesContainerVisible,
 
   // Refs
   socketRef,
   messagesEndRef,
+  messagesContainerRef,
   typingTimeoutRef,
   reconnectTimeoutRef,
   fileInputRef,

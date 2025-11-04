@@ -16,6 +16,7 @@ import linkify from "./hooks/linkify.jsx";
 import Gifs from "./components/Gifs";
 import ProfileModal from "./components/ProfileModal";
 import MessageOptions from "./components/MessageOptions";
+import MessageOptionsPhone from "./components/MessageOptionsPhone";
 import styles from "./index.module.css";
 import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
@@ -73,6 +74,8 @@ const App = () => {
   messageCache, setMessageCache,
   isLoadingMessages, setIsLoadingMessages,
   showMediaViewer, setShowMediaViewer,
+  showMessageOptionsPhone, setShowMessageOptionsPhone,
+  messagesContainerVisible, setMessagesContainerVisible,
 
   // Refs
   socketRef,
@@ -730,7 +733,7 @@ const App = () => {
    }
   }
 
-  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 5 && messages.length > 0) {
+  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 150 && messages.length > 0) {
    const oldestMessage = messages[0];
    if (oldestMessage) {
     setLoadingMoreMessages(true);
@@ -761,33 +764,35 @@ const App = () => {
   const prevLastId = lastMessageIdRef.current;
   const newLastId = lastMsg?.id ?? null;
   const lastChanged = prevLastId !== newLastId;
-  lastMessageIdRef.current = newLastId;
 
   const nearBottom =
    container.scrollHeight - container.scrollTop - container.clientHeight < 80;
 
-  const initialBatch = prevLastId == null && !userScrollLockRef.current && !loadingMoreMessages;
+  const isInitialLoad = prevLastId === null;
+
+  lastMessageIdRef.current = newLastId;
+
+  if (isInitialLoad) {
+   if (container && container.scrollHeight > 0) {
+    container.scrollTop = container.scrollHeight;
+    requestAnimationFrame(() => {
+     setMessagesContainerVisible(true);
+    });
+   }
+   return;
+  }
 
   const canAutoScroll =
-   initialBatch || (lastChanged && isMine && !userScrollLockRef.current) || (lastChanged && nearBottom && !userScrollLockRef.current);
+   (lastChanged && isMine && !userScrollLockRef.current) || (lastChanged && nearBottom && !userScrollLockRef.current);
 
-  if (canAutoScroll || initialBatch) {
-   // Aggressive scroll to bottom
-   const scrollToActualBottom = () => {
-    const container = messagesContainerRef.current;
-    if (container) {
-     container.scrollTop = container.scrollHeight;
-    }
-   };
-
-   // Scroll immediately
-   scrollToActualBottom();
-
-   // Keep scrolling as images load
-   setTimeout(scrollToActualBottom, 50);
-   setTimeout(scrollToActualBottom, 100);
-   setTimeout(scrollToActualBottom, 200);
-   setTimeout(scrollToActualBottom, 500);
+  if (canAutoScroll) {
+   requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+     if (container) {
+      container.scrollTop = container.scrollHeight;
+     }
+    });
+   });
   }
  }, [messages, user, loadingMoreMessages]);
 
@@ -1313,7 +1318,7 @@ const App = () => {
         </div>
 
         <div
-         className={styles.messagesContainer}
+         className={`${styles.messagesContainer} ${messages.length === 0 || !messagesContainerVisible ? styles.messagesContainerHidden : ''}`}
          ref={messagesContainerRef}
          onScroll={handleScroll}
         >
@@ -1343,11 +1348,12 @@ const App = () => {
            pointerEvents: 'none'
           }}>
            <div className={styles.loadingSpinner} style={{
-            width: '24px',
-            height: '24px',
-            border: '3px solid var(--border)',
-            borderTop: '3px solid var(--button-primary)',
-            marginBottom: '0'
+            width: '20px',
+            height: '20px',
+            border: '2px solid var(--border)',
+            borderTop: '2px solid var(--button-primary)',
+            marginBottom: '0',
+            borderRadius: '50%'
            }}></div>
           </div>
          )}
@@ -1380,28 +1386,40 @@ const App = () => {
              data-message-id={message.id}
              className={`${styles.message} ${message.sender_id === user.id ? "sent" : "received"} ${message.reply_to ? "reply" : ""} ${groupClass ? `in-group ${groupClass}` : ''}`}
              onTouchStart={(e) => {
+              if (message.deleted) return;
+
               const touch = e.touches[0];
-              const startTime = Date.now();
               const startY = touch.clientY;
+              const startX = touch.clientX;
+              let longPressTriggered = false;
 
-              const handleTouchEnd = (endEvent) => {
-               const duration = Date.now() - startTime;
-               const endTouch = endEvent.changedTouches[0];
-               const moveY = Math.abs(endTouch.clientY - startY);
-
-               if (duration >= 400 && moveY < 10) {
-                const bubble = e.currentTarget.querySelector(`.${styles.messageBubble}`);
-                if (bubble) {
-                 bubble.setAttribute('data-show-title', 'true');
-                 setTimeout(() => {
-                  bubble.setAttribute('data-show-title', 'false');
-                 }, 2000);
-                }
+              const longPressTimer = setTimeout(() => {
+               longPressTriggered = true;
+               setShowMessageOptionsPhone(message);
+               if (navigator.vibrate) {
+                navigator.vibrate(50);
                }
+              }, 400);
 
+              const handleTouchMove = (moveEvent) => {
+               const moveTouch = moveEvent.touches[0];
+               const moveY = Math.abs(moveTouch.clientY - startY);
+               const moveX = Math.abs(moveTouch.clientX - startX);
+
+               if (moveY > 10 || moveX > 10) {
+                clearTimeout(longPressTimer);
+                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener('touchend', handleTouchEnd);
+               }
+              };
+
+              const handleTouchEnd = () => {
+               clearTimeout(longPressTimer);
+               document.removeEventListener('touchmove', handleTouchMove);
                document.removeEventListener('touchend', handleTouchEnd);
               };
 
+              document.addEventListener('touchmove', handleTouchMove);
               document.addEventListener('touchend', handleTouchEnd);
              }}
             >
@@ -1486,52 +1504,91 @@ const App = () => {
                 </em>
                </div>
               ) : message.message_type === "image" ? (
-               <div
-                className={styles.messageImage}
-                onClick={() => setShowMediaViewer({
-                 url: message.file_path,
-                 name: message.file_name || 'Image',
-                 type: 'image'
-                })}
-                style={{
-                 cursor: 'pointer',
-                 aspectRatio: '16 / 9',
-                 maxWidth: '300px',
-                 width: '100%',
-                 background: 'var(--bg-tertiary)',
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 borderRadius: '12px',
-                 overflow: 'hidden'
-                }}
-               >
-                {visibleMessages.has(message.id) ? (
-                 <img
-                  src={`${API_BASE_URL}${message.file_path}`}
-                  alt="Shared image"
-                  className={styles.sharedImage}
+               (() => {
+                const maxWidth = 300;
+                const maxHeight = 400;
+                let displayWidth = maxWidth;
+                let displayHeight = maxHeight;
+                let aspectRatio = '16 / 9';
+
+                if (message.media_width && message.media_height) {
+                 const mediaAspect = message.media_width / message.media_height;
+                 aspectRatio = `${message.media_width} / ${message.media_height}`;
+
+                 if (message.media_width > maxWidth) {
+                  displayWidth = maxWidth;
+                  displayHeight = maxWidth / mediaAspect;
+                 } else {
+                  displayWidth = message.media_width;
+                  displayHeight = message.media_height;
+                 }
+
+                 if (displayHeight > maxHeight) {
+                  displayHeight = maxHeight;
+                  displayWidth = maxHeight * mediaAspect;
+                 }
+                }
+
+                return (
+                 <div
+                  className={styles.messageImage}
+                  onClick={() => setShowMediaViewer({
+                   url: message.file_path,
+                   name: message.file_name || 'Image',
+                   type: 'image'
+                  })}
                   style={{
-                   width: '100%',
-                   height: '100%',
-                   objectFit: 'cover',
-                   opacity: 0,
-                   transition: 'opacity 0.2s'
+                   cursor: 'pointer',
+                   aspectRatio: aspectRatio,
+                   width: `${displayWidth}px`,
+                   maxWidth: `${maxWidth}px`,
+                   background: 'var(--bg-tertiary)',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   borderRadius: '12px',
+                   overflow: 'hidden',
+                   position: 'relative'
                   }}
-                  onLoad={(e) => {
-                   e.target.classList.add('loaded');
-                   e.target.style.opacity = '1';
-                   const naturalRatio = e.target.naturalWidth / e.target.naturalHeight;
-                   e.target.parentElement.style.aspectRatio = naturalRatio;
-                  }}
-                  onError={(e) => {
-                   e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px;">Failed to load</div>';
-                  }}
-                 />
-                ) : (
-                 <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>📷</div>
-                )}
-               </div>
+                 >
+                  {visibleMessages.has(message.id) ? (
+                   <img
+                    src={`${API_BASE_URL}${message.file_path}`}
+                    alt="Shared image"
+                    className={styles.sharedImage}
+                    style={{
+                     width: '100%',
+                     height: '100%',
+                     objectFit: 'cover',
+                     opacity: 0,
+                     transition: 'opacity 0.3s ease'
+                    }}
+                    onLoad={(e) => {
+                     e.target.style.opacity = '1';
+                    }}
+                    onError={(e) => {
+                     e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px; text-align: center;">Failed to load image</div>';
+                    }}
+                   />
+                  ) : (
+                   <div style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'skeletonLoading 1.5s infinite',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--text-muted)',
+                    fontSize: '32px'
+                   }}>
+                    📷
+                   </div>
+                  )}
+                 </div>
+                );
+               })()
                ) : message.message_type === "file" ? (
                 (() => {
                  const fileType = message.file_type?.toLowerCase();
@@ -1539,17 +1596,42 @@ const App = () => {
                  const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(fileType);
 
                   if (isVideo) {
+                   const maxWidth = 400;
+                   const maxHeight = 400;
+                   let displayWidth = maxWidth;
+                   let displayHeight = maxHeight;
+                   let aspectRatio = '16 / 9';
+
+                   if (message.media_width && message.media_height) {
+                    const mediaAspect = message.media_width / message.media_height;
+                    aspectRatio = `${message.media_width} / ${message.media_height}`;
+
+                    if (message.media_width > maxWidth) {
+                     displayWidth = maxWidth;
+                     displayHeight = maxWidth / mediaAspect;
+                    } else {
+                     displayWidth = message.media_width;
+                     displayHeight = message.media_height;
+                    }
+
+                    if (displayHeight > maxHeight) {
+                     displayHeight = maxHeight;
+                     displayWidth = maxHeight * mediaAspect;
+                    }
+                   }
+
                    return (
                     <div className={styles.messageVideo} style={{
-                     aspectRatio: '16 / 9',
-                     maxWidth: '400px',
-                     width: '100%',
+                     aspectRatio: aspectRatio,
+                     width: `${displayWidth}px`,
+                     maxWidth: `${maxWidth}px`,
                      background: 'var(--bg-tertiary)',
                      display: 'flex',
                      alignItems: 'center',
                      justifyContent: 'center',
                      borderRadius: '12px',
-                     overflow: 'hidden'
+                     overflow: 'hidden',
+                     position: 'relative'
                     }}>
                      {visibleMessages.has(message.id) ? (
                       <VideoPlayer
@@ -1562,9 +1644,22 @@ const App = () => {
                        })}
                       />
                      ) : (
-                      <div style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
-                       <i className="fas fa-video" style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}></i>
-                       <div>🎥 Video</div>
+                      <div style={{
+                       width: '100%',
+                       height: '100%',
+                       background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
+                       backgroundSize: '200% 100%',
+                       animation: 'skeletonLoading 1.5s infinite',
+                       display: 'flex',
+                       flexDirection: 'column',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       color: 'var(--text-muted)',
+                       fontSize: '12px',
+                       textAlign: 'center'
+                      }}>
+                       <i className="fas fa-video" style={{ fontSize: '32px', marginBottom: '8px' }}></i>
+                       <div>Video</div>
                       </div>
                      )}
                     </div>
@@ -1629,56 +1724,95 @@ const App = () => {
                   </div>
                  );
                 })()
-               ) : message.content &&
-              message.content.match(/\.(gif)(\?.*)?$/i) ? (
-              <div
-               className={styles.messageImage}
-               onClick={() => setShowMediaViewer({
-                url: message.content.startsWith("http") ? message.content : message.content,
-                name: 'GIF',
-                type: 'image'
-               })}
-               style={{
-                cursor: 'pointer',
-                aspectRatio: '1 / 1',
-                maxWidth: '250px',
-                width: '100%',
-                background: 'var(--bg-tertiary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '12px',
-                overflow: 'hidden'
-               }}
-              >
-               {visibleMessages.has(message.id) ? (
-                <img
-                 src={message.content.startsWith("http")
-                  ? message.content
-                  : `${API_BASE_URL}${message.content}`}
-                 alt="Shared GIF"
-                 className={styles.sharedImage}
-                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  opacity: 0,
-                  transition: 'opacity 0.2s'
-                 }}
-                 onLoad={(e) => {
-                  e.target.classList.add('loaded');
-                  e.target.style.opacity = '1';
-                  const naturalRatio = e.target.naturalWidth / e.target.naturalHeight;
-                  e.target.parentElement.style.aspectRatio = naturalRatio;
-                 }}
-                 onError={(e) => {
-                  e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px;">Failed to load</div>';
-                 }}
-                />
-               ) : (
-                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>GIF</div>
-               )}
-               </div>
+                ) : message.content &&
+                 message.content.match(/\.(gif)(\?.*)?$/i) ? (
+                 (() => {
+                  const maxWidth = 250;
+                  const maxHeight = 300;
+                  let displayWidth = maxWidth;
+                  let displayHeight = maxHeight;
+                  let aspectRatio = '1 / 1';
+
+                  if (message.media_width && message.media_height) {
+                   const mediaAspect = message.media_width / message.media_height;
+                   aspectRatio = `${message.media_width} / ${message.media_height}`;
+
+                   if (message.media_width > maxWidth) {
+                    displayWidth = maxWidth;
+                    displayHeight = maxWidth / mediaAspect;
+                   } else {
+                    displayWidth = message.media_width;
+                    displayHeight = message.media_height;
+                   }
+
+                   if (displayHeight > maxHeight) {
+                    displayHeight = maxHeight;
+                    displayWidth = maxHeight * mediaAspect;
+                   }
+                  }
+
+                  return (
+                   <div
+                    className={styles.messageImage}
+                    onClick={() => setShowMediaViewer({
+                     url: message.content.startsWith("http") ? message.content : message.content,
+                     name: 'GIF',
+                     type: 'image'
+                    })}
+                    style={{
+                     cursor: 'pointer',
+                     aspectRatio: aspectRatio,
+                     width: `${displayWidth}px`,
+                     maxWidth: `${maxWidth}px`,
+                     background: 'var(--bg-tertiary)',
+                     display: 'flex',
+                     alignItems: 'center',
+                     justifyContent: 'center',
+                     borderRadius: '12px',
+                     overflow: 'hidden',
+                     position: 'relative'
+                    }}
+                   >
+                    {visibleMessages.has(message.id) ? (
+                     <img
+                      src={message.content.startsWith("http")
+                       ? message.content
+                       : `${API_BASE_URL}${message.content}`}
+                      alt="Shared GIF"
+                      className={styles.sharedImage}
+                      style={{
+                       width: '100%',
+                       height: '100%',
+                       objectFit: 'cover',
+                       opacity: 0,
+                       transition: 'opacity 0.3s ease'
+                      }}
+                      onLoad={(e) => {
+                       e.target.style.opacity = '1';
+                      }}
+                      onError={(e) => {
+                       e.target.parentElement.innerHTML = '<div style="color: var(--text-muted); padding: 20px; font-size: 12px; text-align: center;">Failed to load GIF</div>';
+                      }}
+                     />
+                    ) : (
+                     <div style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
+                      backgroundSize: '200% 100%',
+                      animation: 'skeletonLoading 1.5s infinite',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-muted)',
+                      fontSize: '24px'
+                     }}>
+                      GIF
+                     </div>
+                    )}
+                   </div>
+                  );
+                 })()
               ) : (
                <div className={styles.messageContent}>
                 {linkify(message.content)}
@@ -1693,25 +1827,27 @@ const App = () => {
                currentUserId={user.id}
               />
              </div>
-             <MessageOptions
-              message={message}
-              isOwnMessage={message.sender_id === user.id}
-              onReply={handleReplyToMessage}
-              onReact={(e, messageId) => {
-               e.stopPropagation();
-               const rect = e.currentTarget.getBoundingClientRect();
-               const buttonRect = e.target.closest('.react-btn').getBoundingClientRect();
-               setReactionPopupPosition({
-                x: buttonRect.left + buttonRect.width / 2,
-                y: buttonRect.top
-               });
-               setShowReactionPopup(
-                showReactionPopup === messageId ? null : messageId
-               );
-              }}
-              onDelete={setDeleteConfirm}
-              isDeleted={message.deleted}
-             />
+             {!isMobile ? (
+              <MessageOptions
+               message={message}
+               isOwnMessage={message.sender_id === user.id}
+               onReply={handleReplyToMessage}
+               onReact={(e, messageId) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const buttonRect = e.target.closest('.react-btn').getBoundingClientRect();
+                setReactionPopupPosition({
+                 x: buttonRect.left + buttonRect.width / 2,
+                 y: buttonRect.top
+                });
+                setShowReactionPopup(
+                 showReactionPopup === messageId ? null : messageId
+                );
+               }}
+               onDelete={setDeleteConfirm}
+               isDeleted={message.deleted}
+              />
+             ) : null}
             </div>
            );
           })
@@ -2454,6 +2590,24 @@ const App = () => {
     <MediaViewer
      media={showMediaViewer}
      onClose={() => setShowMediaViewer(null)}
+    />
+   )}
+   {showMessageOptionsPhone && isMobile && (
+    <MessageOptionsPhone
+     message={showMessageOptionsPhone}
+     isOwnMessage={showMessageOptionsPhone.sender_id === user.id}
+     onReply={handleReplyToMessage}
+     onAddReaction={handleAddReaction}
+     onRemoveReaction={handleRemoveReaction}
+     onDelete={setDeleteConfirm}
+     onClose={() => setShowMessageOptionsPhone(null)}
+     currentUserReactions={
+      messageReactions[showMessageOptionsPhone.id]
+       ? Object.entries(messageReactions[showMessageOptionsPhone.id])
+        .filter(([type, data]) => data.users?.includes(user.id))
+        .map(([type]) => type)
+       : []
+     }
     />
    )}
   </>
