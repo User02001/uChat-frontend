@@ -22,6 +22,7 @@ import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
+import { encryptFor } from "./crypto/e2ee";
 
 const App = () => {
 
@@ -170,10 +171,20 @@ const App = () => {
      await new Promise(r => setTimeout(r, 600));
     }
 
+    let content = (message ?? "").toString();
+    try {
+     const res = await fetch(`${API_BASE_URL}/api/keys/${receiverId}`, { credentials: "include" });
+     const { devices } = await res.json();
+     const target = devices?.[0];
+     if (target?.public_key_b64) {
+      content = await encryptFor(target.public_key_b64, content);
+     }
+    } catch { /* fallback to plaintext if anything fails */ }
+
     if (socketRef.current && socketRef.current.connected) {
      socketRef.current.emit("send_message", {
       receiver_id: receiverId,
-      content: message,
+      content,
       reply_to: null
      });
      return true;
@@ -1911,9 +1922,10 @@ const App = () => {
           activeContact={activeContact}
          />
          <form
-          onSubmit={
-           isOffline ? (e) => e.preventDefault() : sendMessage
-          }
+          onSubmit={(e) => {
+           e.preventDefault();
+           if (!isOffline) sendMessage();
+          }}
           className={styles.messageInputContainer}
          >
           <input

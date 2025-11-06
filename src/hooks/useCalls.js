@@ -9,23 +9,23 @@ const ICE_SERVERS = [
  // Metered.ca TURN servers
  {
   urls: 'turn:a.relay.metered.ca:80',
-  username: '8eb92513121c21f2fa90e6fc',
-  credential: 'F3RFiGad1XtN3FHA',
+  username: '0fb9f18d86c5f73d408585d8',
+  credential: 'G1tYNp2unkO0qbDe',
  },
  {
   urls: 'turn:a.relay.metered.ca:80?transport=tcp',
-  username: '8eb92513121c21f2fa90e6fc',
-  credential: 'F3RFiGad1XtN3FHA',
+  username: '0fb9f18d86c5f73d408585d8',
+  credential: 'G1tYNp2unkO0qbDe',
  },
  {
   urls: 'turn:a.relay.metered.ca:443',
-  username: '8eb92513121c21f2fa90e6fc',
-  credential: 'F3RFiGad1XtN3FHA',
+  username: '0fb9f18d86c5f73d408585d8',
+  credential: 'G1tYNp2unkO0qbDe',
  },
  {
   urls: 'turns:a.relay.metered.ca:443?transport=tcp',
-  username: '8eb92513121c21f2fa90e6fc',
-  credential: 'F3RFiGad1XtN3FHA',
+  username: '0fb9f18d86c5f73d408585d8',
+  credential: 'G1tYNp2unkO0qbDe',
  },
 ];
 

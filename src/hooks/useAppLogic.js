@@ -2,6 +2,9 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { API_BASE_URL, SOCKET_URL } from "../config";
+import sodium from "libsodium-wrappers";
+import { ensureDeviceKeypair, getPublicKeyB64 } from "../crypto/cryptoKeys";
+import { encryptFor, decryptMaybe } from "../crypto/e2ee";
 
 export const useAppLogic = () => {
  const navigate = useNavigate();
@@ -107,6 +110,10 @@ export const useAppLogic = () => {
     initializeSocket(messagesContainerRef);
     loadContacts();
 
+    // Ensure keypair exists (will auto-save to server if new)
+    await sodium.ready;
+    await ensureDeviceKeypair();
+
     // Delay to let splash animation play fully
     setTimeout(() => {
      setLoading(false);
@@ -205,43 +212,47 @@ export const useAppLogic = () => {
    }
   });
 
-  socket.on("new_message", (data) => {
-   const message = data.message;
+  socket.on("new_message", async (data) => {
+   let message = data.message;
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
+
+   // Decrypt BEFORE checking anything
+   try {
+    if (typeof message.content === "string") {
+     const decrypted = await decryptMaybe(message.content);
+     message = { ...message, content: decrypted };
+    }
+   } catch { /* leave as-is on failure */ }
 
    if (
     currentActiveContact &&
     currentUser &&
-    ((message.sender_id === currentActiveContact.id &&
-     message.receiver_id === currentUser.id) ||
-     (message.sender_id === currentUser.id &&
-      message.receiver_id === currentActiveContact.id))
+    ((message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
+     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))
    ) {
     setMessages((prev) => {
      const exists = prev.some((m) => m.id === message.id);
      if (exists) return prev;
      const updated = [...prev, message];
 
-     // Update cache
      if (currentActiveContact) {
       messageCacheRef.current[currentActiveContact.id] = updated.slice(-100);
      }
-
      return updated;
     });
    }
 
    setTypingUsers((prev) => {
-    const newSet = new Set(prev);
-    newSet.delete(message.sender_id);
-    return newSet;
+    const s = new Set(prev);
+    s.delete(message.sender_id);
+    return s;
    });
 
    handleMessageNotification(message);
   });
 
-  socket.on("messages_loaded", (data) => {
+  socket.on('messages_loaded', async (data) => {
    const { messages: newMessages, has_more, contact_id } = data;
 
    if (socketRef.current._loadingTimer) {
@@ -250,43 +261,46 @@ export const useAppLogic = () => {
    }
 
    setHasMoreMessages(has_more);
-
    const wasLoadingMore = loadingMoreMessages;
    setLoadingMoreMessages(false);
 
-   if (newMessages.length > 0) {
+   // Decrypt batch
+   let decrypted = newMessages;
+   try {
+    decrypted = await Promise.all(
+     newMessages.map(async (m) => ({
+      ...m,
+      content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
+     }))
+    );
+   } catch { /* ignore and show what we have */ }
+
+   if (decrypted.length > 0) {
     setIsLoadingMessages(null);
 
     setMessages((prev) => {
-     const combined = [...newMessages, ...prev];
-     const unique = combined.filter((msg, index, self) =>
-      index === self.findIndex((m) => m.id === msg.id)
-     );
+     const combined = [...decrypted, ...prev];
+     const unique = combined.filter((msg, i, self) => i === self.findIndex((x) => x.id === msg.id));
      const sorted = unique.sort((a, b) => a.id - b.id);
 
-     // Update cache - keep last 100 messages per contact
      if (contact_id) {
       messageCacheRef.current[contact_id] = sorted.slice(-100);
      }
 
-     // If initial load, scroll instantly before showing
      if (prev.length === 0 && !wasLoadingMore && messagesContainerRefParam?.current) {
-      messagesContainerRefParam.current.style.opacity = '0';
+      messagesContainerRefParam.current.style.opacity = "0";
       messagesContainerRefParam.current.scrollTop = messagesContainerRefParam.current.scrollHeight;
       setTimeout(() => {
-       if (messagesContainerRefParam.current) {
-        messagesContainerRefParam.current.style.opacity = '1';
-       }
+       if (messagesContainerRefParam.current) messagesContainerRefParam.current.style.opacity = "1";
       }, 100);
      }
-
      return sorted;
     });
 
     const reactionsData = {};
-    newMessages.forEach((message) => {
-     if (message.reactions && Object.keys(message.reactions).length > 0) {
-      reactionsData[message.id] = message.reactions;
+    decrypted.forEach((m) => {
+     if (m.reactions && Object.keys(m.reactions).length > 0) {
+      reactionsData[m.id] = m.reactions;
      }
     });
     setMessageReactions((prev) => ({ ...prev, ...reactionsData }));
@@ -295,12 +309,16 @@ export const useAppLogic = () => {
    }
   });
 
-  socket.on("desktop_notification", (data) => {
+  socket.on("desktop_notification", async (data) => {
    const currentActiveContact = activeContactRef.current;
-   const currentUser = userRef.current;
-   const message = data.message;
+   const message = { ...data.message };
 
-   // Only show notification if this chat is NOT currently active
+   try {
+    if (typeof message.content === "string") {
+     message.content = await decryptMaybe(message.content);
+    }
+   } catch { }
+
    if (!currentActiveContact || currentActiveContact.id !== message.sender_id) {
     handleMessageNotification(message);
    }
@@ -350,8 +368,14 @@ export const useAppLogic = () => {
    });
   });
 
-  socket.on("contact_updated", (data) => {
+  socket.on("contact_updated", async (data) => {
    const currentActive = activeContactRef.current;
+
+   // Decrypt lastMessage if it's encrypted
+   let decryptedLastMessage = data.lastMessage;
+   if (decryptedLastMessage && typeof decryptedLastMessage === 'string') {
+    decryptedLastMessage = await decryptMaybe(decryptedLastMessage);
+   }
 
    setContacts((prev) =>
     prev.map((contact) => {
@@ -361,7 +385,7 @@ export const useAppLogic = () => {
 
       return {
        ...contact,
-       lastMessage: data.lastMessage,
+       lastMessage: decryptedLastMessage,
        lastMessageTime: data.lastMessageTime,
        last_seen: data.last_seen || contact.last_seen,
        unread: isActive ? false : data.unread,
@@ -432,7 +456,18 @@ export const useAppLogic = () => {
 
    if (response.ok) {
     const data = await response.json();
-    setContacts(data.contacts);
+
+    // Decrypt lastMessage for each contact
+    const decryptedContacts = await Promise.all(
+     data.contacts.map(async (contact) => {
+      if (contact.lastMessage && typeof contact.lastMessage === 'string') {
+       contact.lastMessage = await decryptMaybe(contact.lastMessage);
+      }
+      return contact;
+     })
+    );
+
+    setContacts(decryptedContacts);
     setOnlineUsers(data.online_users);
     setContactsLoading(false);
    } else if (response.status === 401) {
@@ -674,36 +709,32 @@ export const useAppLogic = () => {
  }, [activeContact]);
 
  // Send message
- const sendMessage = useCallback(
-  (e) => {
-   e.preventDefault();
+ const sendMessage = useCallback(async () => {
+  if (!socketRef.current || !activeContact || !messageText.trim()) return;
 
-   if (!messageText.trim() || !activeContact || !socketRef.current) return;
+  const plaintext = messageText.trim();
 
-   socketRef.current.emit("send_message", {
-    receiver_id: activeContact.id,
-    content: messageText.trim(),
-    reply_to: replyingTo ? replyingTo.id : null,
-   });
-
-   setMessageText("");
-   setReplyingTo(null);
-   setIsTyping(false);
-
-   if (typingTimeoutRef.current) {
-    clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = null;
+  // Encrypt for recipient
+  let encryptedContent = plaintext;
+  try {
+   const res = await fetch(`${API_BASE_URL}/api/keys/${activeContact.id}`, { credentials: "include" });
+   const { devices } = await res.json();
+   const target = devices?.[0];
+   if (target?.public_key_b64) {
+    encryptedContent = await encryptFor(target.public_key_b64, plaintext);
    }
+  } catch { /* fallback to plaintext */ }
 
-   if (socketRef.current && socketRef.current.connected) {
-    socketRef.current.emit("typing", {
-     receiver_id: activeContact.id,
-     is_typing: false,
-    });
-   }
-  },
-  [messageText, activeContact, replyingTo]
- );
+  socketRef.current.emit("send_message", {
+   receiver_id: activeContact.id,
+   content: encryptedContent,
+   plaintext_copy: plaintext,  // Send plaintext for sender's copy
+   reply_to: replyingTo?.id || null,
+  });
+
+  setMessageText("");
+  setReplyingTo(null);
+ }, [socketRef, activeContact, messageText, replyingTo]);
 
  // Handle typing indicator with debouncing
  const lastTypingEmit = useRef(0);
