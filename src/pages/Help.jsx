@@ -9,8 +9,9 @@ const Help = () => {
  const [user, setUser] = useState(null);
  const [loading, setLoading] = useState(true);
  const [activeCategory, setActiveCategory] = useState('getting-started');
+ const [expandedCategories, setExpandedCategories] = useState(['getting-started']);
+ const [activeArticle, setActiveArticle] = useState(null); // null = show all articles
  const [searchQuery, setSearchQuery] = useState('');
- const [expandedQuestions, setExpandedQuestions] = useState([]);
  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
  useEffect(() => {
@@ -59,37 +60,61 @@ const Help = () => {
   };
  }, []);
 
- const toggleQuestion = (questionId) => {
-  setExpandedQuestions(prev =>
-   prev.includes(questionId)
-    ? prev.filter(id => id !== questionId)
-    : [...prev, questionId]
+ const toggleCategory = (categoryId) => {
+  setExpandedCategories(prev =>
+   prev.includes(categoryId)
+    ? prev.filter(id => id !== categoryId)
+    : [...prev, categoryId]
   );
+ };
+
+ const selectCategory = (categoryId) => {
+  setActiveCategory(categoryId);
+  setActiveArticle(null); // Show all articles when selecting category
+  setMobileMenuOpen(false);
+
+  // Auto-expand the category if not already expanded
+  if (!expandedCategories.includes(categoryId)) {
+   setExpandedCategories(prev => [...prev, categoryId]);
+  }
+ };
+
+ const selectArticle = (categoryId, subcategoryId, articleId) => {
+  setActiveCategory(categoryId);
+  setActiveArticle(articleId);
+  setMobileMenuOpen(false);
  };
 
  const toggleMobileMenu = () => {
   setMobileMenuOpen(!mobileMenuOpen);
  };
 
- const selectCategory = (categoryId) => {
-  setActiveCategory(categoryId);
-  setMobileMenuOpen(false);
-  setExpandedQuestions([]);
+ // Search logic
+ const getFilteredData = () => {
+  if (!searchQuery) return helpData.categories;
+
+  const query = searchQuery.toLowerCase();
+  return helpData.categories.map(category => ({
+   ...category,
+   subcategories: category.subcategories.map(subcategory => ({
+    ...subcategory,
+    articles: subcategory.articles.filter(article =>
+     article.title.toLowerCase().includes(query) ||
+     article.content.toLowerCase().includes(query)
+    )
+   })).filter(subcategory => subcategory.articles.length > 0)
+  })).filter(category => category.subcategories.length > 0);
  };
 
- const filteredData = helpData.categories
-  .map(category => ({
-   ...category,
-   questions: category.questions.filter(q =>
-    q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    q.answer.toLowerCase().includes(searchQuery.toLowerCase())
-   )
-  }))
-  .filter(category => category.questions.length > 0);
+ const filteredData = getFilteredData();
+ const currentCategory = filteredData.find(c => c.id === activeCategory) || filteredData[0];
 
- const currentCategory = searchQuery
-  ? filteredData.find(c => c.id === activeCategory) || filteredData[0]
-  : helpData.categories.find(c => c.id === activeCategory);
+ // Get current article if one is selected
+ const currentArticleData = currentCategory && activeArticle
+  ? currentCategory.subcategories
+   .flatMap(sub => sub.articles)
+   .find(article => article.id === activeArticle)
+  : null;
 
  if (loading) {
   return (
@@ -144,15 +169,37 @@ const Help = () => {
 
       <h3 className="categories-title">Categories</h3>
       <div className="categories-list">
-       {(searchQuery ? filteredData : helpData.categories).map((category) => (
-        <button
-         key={category.id}
-         className={`category-btn ${activeCategory === category.id ? 'active' : ''}`}
-         onClick={() => selectCategory(category.id)}
-        >
-         <i className={`${category.icon} category-icon`}></i>
-         <span className="category-name">{category.name}</span>
-        </button>
+       {filteredData.map((category) => (
+        <div key={category.id} className="category-group">
+         <button
+          className={`category-btn ${activeCategory === category.id ? 'active' : ''}`}
+          onClick={() => {
+           toggleCategory(category.id);
+          }}
+         >
+          <i className={`${category.icon} category-icon`}></i>
+          <span className="category-name">{category.name}</span>
+          <i className={`fas fa-chevron-down chevron-icon ${expandedCategories.includes(category.id) ? 'expanded' : ''}`}></i>
+         </button>
+
+         {expandedCategories.includes(category.id) && (
+          <div className="subcategories-list">
+           {category.subcategories.map((subcategory) => (
+            <button
+             key={subcategory.id}
+             className="subcategory-btn"
+             onClick={() => {
+              setActiveCategory(category.id);
+              setActiveArticle(subcategory.articles[0]?.id || null);
+              setMobileMenuOpen(false);
+             }}
+            >
+             {subcategory.name}
+            </button>
+           ))}
+          </div>
+         )}
+        </div>
        ))}
       </div>
      </aside>
@@ -172,31 +219,58 @@ const Help = () => {
          </div>
         </div>
 
-        <div className="questions-list">
-         {currentCategory.questions.map((item) => (
-          <div key={item.id} className="question-card">
-           <button
-            className={`question-btn ${expandedQuestions.includes(item.id) ? 'expanded' : ''}`}
-            onClick={() => toggleQuestion(item.id)}
-           >
-            <span className="question-text">{item.question}</span>
-            <i className="fas fa-chevron-down chevron-icon"></i>
-           </button>
-           {expandedQuestions.includes(item.id) && (
-            <div className="answer-content">
-             <p>{item.answer}</p>
-             {item.steps && (
-              <ol className="answer-steps">
-               {item.steps.map((step, idx) => (
-                <li key={idx}>{step}</li>
-               ))}
-              </ol>
-             )}
+        {/* Show single article if selected */}
+        {currentArticleData ? (
+         <div className="single-article-view">
+          <button
+           className="back-button"
+           onClick={() => setActiveArticle(null)}
+          >
+           <i className="fas fa-arrow-left"></i> Back to all articles
+          </button>
+
+          <article className="article-content">
+           <h1>{currentArticleData.title}</h1>
+           <div className="article-body">
+            {currentArticleData.content.split('\n\n').map((paragraph, idx) => (
+             <p key={idx}>{paragraph}</p>
+            ))}
+           </div>
+          </article>
+         </div>
+        ) : (
+         /* Show all articles grouped by subcategory */
+         <div className="articles-list">
+          {currentCategory.subcategories && currentCategory.subcategories.length > 0 ? (
+           currentCategory.subcategories.map((subcategory) => (
+            <div key={subcategory.id} className="subcategory-section">
+             <h3 className="subcategory-heading">{subcategory.name}</h3>
+             <div className="articles-grid">
+              {subcategory.articles.map((article) => (
+               <button
+                key={article.id}
+                className="article-card"
+                onClick={() => selectArticle(currentCategory.id, subcategory.id, article.id)}
+               >
+                <h4>{article.title}</h4>
+                <p>{article.content.substring(0, 120)}...</p>
+                <span className="read-more">
+                 Read more <i className="fas fa-arrow-right"></i>
+                </span>
+               </button>
+              ))}
+             </div>
             </div>
-           )}
-          </div>
-         ))}
-        </div>
+           ))
+          ) : (
+           <div className="no-results">
+            <i className="fas fa-search"></i>
+            <h3>No results found</h3>
+            <p>Try adjusting your search query</p>
+           </div>
+          )}
+         </div>
+        )}
 
         <div className="support-card">
          <i className="fas fa-headset support-icon"></i>

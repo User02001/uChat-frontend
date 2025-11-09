@@ -46,6 +46,7 @@ const GoogleAuth = lazy(() => import('./pages/GoogleAuth.jsx'))
 const Help = lazy(() => import('./pages/Help.jsx'))
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions.jsx'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'))
+const Welp = lazy(() => import('./pages/Welp.jsx'))
 
 // Wrapper component with aggressive cleanup
 const AppRoutes = () => {
@@ -76,6 +77,7 @@ const AppRoutes = () => {
     <Route path="/terms" element={<TermsAndConditions key="terms" />} />
     <Route path="/privacy" element={<PrivacyPolicy key="privacy" />} />
     <Route path="/help" element={<Help key="help" />} />
+    <Route path="/welp" element={<Welp key="welp" />} />
     <Route path="/" element={<Navigate to="/chat" replace />} />
     <Route path="*" element={<Navigate to="/login" replace />} />
    </Routes>

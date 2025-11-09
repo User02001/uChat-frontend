@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Login.module.css';
 import { API_BASE_URL } from '../config';
+import useStars from "../hooks/useStars";
 
 const Verify = () => {
  const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Verify = () => {
  const [success, setSuccess] = useState('');
  const [loading, setLoading] = useState(false);
  const [email, setEmail] = useState('');
+ const canvasRef = useStars();
 
  useEffect(() => {
   // Check if user is already logged in first
@@ -181,7 +183,7 @@ const Verify = () => {
 
  return (
   <div className={styles.loginContainer}>
-   <div className={styles.auraBackground}></div>
+   <canvas ref={canvasRef} className={styles.starCanvas} />
    <div className={styles.loginCard}>
     <div className={styles.loginHeader}>
      <div className={styles.logoContainer} style={{

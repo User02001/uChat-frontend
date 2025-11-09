@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Login.module.css';
 import { API_BASE_URL } from '../config';
+import useStars from "../hooks/useStars";
 
 const Login = () => {
  const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Login = () => {
  const [loading, setLoading] = useState(false);
  const [showPassword, setShowPassword] = useState(false);
  const [agreedToTerms, setAgreedToTerms] = useState(false);
+ const canvasRef = useStars();
 
  useEffect(() => {
   // Load Font Awesome
@@ -100,7 +102,7 @@ const Login = () => {
    }
   } catch (error) {
    console.error('Login error:', error);
-   setError('Network error. Please try again.');
+   setError('Network error. Sorry :( Check our status too.');
   } finally {
    setLoading(false);
   }
@@ -108,7 +110,7 @@ const Login = () => {
 
  return (
   <div className={styles.loginContainer}>
-   <div className={styles.auraBackground}></div>
+   <canvas ref={canvasRef} className={styles.starCanvas} />
    <div className={styles.loginCard}>
     <div className={styles.loginHeader}>
      <div className={styles.logoContainer} style={{
@@ -129,12 +131,12 @@ const Login = () => {
       />
      </div>
      <h1>
-      <i className="fas fa-comments" style={{ marginRight: '12px', color: 'var(--primary-color, #007bff)' }}></i>
+      <i className="fas fa-comments" style={{ marginRight: '12px', color: 'orange' }}></i>
       Welcome to uChat
      </h1>
      <p>
       <i className="fas fa-sign-in-alt" style={{ marginRight: '8px', opacity: 0.7 }}></i>
-      Hello there, now log in to start chatting :D
+      Hello there, now log in to continue :3
      </p>
     </div>
 
@@ -249,7 +251,15 @@ const Login = () => {
        </label>
       </div>
       <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading || !agreedToTerms}>
-       {loading ? 'Logging in...' : 'Login'}
+       {loading ? (
+        <>
+         <i className="fas fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> Logging in...
+        </>
+       ) : (
+        <>
+         <i className="fas fa-right-to-bracket" style={{ marginRight: '8px' }}></i> Login
+        </>
+       )}
       </button>
      </form>
 
@@ -276,7 +286,7 @@ const Login = () => {
       Don't have an account?
       <a href="/signup">
        <i className="fas fa-user-plus" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
-       Sign up
+       Sign up!
       </a>
      </p>
     </div>

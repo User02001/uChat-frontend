@@ -1,3 +1,11 @@
+/* Load Product Sans font */
+@font-face {
+    font-family: 'Product Sans';
+    src: url('/resources/fonts/ProductSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* Reset default styles */
 * {
     margin: 0;
@@ -17,6 +25,7 @@ body, html {
     /* Light theme */
     --bg-primary: #f5f5f5;
     --bg-secondary: #ffffff;
+    --signin-card: #ffffff;
     --text-primary: #1a1a1a;
     --text-secondary: #666666;
     --border: #e0e0e0;
@@ -41,6 +50,7 @@ body, html {
     /* Dark theme */
     --bg-primary: linear-gradient(135deg, #000000 0%, #000000 100%);
     --bg-secondary: #000000;
+    --signin-card: #30303059;
     --text-primary: #ffffff;
     --text-secondary: #cccccc;
     --border: #404040;
@@ -63,17 +73,17 @@ body, html {
 
 .loginContainer {
     min-height: 100vh;
-    background: var(--bg-primary);
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     transition: background 0.3s ease;
 }
 
 .loginCard {
-    background-color: var(--bg-secondary);
+    background: var(--signin-card);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow);
     width: 100%;
@@ -336,39 +346,6 @@ body, html {
     }
 }
 
-/* Yellow aura background animation - ULTRA OPTIMIZED */
-.auraBackground {
-    position: fixed !important;
-    top: 15% !important;
-    left: 20% !important;
-    width: 1200px !important;
-    height: 1200px !important;
-    transform: translate(-50%, -50%) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-    background: radial-gradient(circle, rgba(255, 215, 0, 0.9) 0%, rgba(255, 193, 7, 0.6) 30%, rgba(255, 165, 0, 0.4) 50%, transparent 70%) !important;
-    border-radius: 50% !important;
-    filter: blur(60px) !important;
-    animation: aura-breathe 2.5s ease-in-out infinite !important;
-    will-change: opacity !important;
-    transform-origin: center !important;
-    backface-visibility: hidden !important;
-    perspective: 1000px !important;
-}
-
-@keyframes aura-breathe {
-    0% {
-        opacity: 0.6;
-    }
-
-    50% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0.6;
-    }
-}
 
 .mainLogo {
     object-fit: contain;
@@ -518,4 +495,15 @@ body, html {
         height: 10px;
         opacity: 1;
     }
+}
+
+.starCanvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: #000;
 }

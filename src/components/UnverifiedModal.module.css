@@ -1,4 +1,4 @@
-.unverified-modal-overlay {
+.unverifiedModalOverlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -13,7 +13,7 @@
     animation: fadeInOverlay 0.3s ease-out forwards;
 }
 
-[data-theme="dark"] .unverified-modal-overlay {
+[data-theme="dark"] .unverifiedModalOverlay {
     background: rgba(0, 0, 0, 0.6);
 }
 
@@ -39,7 +39,7 @@
     }
 }
 
-.unverified-modal-content {
+.unverifiedModalContent {
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -52,7 +52,7 @@
     animation: slideInModal 0.3s ease-out forwards;
 }
 
-    .unverified-modal-content h3 {
+    .unverifiedModalContent h3 {
         margin: 20px 20px 16px 20px;
         color: #ef4444;
         font-size: 1.5rem;
@@ -61,18 +61,18 @@
         gap: 10px;
     }
 
-        .unverified-modal-content h3 i {
+        .unverifiedModalContent h3 i {
             font-size: 1.3rem;
         }
 
-    .unverified-modal-content p {
+    .unverifiedModalContent p {
         margin: 0 20px 10px 20px;
         color: var(--text-primary);
         font-size: 15px;
         line-height: 1.6;
     }
 
-.unverified-warning-box {
+.unverifiedWarningBox {
     background: var(--warning-bg);
     border: 1px solid var(--warning-border);
     border-radius: 8px;
@@ -80,39 +80,39 @@
     padding: 16px;
 }
 
-    .unverified-warning-box p {
+    .unverifiedWarningBox p {
         margin: 0 0 12px 0;
         color: var(--warning-text);
         font-weight: 600;
     }
 
-    .unverified-warning-box ul {
+    .unverifiedWarningBox ul {
         margin: 0;
         padding-left: 20px;
         color: var(--text-secondary);
         font-size: 14px;
     }
 
-    .unverified-warning-box li {
+    .unverifiedWarningBox li {
         margin: 6px 0;
         line-height: 1.5;
     }
 
-.unverified-info {
+.unverifiedInfo {
     font-size: 13px;
     color: var(--text-muted);
     margin: 0 20px 24px 20px !important;
     font-style: italic;
 }
 
-.modal-actions {
+.modalActions {
     display: flex;
     gap: 12px;
     padding: 20px;
     border-top: 1px solid var(--border);
 }
 
-.modal-close {
+.modalClose {
     flex: 1;
     padding: 12px 28px;
     border: none;
@@ -125,11 +125,24 @@
     color: white;
 }
 
-    .modal-close:hover {
+    .modalClose:hover {
         background: var(--button-primary-hover);
         transform: scale(1.03);
     }
 
-    .modal-close:active {
+    .modalClose:active {
         transform: scale(0.98);
     }
+
+.unverifiedIcon {
+    width: 35px;
+    height: 35px;
+    flex-shrink: 0;
+}
+
+.unverifiedIconModal1 {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    margin: 0 2px;
+}

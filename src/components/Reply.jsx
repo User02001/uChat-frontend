@@ -1,8 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './Reply.css';
 import { API_BASE_URL } from '../config';
+import { decryptMaybe } from '../crypto/e2ee';
 
 const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
+ const [decryptedContent, setDecryptedContent] = useState('');
+
+ useEffect(() => {
+  const decrypt = async () => {
+   if (replyingTo && replyingTo.content && typeof replyingTo.content === 'string') {
+    const decrypted = await decryptMaybe(replyingTo.content);
+    setDecryptedContent(decrypted);
+   } else {
+    setDecryptedContent(replyingTo?.content || '');
+   }
+  };
+  decrypt();
+ }, [replyingTo]);
+
  if (!replyingTo) return null;
 
  const truncateMessage = (text, maxLength = 50) => {
@@ -29,7 +44,7 @@ const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
         This message has been deleted
        </em>
       ) : (
-       truncateMessage(replyingTo.content || '')
+       truncateMessage(decryptedContent || '')
       )}
      </div>
     </div>

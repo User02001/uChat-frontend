@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { API_BASE_URL, SOCKET_URL } from "../config";
-import sodium from "libsodium-wrappers";
+import sodium from "libsodium-wrappers-sumo";
 import { ensureDeviceKeypair, getPublicKeyB64 } from "../crypto/cryptoKeys";
 import { encryptFor, decryptMaybe } from "../crypto/e2ee";
 
@@ -63,6 +63,7 @@ export const useAppLogic = () => {
  const [showMediaViewer, setShowMediaViewer] = useState(null);
  const [showMessageOptionsPhone, setShowMessageOptionsPhone] = useState(null);
  const [messagesContainerVisible, setMessagesContainerVisible] = useState(true);
+ const [showPinModal, setShowPinModal] = useState(null); // 'setup' or 'unlock'
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -110,9 +111,7 @@ export const useAppLogic = () => {
     initializeSocket(messagesContainerRef);
     loadContacts();
 
-    // Ensure keypair exists (will auto-save to server if new)
-    await sodium.ready;
-    await ensureDeviceKeypair();
+    // DON'T call ensureDeviceKeypair here - wait for PIN modal
 
     // Delay to let splash animation play fully
     setTimeout(() => {
@@ -126,6 +125,94 @@ export const useAppLogic = () => {
    navigate("/login", { replace: true });
   }
  }, [navigate]);
+
+ // In checkPinStatus callback - around line 130
+ const checkPinStatus = useCallback(async () => {
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/keys/my-device`, {
+    credentials: "include",
+   });
+
+   if (response.status === 404) {
+    setShowPinModal('setup');
+    return;
+   } else if (response.ok) {
+    const data = await response.json();
+    if (data.encrypted_private_key) {
+     // Check if we have a cached DERIVED KEY (not PIN!)
+     const cachedKey = localStorage.getItem('uchat_session_master_key');
+     if (cachedKey) {
+      console.log('[PIN] Found cached key, auto-unlocking...');
+      try {
+       await ensureDeviceKeypair(); // Will use cached key
+       console.log('[PIN] Auto-unlock successful');
+       // Don't show PIN modal - we're already unlocked
+      } catch (err) {
+       console.error('[PIN] Auto-unlock failed:', err);
+       // Clear invalid cached key
+       localStorage.removeItem('uchat_session_master_key');
+       setShowPinModal('unlock');
+      }
+     } else {
+      setShowPinModal('unlock');
+     }
+    }
+   }
+  } catch (err) {
+   // SILENCE - don't log 404s
+  }
+ }, []);
+
+ const handlePinSubmit = useCallback(async (pin) => {
+  console.log('[PIN] Submitting PIN, mode:', showPinModal, 'pin length:', pin?.length);
+
+  try {
+   if (showPinModal === 'setup') {
+    console.log('[PIN] Creating new keypair...');
+    const { createAndSaveKeypair } = await import("../crypto/cryptoKeys");
+    await createAndSaveKeypair(pin);
+    console.log('[PIN] Keypair created successfully');
+    setShowPinModal(null);
+   } else {
+    console.log('[PIN] Unlocking with existing keypair...');
+    const { ensureDeviceKeypair } = await import("../crypto/cryptoKeys");
+    await ensureDeviceKeypair(pin); // This will save the derived key to localStorage
+    console.log('[PIN] Unlocked successfully');
+    setShowPinModal(null);
+
+    // RE-DECRYPT ALL MESSAGES AFTER UNLOCK
+    if (messages.length > 0) {
+     console.log('[PIN] Re-decrypting', messages.length, 'messages...');
+     const { decryptMaybe } = await import("../crypto/e2ee");
+     const decryptedMessages = await Promise.all(
+      messages.map(async (m) => ({
+       ...m,
+       content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
+      }))
+     );
+     setMessages(decryptedMessages);
+     console.log('[PIN] Messages re-decrypted');
+    }
+
+    // RE-DECRYPT ALL CONTACT PREVIEWS
+    if (contacts.length > 0) {
+     console.log('[PIN] Re-decrypting', contacts.length, 'contact previews...');
+     const { decryptMaybe } = await import("../crypto/e2ee");
+     const decryptedContacts = await Promise.all(
+      contacts.map(async (c) => ({
+       ...c,
+       lastMessage: typeof c.lastMessage === "string" ? await decryptMaybe(c.lastMessage) : c.lastMessage
+      }))
+     );
+     setContacts(decryptedContacts);
+     console.log('[PIN] Contact previews re-decrypted');
+    }
+   }
+  } catch (err) {
+   console.error('[PIN] Error:', err);
+   throw err; // Re-throw so PinForEnc can show the error
+  }
+ }, [showPinModal, messages, contacts]);
 
  // Initialize Socket.IO connection
  const initializeSocket = useCallback((messagesContainerRefParam) => {
@@ -217,7 +304,7 @@ export const useAppLogic = () => {
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
 
-   // Decrypt BEFORE checking anything
+   // Decrypt BEFORE doing anything else
    try {
     if (typeof message.content === "string") {
      const decrypted = await decryptMaybe(message.content);
@@ -225,17 +312,19 @@ export const useAppLogic = () => {
     }
    } catch { /* leave as-is on failure */ }
 
+   // If this message belongs to the currently open chat, append it
    if (
     currentActiveContact &&
     currentUser &&
-    ((message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
-     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))
+    (
+     (message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
+     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id)
+    )
    ) {
     setMessages((prev) => {
      const exists = prev.some((m) => m.id === message.id);
      if (exists) return prev;
      const updated = [...prev, message];
-
      if (currentActiveContact) {
       messageCacheRef.current[currentActiveContact.id] = updated.slice(-100);
      }
@@ -243,6 +332,34 @@ export const useAppLogic = () => {
     });
    }
 
+   // KEEP THE PREVIEW IN SYNC (always decrypted)
+   if (currentUser) {
+    const peerId = (message.sender_id === currentUser.id)
+     ? message.receiver_id
+     : message.sender_id;
+
+    const previewText =
+     message.message_type === "image"
+      ? "📷 Sent an image"
+      : message.message_type === "file"
+       ? `📎 ${message.file_name || "File"}`
+       : (typeof message.content === "string" ? message.content : "");
+
+    setContacts((prev) =>
+     prev.map((c) =>
+      c.id === peerId
+       ? {
+        ...c,
+        lastMessage: previewText || c.lastMessage,
+        lastMessageTime: message.timestamp || c.lastMessageTime,
+        lastSenderId: message.sender_id,
+       }
+       : c
+     )
+    );
+   }
+
+   // housekeeping (same as before)
    setTypingUsers((prev) => {
     const s = new Set(prev);
     s.delete(message.sender_id);
@@ -264,14 +381,26 @@ export const useAppLogic = () => {
    const wasLoadingMore = loadingMoreMessages;
    setLoadingMoreMessages(false);
 
-   // Decrypt batch
+   // Decrypt batch (including original_message content for replies)
    let decrypted = newMessages;
    try {
     decrypted = await Promise.all(
-     newMessages.map(async (m) => ({
-      ...m,
-      content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
-     }))
+     newMessages.map(async (m) => {
+      const decryptedMessage = {
+       ...m,
+       content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
+      };
+
+      // Also decrypt original_message content if it exists (for replies)
+      if (m.original_message && typeof m.original_message.content === "string") {
+       decryptedMessage.original_message = {
+        ...m.original_message,
+        content: await decryptMaybe(m.original_message.content)
+       };
+      }
+
+      return decryptedMessage;
+     })
     );
    } catch { /* ignore and show what we have */ }
 
@@ -567,7 +696,6 @@ export const useAppLogic = () => {
   }
  }, [navigate]);
 
- // Add contact
  const addContact = useCallback(async (userId) => {
   try {
    const response = await fetch(
@@ -580,7 +708,21 @@ export const useAppLogic = () => {
 
    if (response.ok) {
     const data = await response.json();
-    setContacts((prev) => [...prev, data.contact]);
+    let contact = data.contact;
+
+    // Ensure previews never show enc:v1:...
+    if (contact && typeof contact.lastMessage === "string") {
+     try {
+      contact = {
+       ...contact,
+       lastMessage: await decryptMaybe(contact.lastMessage),
+      };
+     } catch {
+      // keep as-is if anything goes wrong
+     }
+    }
+
+    setContacts((prev) => [...prev, contact]);
     setSearchResults([]);
     setSearchQuery("");
     setShowSearch(false);
@@ -710,27 +852,49 @@ export const useAppLogic = () => {
 
  // Send message
  const sendMessage = useCallback(async () => {
-  if (!socketRef.current || !activeContact || !messageText.trim()) return;
+  console.log('[SEND] sendMessage called');
+  console.log('[SEND] socketRef.current:', !!socketRef.current);
+  console.log('[SEND] activeContact:', activeContact?.username);
+  console.log('[SEND] messageText:', messageText);
+
+  if (!socketRef.current || !activeContact || !messageText.trim()) {
+   console.log('[SEND] Validation failed - returning early');
+   return;
+  }
 
   const plaintext = messageText.trim();
+  console.log('[SEND] Attempting to send message:', plaintext);
 
-  // Encrypt for recipient
-  let encryptedContent = plaintext;
   try {
+   console.log('[SEND] Fetching recipient keys for user:', activeContact.id);
    const res = await fetch(`${API_BASE_URL}/api/keys/${activeContact.id}`, { credentials: "include" });
    const { devices } = await res.json();
    const target = devices?.[0];
-   if (target?.public_key_b64) {
-    encryptedContent = await encryptFor(target.public_key_b64, plaintext);
-   }
-  } catch { /* fallback to plaintext */ }
 
-  socketRef.current.emit("send_message", {
-   receiver_id: activeContact.id,
-   content: encryptedContent,
-   plaintext_copy: plaintext,  // Send plaintext for sender's copy
-   reply_to: replyingTo?.id || null,
-  });
+   console.log('[SEND] Recipient public key:', target?.public_key_b64?.substring(0, 20) + '...');
+
+   if (target?.public_key_b64) {
+    const { encryptMessageDouble } = await import("../crypto/e2ee");
+    console.log('[SEND] Encrypting message...');
+    const { content_receiver, content_sender } = await encryptMessageDouble(plaintext, target.public_key_b64);
+
+    console.log('[SEND] Encrypted for receiver:', content_receiver?.substring(0, 50) + '...');
+    console.log('[SEND] Encrypted for sender:', content_sender?.substring(0, 50) + '...');
+
+    console.log('[SEND] Emitting to socket...');
+    socketRef.current.emit("send_message", {
+     receiver_id: activeContact.id,
+     content_receiver,
+     content_sender,
+     reply_to: replyingTo?.id || null,
+    });
+    console.log('[SEND] Message sent successfully');
+   } else {
+    console.error('[SEND] No public key found for recipient');
+   }
+  } catch (err) {
+   console.error("[SEND] Encryption failed:", err);
+  }
 
   setMessageText("");
   setReplyingTo(null);
@@ -800,9 +964,13 @@ export const useAppLogic = () => {
     socketRef.current.disconnect();
    }
 
+   // Clear stored derived key on logout
+   localStorage.removeItem('uchat_session_master_key');
+
    navigate("/login", { replace: true });
   } catch (error) {
    console.error("Logout failed:", error);
+   localStorage.removeItem('uchat_session_master_key');
    navigate("/login", { replace: true });
   }
  }, [navigate]);
@@ -1053,6 +1221,13 @@ export const useAppLogic = () => {
  useEffect(() => {
   checkAuth();
  }, [checkAuth]);
+
+ // Check PIN status ONCE after user loads
+ useEffect(() => {
+  if (user && showPinModal === null) {
+   checkPinStatus();
+  }
+ }, [user]); // Remove checkPinStatus from dependencies
 
  // Request notification permission
  useEffect(() => {
@@ -1315,6 +1490,10 @@ export const useAppLogic = () => {
   setShowMessageOptionsPhone,
   messagesContainerVisible,
   setMessagesContainerVisible,
+  checkPinStatus,
+  handlePinSubmit,
+  showPinModal,
+  setShowPinModal,
 
   // Refs
   socketRef,

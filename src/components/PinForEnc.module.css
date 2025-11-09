@@ -1,0 +1,458 @@
+/* Load Product Sans font */
+@font-face {
+    font-family: 'Product Sans';
+    src: url('/resources/fonts/ProductSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.pinModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    opacity: 0;
+    animation: fadeInOverlay 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    font-family: 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+[data-theme="dark"] .pinModalOverlay {
+    background: #000000;
+}
+
+@keyframes fadeInOverlay {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInModal {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-8px);
+    }
+
+    50% {
+        transform: translateX(8px);
+    }
+
+    75% {
+        transform: translateX(-8px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+.pinModalContent {
+    background: var(--bg-primary);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    max-width: 520px;
+    width: 92%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 30px 90px var(--shadow), 0 10px 30px rgba(0, 0, 0, 0.1);
+    position: relative;
+    animation: slideInModal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+    .pinModalContent h3 {
+        margin: 0;
+        padding: 32px 32px 20px 32px;
+        color: var(--button-primary);
+        font-size: 1.8rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        border-bottom: 2px solid var(--border);
+    }
+
+        .pinModalContent h3 i {
+            font-size: 1.6rem;
+        }
+
+    .pinModalContent p {
+        margin: 24px 32px 20px 32px;
+        color: var(--text-primary);
+        font-size: 15px;
+        line-height: 1.7;
+        text-align: center;
+    }
+
+.pinWarningBox {
+    background: var(--warning-bg);
+    border: 2px solid var(--warning-border);
+    border-radius: 14px;
+    margin: 24px 32px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+    .pinWarningBox p {
+        margin: 0 0 14px 0 !important;
+        color: var(--warning-text);
+        font-weight: 700;
+        font-size: 15px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .pinWarningBox p::before {
+            content: "\f06a";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+    .pinWarningBox ul {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+        color: var(--text-secondary);
+        font-size: 14px;
+    }
+
+    .pinWarningBox li {
+        margin: 10px 0;
+        line-height: 1.6;
+        padding-left: 28px;
+        position: relative;
+    }
+
+        .pinWarningBox li::before {
+            content: "\f058";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: green;
+            font-size: 14px;
+        }
+
+.pinForm {
+    padding: 0 32px 32px 32px;
+}
+
+.pinInputGroup {
+    margin-bottom: 20px;
+}
+
+    .pinInputGroup label {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .pinInputGroup label::before {
+            content: "\f084";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            font-size: 13px;
+        }
+
+.required {
+    color: #ef4444;
+    font-size: 16px;
+}
+
+.pinInput {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    font-size: 26px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 12px;
+    text-align: center;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+    .pinInput:focus {
+        outline: none;
+        border-color: var(--button-primary);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        transform: translateY(-2px);
+        background: var(--bg-primary);
+    }
+
+    .pinInput::placeholder {
+        letter-spacing: 10px;
+        font-family: inherit;
+        font-weight: normal;
+        opacity: 0.5;
+    }
+
+    .pinInput:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+.pinError {
+    background: rgba(239, 68, 68, 0.12);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    color: #ef4444;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: shake 0.4s ease-in-out;
+}
+
+    .pinError::before {
+        content: "\f071";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+.pinInfo {
+    font-size: 13px !important;
+    color: var(--text-muted) !important;
+    margin: 0 0 24px 0 !important;
+    font-style: italic;
+    line-height: 1.6;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+    .pinInfo::before {
+        content: "\f05a";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 14px;
+        font-style: normal;
+    }
+
+.modalActions {
+    display: flex;
+    gap: 14px;
+    padding-top: 24px;
+    border-top: 2px solid var(--border);
+}
+
+.modalCancel {
+    flex: 1;
+    padding: 16px 16px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+    .modalCancel::before {
+        content: "\f00d";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 16px;
+    }
+
+    .modalCancel:hover:not(:disabled) {
+        background: var(--bg-tertiary);
+        border-color: var(--text-muted);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .modalCancel:active:not(:disabled) {
+        transform: translateY(-1px);
+    }
+
+    .modalCancel:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+.modalSubmit {
+    flex: 1;
+    padding: 16px 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--button-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+    .modalSubmit:hover:not(:disabled) {
+        background: var(--button-primary-hover);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    }
+
+    .modalSubmit:active:not(:disabled) {
+        transform: translateY(-1px);
+    }
+
+    .modalSubmit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .modalSubmit i {
+        font-size: 16px;
+    }
+
+.pinPad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 280px;
+    margin: 24px auto 28px auto;
+}
+
+.pinPadKey {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    height: 70px;
+    width: 70px;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+    .pinPadKey:hover:not(:disabled) {
+        background: var(--bg-tertiary);
+        border-color: var(--button-primary);
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .pinPadKey:active:not(:disabled) {
+        transform: translateY(-1px) scale(1.02);
+    }
+
+    .pinPadKey:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+.backspaceKey {
+    color: #ef4444;
+}
+
+    .backspaceKey i {
+        font-size: 22px;
+    }
+
+.enterKey {
+    background: var(--button-primary);
+    color: #fff;
+    border-color: var(--button-primary);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+    .enterKey i {
+        font-size: 24px;
+    }
+
+    .enterKey:hover:not(:disabled) {
+        background: var(--button-primary-hover);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
+    }
+
+/* Scrollbar styling */
+.pinModalContent::-webkit-scrollbar {
+    width: 10px;
+}
+
+.pinModalContent::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    margin: 8px;
+}
+
+.pinModalContent::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+    border: 2px solid var(--bg-secondary);
+}
+
+    .pinModalContent::-webkit-scrollbar-thumb:hover {
+        background: var(--text-muted);
+    }
+
+.learnMoreThing1 {
+    color: var(--button-primary);
+}

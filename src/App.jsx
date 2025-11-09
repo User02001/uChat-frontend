@@ -23,6 +23,7 @@ import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
 import { encryptFor } from "./crypto/e2ee";
+import PinForEnc from "./components/PinForEnc";
 
 const App = () => {
 
@@ -103,6 +104,9 @@ const App = () => {
   saveLastContact,
   loadLastContact,
   handleMessageNotification,
+  showPinModal,
+  setShowPinModal,
+  handlePinSubmit,
  } = useAppLogic();
 
  const handleDragStart = (e) => {
@@ -2558,7 +2562,7 @@ const App = () => {
    )}
    {showProfileModal && (
     <ProfileModal
-     user={showProfileModal}
+     user={contacts.find(c => c.id === showProfileModal.id) || showProfileModal}
      onClose={() => setShowProfileModal(null)}
      currentUserId={user.id}
      onlineUsers={onlineUsers}
@@ -2586,8 +2590,8 @@ const App = () => {
       setShowProfileModal(false);
       selectContact(u);
      }}
-     lastMessage={showProfileModal?.lastMessage}
-     lastMessageSenderId={showProfileModal?.lastSenderId}
+     lastMessage={contacts.find(c => c.id === showProfileModal.id)?.lastMessage || showProfileModal?.lastMessage}
+     lastMessageSenderId={contacts.find(c => c.id === showProfileModal.id)?.lastSenderId || showProfileModal?.lastSenderId}
     />
    )}
    {showReactionPopup && (
@@ -2620,6 +2624,13 @@ const App = () => {
         .map(([type]) => type)
        : []
      }
+    />
+   )}
+   {showPinModal && (
+    <PinForEnc
+     mode={showPinModal}
+     onSubmit={handlePinSubmit}
+     onClose={() => showPinModal === 'unlock' ? null : setShowPinModal(null)}
     />
    )}
   </>
