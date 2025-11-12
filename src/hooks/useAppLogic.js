@@ -2,9 +2,6 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { API_BASE_URL, SOCKET_URL } from "../config";
-import sodium from "libsodium-wrappers-sumo";
-import { ensureDeviceKeypair, getPublicKeyB64 } from "../crypto/cryptoKeys";
-import { encryptFor, decryptMaybe } from "../crypto/e2ee";
 
 export const useAppLogic = () => {
  const navigate = useNavigate();
@@ -63,7 +60,6 @@ export const useAppLogic = () => {
  const [showMediaViewer, setShowMediaViewer] = useState(null);
  const [showMessageOptionsPhone, setShowMessageOptionsPhone] = useState(null);
  const [messagesContainerVisible, setMessagesContainerVisible] = useState(true);
- const [showPinModal, setShowPinModal] = useState(null); // 'setup' or 'unlock'
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -111,8 +107,6 @@ export const useAppLogic = () => {
     initializeSocket(messagesContainerRef);
     loadContacts();
 
-    // DON'T call ensureDeviceKeypair here - wait for PIN modal
-
     // Delay to let splash animation play fully
     setTimeout(() => {
      setLoading(false);
@@ -125,94 +119,6 @@ export const useAppLogic = () => {
    navigate("/login", { replace: true });
   }
  }, [navigate]);
-
- // In checkPinStatus callback - around line 130
- const checkPinStatus = useCallback(async () => {
-  try {
-   const response = await fetch(`${API_BASE_URL}/api/keys/my-device`, {
-    credentials: "include",
-   });
-
-   if (response.status === 404) {
-    setShowPinModal('setup');
-    return;
-   } else if (response.ok) {
-    const data = await response.json();
-    if (data.encrypted_private_key) {
-     // Check if we have a cached DERIVED KEY (not PIN!)
-     const cachedKey = localStorage.getItem('uchat_session_master_key');
-     if (cachedKey) {
-      console.log('[PIN] Found cached key, auto-unlocking...');
-      try {
-       await ensureDeviceKeypair(); // Will use cached key
-       console.log('[PIN] Auto-unlock successful');
-       // Don't show PIN modal - we're already unlocked
-      } catch (err) {
-       console.error('[PIN] Auto-unlock failed:', err);
-       // Clear invalid cached key
-       localStorage.removeItem('uchat_session_master_key');
-       setShowPinModal('unlock');
-      }
-     } else {
-      setShowPinModal('unlock');
-     }
-    }
-   }
-  } catch (err) {
-   // SILENCE - don't log 404s
-  }
- }, []);
-
- const handlePinSubmit = useCallback(async (pin) => {
-  console.log('[PIN] Submitting PIN, mode:', showPinModal, 'pin length:', pin?.length);
-
-  try {
-   if (showPinModal === 'setup') {
-    console.log('[PIN] Creating new keypair...');
-    const { createAndSaveKeypair } = await import("../crypto/cryptoKeys");
-    await createAndSaveKeypair(pin);
-    console.log('[PIN] Keypair created successfully');
-    setShowPinModal(null);
-   } else {
-    console.log('[PIN] Unlocking with existing keypair...');
-    const { ensureDeviceKeypair } = await import("../crypto/cryptoKeys");
-    await ensureDeviceKeypair(pin); // This will save the derived key to localStorage
-    console.log('[PIN] Unlocked successfully');
-    setShowPinModal(null);
-
-    // RE-DECRYPT ALL MESSAGES AFTER UNLOCK
-    if (messages.length > 0) {
-     console.log('[PIN] Re-decrypting', messages.length, 'messages...');
-     const { decryptMaybe } = await import("../crypto/e2ee");
-     const decryptedMessages = await Promise.all(
-      messages.map(async (m) => ({
-       ...m,
-       content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
-      }))
-     );
-     setMessages(decryptedMessages);
-     console.log('[PIN] Messages re-decrypted');
-    }
-
-    // RE-DECRYPT ALL CONTACT PREVIEWS
-    if (contacts.length > 0) {
-     console.log('[PIN] Re-decrypting', contacts.length, 'contact previews...');
-     const { decryptMaybe } = await import("../crypto/e2ee");
-     const decryptedContacts = await Promise.all(
-      contacts.map(async (c) => ({
-       ...c,
-       lastMessage: typeof c.lastMessage === "string" ? await decryptMaybe(c.lastMessage) : c.lastMessage
-      }))
-     );
-     setContacts(decryptedContacts);
-     console.log('[PIN] Contact previews re-decrypted');
-    }
-   }
-  } catch (err) {
-   console.error('[PIN] Error:', err);
-   throw err; // Re-throw so PinForEnc can show the error
-  }
- }, [showPinModal, messages, contacts]);
 
  // Initialize Socket.IO connection
  const initializeSocket = useCallback((messagesContainerRefParam) => {
@@ -299,18 +205,12 @@ export const useAppLogic = () => {
    }
   });
 
-  socket.on("new_message", async (data) => {
-   let message = data.message;
+  socket.on("new_message", (data) => {
+   const message = data.message;
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
 
-   // Decrypt BEFORE doing anything else
-   try {
-    if (typeof message.content === "string") {
-     const decrypted = await decryptMaybe(message.content);
-     message = { ...message, content: decrypted };
-    }
-   } catch { /* leave as-is on failure */ }
+   // Messages are already decrypted by the server - no client-side decryption needed
 
    // If this message belongs to the currently open chat, append it
    if (
@@ -332,7 +232,7 @@ export const useAppLogic = () => {
     });
    }
 
-   // KEEP THE PREVIEW IN SYNC (always decrypted)
+   // Update contact preview
    if (currentUser) {
     const peerId = (message.sender_id === currentUser.id)
      ? message.receiver_id
@@ -343,14 +243,14 @@ export const useAppLogic = () => {
       ? "📷 Sent an image"
       : message.message_type === "file"
        ? `📎 ${message.file_name || "File"}`
-       : (typeof message.content === "string" ? message.content : "");
+       : message.content || "";
 
     setContacts((prev) =>
      prev.map((c) =>
       c.id === peerId
        ? {
         ...c,
-        lastMessage: previewText || c.lastMessage,
+        lastMessage: previewText,
         lastMessageTime: message.timestamp || c.lastMessageTime,
         lastSenderId: message.sender_id,
        }
@@ -359,7 +259,6 @@ export const useAppLogic = () => {
     );
    }
 
-   // housekeeping (same as before)
    setTypingUsers((prev) => {
     const s = new Set(prev);
     s.delete(message.sender_id);
@@ -369,7 +268,7 @@ export const useAppLogic = () => {
    handleMessageNotification(message);
   });
 
-  socket.on('messages_loaded', async (data) => {
+  socket.on('messages_loaded', (data) => {
    const { messages: newMessages, has_more, contact_id } = data;
 
    if (socketRef.current._loadingTimer) {
@@ -381,34 +280,12 @@ export const useAppLogic = () => {
    const wasLoadingMore = loadingMoreMessages;
    setLoadingMoreMessages(false);
 
-   // Decrypt batch (including original_message content for replies)
-   let decrypted = newMessages;
-   try {
-    decrypted = await Promise.all(
-     newMessages.map(async (m) => {
-      const decryptedMessage = {
-       ...m,
-       content: typeof m.content === "string" ? await decryptMaybe(m.content) : m.content
-      };
-
-      // Also decrypt original_message content if it exists (for replies)
-      if (m.original_message && typeof m.original_message.content === "string") {
-       decryptedMessage.original_message = {
-        ...m.original_message,
-        content: await decryptMaybe(m.original_message.content)
-       };
-      }
-
-      return decryptedMessage;
-     })
-    );
-   } catch { /* ignore and show what we have */ }
-
-   if (decrypted.length > 0) {
+   // Messages are already decrypted by the server
+   if (newMessages.length > 0) {
     setIsLoadingMessages(null);
 
     setMessages((prev) => {
-     const combined = [...decrypted, ...prev];
+     const combined = [...newMessages, ...prev];
      const unique = combined.filter((msg, i, self) => i === self.findIndex((x) => x.id === msg.id));
      const sorted = unique.sort((a, b) => a.id - b.id);
 
@@ -427,7 +304,7 @@ export const useAppLogic = () => {
     });
 
     const reactionsData = {};
-    decrypted.forEach((m) => {
+    newMessages.forEach((m) => {
      if (m.reactions && Object.keys(m.reactions).length > 0) {
       reactionsData[m.id] = m.reactions;
      }
@@ -438,15 +315,11 @@ export const useAppLogic = () => {
    }
   });
 
-  socket.on("desktop_notification", async (data) => {
+  socket.on("desktop_notification", (data) => {
    const currentActiveContact = activeContactRef.current;
-   const message = { ...data.message };
+   const message = data.message;
 
-   try {
-    if (typeof message.content === "string") {
-     message.content = await decryptMaybe(message.content);
-    }
-   } catch { }
+   // Message is already decrypted by server
 
    if (!currentActiveContact || currentActiveContact.id !== message.sender_id) {
     handleMessageNotification(message);
@@ -497,15 +370,10 @@ export const useAppLogic = () => {
    });
   });
 
-  socket.on("contact_updated", async (data) => {
+  socket.on("contact_updated", (data) => {
    const currentActive = activeContactRef.current;
 
-   // Decrypt lastMessage if it's encrypted
-   let decryptedLastMessage = data.lastMessage;
-   if (decryptedLastMessage && typeof decryptedLastMessage === 'string') {
-    decryptedLastMessage = await decryptMaybe(decryptedLastMessage);
-   }
-
+   // lastMessage is already decrypted by server
    setContacts((prev) =>
     prev.map((contact) => {
      if (contact.id === data.contact_id) {
@@ -514,7 +382,7 @@ export const useAppLogic = () => {
 
       return {
        ...contact,
-       lastMessage: decryptedLastMessage,
+       lastMessage: data.lastMessage,
        lastMessageTime: data.lastMessageTime,
        last_seen: data.last_seen || contact.last_seen,
        unread: isActive ? false : data.unread,
@@ -586,17 +454,8 @@ export const useAppLogic = () => {
    if (response.ok) {
     const data = await response.json();
 
-    // Decrypt lastMessage for each contact
-    const decryptedContacts = await Promise.all(
-     data.contacts.map(async (contact) => {
-      if (contact.lastMessage && typeof contact.lastMessage === 'string') {
-       contact.lastMessage = await decryptMaybe(contact.lastMessage);
-      }
-      return contact;
-     })
-    );
-
-    setContacts(decryptedContacts);
+    // Messages are already decrypted by server
+    setContacts(data.contacts);
     setOnlineUsers(data.online_users);
     setContactsLoading(false);
    } else if (response.status === 401) {
@@ -708,24 +567,12 @@ export const useAppLogic = () => {
 
    if (response.ok) {
     const data = await response.json();
-    let contact = data.contact;
+    const contact = data.contact;
 
-    // Ensure previews never show enc:v1:...
-    if (contact && typeof contact.lastMessage === "string") {
-     try {
-      contact = {
-       ...contact,
-       lastMessage: await decryptMaybe(contact.lastMessage),
-      };
-     } catch {
-      // keep as-is if anything goes wrong
-     }
-    }
-
+    // Contact data is already decrypted by server
     setContacts((prev) => [...prev, contact]);
     setSearchResults([]);
     setSearchQuery("");
-    setShowSearch(false);
    } else if (response.status === 401) {
     navigate("/login", { replace: true });
    } else {
@@ -851,50 +698,19 @@ export const useAppLogic = () => {
  }, [activeContact]);
 
  // Send message
- const sendMessage = useCallback(async () => {
-  console.log('[SEND] sendMessage called');
-  console.log('[SEND] socketRef.current:', !!socketRef.current);
-  console.log('[SEND] activeContact:', activeContact?.username);
-  console.log('[SEND] messageText:', messageText);
-
+ const sendMessage = useCallback(() => {
   if (!socketRef.current || !activeContact || !messageText.trim()) {
-   console.log('[SEND] Validation failed - returning early');
    return;
   }
 
-  const plaintext = messageText.trim();
-  console.log('[SEND] Attempting to send message:', plaintext);
+  const content = messageText.trim();
 
-  try {
-   console.log('[SEND] Fetching recipient keys for user:', activeContact.id);
-   const res = await fetch(`${API_BASE_URL}/api/keys/${activeContact.id}`, { credentials: "include" });
-   const { devices } = await res.json();
-   const target = devices?.[0];
-
-   console.log('[SEND] Recipient public key:', target?.public_key_b64?.substring(0, 20) + '...');
-
-   if (target?.public_key_b64) {
-    const { encryptMessageDouble } = await import("../crypto/e2ee");
-    console.log('[SEND] Encrypting message...');
-    const { content_receiver, content_sender } = await encryptMessageDouble(plaintext, target.public_key_b64);
-
-    console.log('[SEND] Encrypted for receiver:', content_receiver?.substring(0, 50) + '...');
-    console.log('[SEND] Encrypted for sender:', content_sender?.substring(0, 50) + '...');
-
-    console.log('[SEND] Emitting to socket...');
-    socketRef.current.emit("send_message", {
-     receiver_id: activeContact.id,
-     content_receiver,
-     content_sender,
-     reply_to: replyingTo?.id || null,
-    });
-    console.log('[SEND] Message sent successfully');
-   } else {
-    console.error('[SEND] No public key found for recipient');
-   }
-  } catch (err) {
-   console.error("[SEND] Encryption failed:", err);
-  }
+  // Server will handle encryption - just send plaintext
+  socketRef.current.emit("send_message", {
+   receiver_id: activeContact.id,
+   content: content,
+   reply_to: replyingTo?.id || null,
+  });
 
   setMessageText("");
   setReplyingTo(null);
@@ -964,13 +780,9 @@ export const useAppLogic = () => {
     socketRef.current.disconnect();
    }
 
-   // Clear stored derived key on logout
-   localStorage.removeItem('uchat_session_master_key');
-
    navigate("/login", { replace: true });
   } catch (error) {
    console.error("Logout failed:", error);
-   localStorage.removeItem('uchat_session_master_key');
    navigate("/login", { replace: true });
   }
  }, [navigate]);
@@ -1130,7 +942,7 @@ export const useAppLogic = () => {
     setSearchQuery("");
     setSearchResults([]);
    }
-   if (showSearch && !event.target.closest(".search-section")) {
+   if (showSearch && !event.target.closest(".search-section") && !event.target.closest(".search-results")) {
     setShowSearch(false);
     setShowMobileSearch(false);
     setSearchQuery("");
@@ -1184,8 +996,9 @@ export const useAppLogic = () => {
    }
 
    const userHasApp = localStorage.getItem("uchat-user-has-desktop-app");
+   const dismissed = sessionStorage.getItem("uchat-download-dismissed");
 
-   if (!isWindows || userHasApp === "true") {
+   if (!isWindows || userHasApp === "true" || dismissed === "true") {
     return;
    }
 
@@ -1207,7 +1020,7 @@ export const useAppLogic = () => {
     JSON.stringify(refreshData)
    );
 
-   if (refreshData.count % 3 === 0 && !sessionDismissed) {
+   if (refreshData.count % 3 === 0) {
     setTimeout(() => {
      setShowDownloadRecommendation(true);
     }, 3000);
@@ -1215,19 +1028,12 @@ export const useAppLogic = () => {
   };
 
   detectWindowsAndManageDisplay();
- }, [sessionDismissed]);
+ }, []);
 
  // Initialize auth on mount
  useEffect(() => {
   checkAuth();
  }, [checkAuth]);
-
- // Check PIN status ONCE after user loads
- useEffect(() => {
-  if (user && showPinModal === null) {
-   checkPinStatus();
-  }
- }, [user]); // Remove checkPinStatus from dependencies
 
  // Request notification permission
  useEffect(() => {
@@ -1316,7 +1122,7 @@ export const useAppLogic = () => {
  useEffect(() => {
   const timeoutId = setTimeout(() => {
    searchUsers(searchQuery);
-  }, 300);
+  }, 150);
 
   return () => clearTimeout(timeoutId);
  }, [searchQuery, searchUsers]);
@@ -1490,10 +1296,6 @@ export const useAppLogic = () => {
   setShowMessageOptionsPhone,
   messagesContainerVisible,
   setMessagesContainerVisible,
-  checkPinStatus,
-  handlePinSubmit,
-  showPinModal,
-  setShowPinModal,
 
   // Refs
   socketRef,

@@ -22,8 +22,6 @@ import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
-import { encryptFor } from "./crypto/e2ee";
-import PinForEnc from "./components/PinForEnc";
 
 const App = () => {
 
@@ -104,9 +102,6 @@ const App = () => {
   saveLastContact,
   loadLastContact,
   handleMessageNotification,
-  showPinModal,
-  setShowPinModal,
-  handlePinSubmit,
  } = useAppLogic();
 
  const handleDragStart = (e) => {
@@ -175,16 +170,9 @@ const App = () => {
      await new Promise(r => setTimeout(r, 600));
     }
 
-    let content = (message ?? "").toString();
-    try {
-     const res = await fetch(`${API_BASE_URL}/api/keys/${receiverId}`, { credentials: "include" });
-     const { devices } = await res.json();
-     const target = devices?.[0];
-     if (target?.public_key_b64) {
-      content = await encryptFor(target.public_key_b64, content);
-     }
-    } catch { /* fallback to plaintext if anything fails */ }
+    const content = (message ?? "").toString();
 
+    // Server handles encryption - just send plaintext
     if (socketRef.current && socketRef.current.connected) {
      socketRef.current.emit("send_message", {
       receiver_id: receiverId,
@@ -371,7 +359,7 @@ const App = () => {
  // Add this function to handle dismissing the recommendation (session only)
  const dismissDownloadRecommendation = () => {
   setShowDownloadRecommendation(false);
-  setSessionDismissed(true);
+  sessionStorage.setItem("uchat-download-dismissed", "true");
  };
 
  // Add this function to handle "I already have it" checkbox
@@ -925,7 +913,10 @@ const App = () => {
           type="text"
           placeholder="Search users..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+           setSearchQuery(e.target.value);
+           setShowSearch(true);
+          }}
           onFocus={() => setShowSearch(true)}
           className={styles.searchInput}
          />
@@ -1830,7 +1821,7 @@ const App = () => {
                  })()
               ) : (
                <div className={styles.messageContent}>
-                {linkify(message.content)}
+                {linkify(message.content_sender && message.sender_id === user.id ? message.content_sender : message.content_receiver || message.content)}
                </div>
               )}
 
@@ -2624,13 +2615,6 @@ const App = () => {
         .map(([type]) => type)
        : []
      }
-    />
-   )}
-   {showPinModal && (
-    <PinForEnc
-     mode={showPinModal}
-     onSubmit={handlePinSubmit}
-     onClose={() => showPinModal === 'unlock' ? null : setShowPinModal(null)}
     />
    )}
   </>

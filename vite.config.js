@@ -41,12 +41,12 @@ export default defineConfig({
  },
  server: {
   ...(process.env.NODE_ENV !== 'production' &&
-   fs.existsSync('../uChat-backend/server.key') &&
-   fs.existsSync('../uChat-backend/server.crt')
+   fs.existsSync('./192.168.1.48+3-key.pem') &&
+   fs.existsSync('./192.168.1.48+3.pem')
    ? {
     https: {
-     key: fs.readFileSync('../uChat-backend/server.key'),
-     cert: fs.readFileSync('../uChat-backend/server.crt'),
+     key: fs.readFileSync('./192.168.1.48+3-key.pem'),
+     cert: fs.readFileSync('./192.168.1.48+3.pem'),
     },
    }
    : {}),
