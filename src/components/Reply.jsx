@@ -3,7 +3,7 @@ import './Reply.css';
 import { API_BASE_URL } from '../config';
 import { decryptMaybe } from '../crypto/e2ee';
 
-const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
+const Reply = ({ replyingTo, onCancelReply, activeContact, isInsideMessage, onScrollToMessage }) => {
  const [decryptedContent, setDecryptedContent] = useState('');
 
  useEffect(() => {
@@ -25,6 +25,46 @@ const Reply = ({ replyingTo, onCancelReply, activeContact }) => {
   return text.substring(0, maxLength) + '...';
  };
 
+
+ if (isInsideMessage) {
+  const senderData = {
+   username: replyingTo.sender_username || (replyingTo.sender_id === replyingTo.currentUserId ? 'You' : activeContact?.username),
+   avatar_url: replyingTo.sender_avatar || (replyingTo.sender_id === replyingTo.currentUserId ? replyingTo.currentUserAvatar : activeContact?.avatar_url)
+  };
+
+  return (
+   <div
+    className="reply-inside-discord"
+    onClick={() => onScrollToMessage && onScrollToMessage(replyingTo.id)}
+   >
+    <div className="reply-curve-line"></div>
+    <img
+     src={
+      senderData.avatar_url
+       ? `${API_BASE_URL}${senderData.avatar_url}`
+       : "/resources/default_avatar.png"
+     }
+     alt={senderData.username}
+     className="reply-avatar-small"
+     draggable="false"
+    />
+    <div className="reply-text-content">
+     <span className="reply-username-small">{senderData.username}</span>
+     <span className="reply-message-small">
+      {replyingTo.deleted ? (
+       <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+        Message deleted
+       </em>
+      ) : (
+       decryptedContent || ''
+      )}
+     </span>
+    </div>
+   </div>
+  );
+ }
+
+ // Input area preview (existing style)
  return (
   <div className="reply-preview">
    <div className="reply-content">

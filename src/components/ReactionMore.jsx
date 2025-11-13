@@ -1,7 +1,7 @@
 import React from 'react';
 import './ReactionMore.css';
 
-const ReactionMore = ({ messageId, onAddReaction, onClose, position }) => {
+const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, message }) => {
  // Map emojis to the reaction types expected by the backend
  const reactions = [
   { emoji: '👍', type: 'like' },
@@ -10,7 +10,8 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position }) => {
   { emoji: '😢', type: 'sad' },
   { emoji: '😡', type: 'angry' },
   { emoji: '👎', type: 'dislike' },
-  { emoji: '💀', type: 'skull' }
+  { emoji: '💀', type: 'skull' },
+  { icon: 'fa-reply', type: 'reply' }
  ];
 
  const handleReactionClick = (reactionType) => {
@@ -18,46 +19,48 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position }) => {
   onClose();
  };
 
- const isMobile = window.innerWidth <= 768;
+ const handleReplyClick = () => {
+  onReply(message);
+  onClose();
+ };
+
+ const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
  const getAdjustedPosition = () => {
-  // On mobile, always center horizontally
-  if (isMobile) {
+  // On mobile, center horizontally
+  if (isTouchDevice) {
    return {
     x: window.innerWidth / 2,
     y: position.y,
-    transform: 'translate(-50%, calc(-100% - 12px))'
+    transform: 'translate(-50%, 0)'
    };
   }
-
-  // Desktop: edge detection
-  const popupWidth = 420;
-  const popupHeight = 80;
-  const padding = 15;
-
+  // Desktop: position to the right of message, aligned with top
+  const popupWidth = 280;
+  const popupHeight = 60;
+  const padding = 12;
   let adjustedX = position.x;
   let adjustedY = position.y;
-  let transform = 'translate(-50%, calc(-100% - 12px))';
+  let transform = 'translate(0, -100%)';
 
-  // Calculate actual left and right edges after centering
-  const leftEdge = adjustedX - (popupWidth / 2);
-  const rightEdge = adjustedX + (popupWidth / 2);
-
-  // Check and fix right edge overflow
-  if (rightEdge > window.innerWidth - padding) {
-   const overflow = rightEdge - (window.innerWidth - padding);
-   adjustedX = adjustedX - overflow;
+  // Check if it overflows right edge
+  if (adjustedX + popupWidth + padding > window.innerWidth) {
+   // Position to the left of the message instead
+   const messageRect = document.querySelector(`[data-message-id]`)?.getBoundingClientRect();
+   if (messageRect) {
+    adjustedX = messageRect.left - 10;
+    transform = 'translate(-100%, -100%)';
+   }
   }
 
-  // Check and fix left edge overflow
-  if (leftEdge < padding) {
-   const overflow = padding - leftEdge;
-   adjustedX = adjustedX + overflow;
+  // Check if it overflows bottom
+  if (adjustedY + popupHeight > window.innerHeight - padding) {
+   adjustedY = window.innerHeight - padding - popupHeight;
   }
 
-  // Check top edge - if popup would go above screen, show below instead
-  if (adjustedY - popupHeight - 24 < padding) {
-   transform = 'translate(-50%, 12px)';
+  // Check if it overflows top
+  if (adjustedY < padding) {
+   adjustedY = padding;
   }
 
   return { x: adjustedX, y: adjustedY, transform };
@@ -67,31 +70,24 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position }) => {
 
  return (
   <div
-   className="reaction-more-overlay"
-   onClick={onClose}
+   className="reaction-more-popup"
+   onClick={(e) => e.stopPropagation()}
+   role="dialog"
+   aria-label="Add reaction"
   >
-   <div
-    className="reaction-more-popup"
-    style={{
-     position: 'fixed',
-     left: `${adjustedPos.x}px`,
-     top: `${adjustedPos.y}px`,
-     transform: adjustedPos.transform
-    }}
-    onClick={(e) => e.stopPropagation()}
-   >
-    <div className="reaction-more-grid">
-     {reactions.map((reaction, index) => (
-      <button
-       key={index}
-       className="reaction-more-btn"
-       onClick={() => handleReactionClick(reaction.type)}
-       title={`React with ${reaction.emoji}`}
-      >
-       {reaction.emoji}
-      </button>
-     ))}
-    </div>
+   <div className="reaction-more-grid">
+    {reactions.map((reaction, index) => (
+     <button
+      key={index}
+      className="reaction-more-btn"
+      onClick={() => reaction.type === 'reply' ? handleReplyClick() : handleReactionClick(reaction.type)}
+      title={reaction.emoji ? `React with ${reaction.emoji}` : 'Reply'}
+      aria-label={reaction.emoji ? `React with ${reaction.emoji}` : 'Reply'}
+      type="button"
+     >
+      {reaction.emoji || <i className="fas fa-reply"></i>}
+     </button>
+    ))}
    </div>
   </div>
  );

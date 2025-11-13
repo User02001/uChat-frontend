@@ -39,16 +39,21 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--bg-secondary);
+    background: #f5f5f5;
     border-radius: 24px 24px 0 0;
     padding: 0 20px 32px 20px;
     z-index: 9999;
-    box-shadow: 0 -4px 24px var(--shadow);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
     animation: slideUp 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
     max-height: 60vh;
     overflow-y: auto;
     transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     pointer-events: auto;
+}
+
+[data-theme="dark"] .bottomSheet {
+    background: var(--bg-secondary);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .bottomSheetClosing {
@@ -116,8 +121,8 @@
     height: clamp(38px, 11vw, 48px);
     min-width: 38px;
     min-height: 38px;
-    border: 2px solid transparent;
-    background: var(--bg-tertiary);
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    background: #ffffff;
     border-radius: 50%;
     font-size: clamp(18px, 5vw, 24px);
     cursor: pointer;
@@ -126,6 +131,11 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+}
+
+[data-theme="dark"] .reactionButton {
+    background: var(--bg-tertiary);
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
     .reactionButton:active {
@@ -155,7 +165,7 @@
     gap: 16px;
     padding: 16px 20px;
     border: none;
-    background: var(--bg-tertiary);
+    background: #ffffff;
     color: var(--text-primary);
     border-radius: 12px;
     font-size: 16px;
@@ -164,6 +174,10 @@
     transition: all 0.15s ease;
     width: 100%;
     text-align: left;
+}
+
+[data-theme="dark"] .actionButton {
+    background: var(--bg-tertiary);
 }
 
     .actionButton i {
