@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './MessageDiscord.module.css';
 import { API_BASE_URL } from '../config';
 import ReactionMore from './ReactionMore';
 import Reaction from './Reaction';
-import Reply from './Reply'
+import Reply from './Reply';
+import VideoPlayer from './VideoPlayer';
 
 const MessageDiscord = ({
  message,
@@ -20,13 +21,18 @@ const MessageDiscord = ({
  isMobile,
  onLongPress,
  onReply,
+ onDelete,
+ onReport,
  allMessages,
- children
+ children,
+ onMediaExpand,
+ formatFileSize,
+ getFileIcon
 }) => {
  const isSent = message.sender_id === user.id;
  const senderData = isSent ? user : activeContact;
- const longPressTimerRef = React.useRef(null);
- const [pressing, setPressing] = React.useState(false);
+ const longPressTimerRef = useRef(null);
+ const [pressing, setPressing] = useState(false);
  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
 
  const handleTouchStart = (e) => {
@@ -56,7 +62,7 @@ const MessageDiscord = ({
   }
  };
 
- React.useEffect(() => {
+ useEffect(() => {
   return () => {
    if (longPressTimerRef.current) {
     clearTimeout(longPressTimerRef.current);
@@ -191,10 +197,108 @@ const MessageDiscord = ({
       onClose={() => { }}
       position={{ x: 0, y: 0 }}
       onReply={onReply}
+      onDelete={onDelete}
+      onReport={onReport}
       message={message}
+      isOwnMessage={message.sender_id === user.id}
      />
     </div>
    )}
+  </div>
+ );
+};
+
+// Custom Audio Player Component
+export const AudioPlayer = ({ src, fileName }) => {
+ const audioRef = useRef(null);
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [currentTime, setCurrentTime] = useState(0);
+ const [duration, setDuration] = useState(0);
+
+ useEffect(() => {
+  const audio = audioRef.current;
+  if (!audio) return;
+
+  const handleLoadedMetadata = () => setDuration(audio.duration);
+  const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+  const handleEnded = () => setIsPlaying(false);
+
+  audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+  audio.addEventListener('timeupdate', handleTimeUpdate);
+  audio.addEventListener('ended', handleEnded);
+
+  return () => {
+   audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+   audio.removeEventListener('timeupdate', handleTimeUpdate);
+   audio.removeEventListener('ended', handleEnded);
+  };
+ }, []);
+
+ const togglePlay = () => {
+  if (audioRef.current) {
+   if (isPlaying) {
+    audioRef.current.pause();
+   } else {
+    audioRef.current.play();
+   }
+   setIsPlaying(!isPlaying);
+  }
+ };
+
+ const handleProgressClick = (e) => {
+  const bounds = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - bounds.left;
+  const percentage = x / bounds.width;
+  const newTime = percentage * duration;
+  if (audioRef.current) {
+   audioRef.current.currentTime = newTime;
+   setCurrentTime(newTime);
+  }
+ };
+
+ const formatTime = (time) => {
+  if (isNaN(time)) return '0:00';
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+ };
+
+ return (
+  <div className={styles.audioPlayer}>
+   <div className={styles.audioHeader}>
+    <div className={styles.audioIcon}>
+     <i className="fas fa-music"></i>
+    </div>
+    <div className={styles.audioInfo}>
+     <div className={styles.audioTitle}>{fileName || 'Audio File'}</div>
+     <div className={styles.audioSubtitle}>Audio • {formatTime(duration)}</div>
+    </div>
+    <button
+     className={styles.audioDownloadBtn}
+     onClick={() => window.open(src, '_blank')}
+     title="Download"
+    >
+     <i className="fas fa-download"></i>
+    </button>
+   </div>
+   <div className={styles.audioControls}>
+    <button className={styles.audioPlayBtn} onClick={togglePlay}>
+     <i className={`fas fa-${isPlaying ? 'pause' : 'play'}`}></i>
+    </button>
+    <div className={styles.audioProgress}>
+     <div className={styles.audioProgressBar} onClick={handleProgressClick}>
+      <div
+       className={styles.audioProgressFill}
+       style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+      ></div>
+     </div>
+     <div className={styles.audioTime}>
+      <span>{formatTime(currentTime)}</span>
+      <span>{formatTime(duration)}</span>
+     </div>
+    </div>
+   </div>
+   <audio ref={audioRef} src={src} preload="metadata" />
   </div>
  );
 };

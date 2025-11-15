@@ -230,75 +230,86 @@ const Signup = () => {
   return true;
  };
 
+ // Replace the checkStepWithBackend function in Signup.jsx with this:
+
  const checkStepWithBackend = async () => {
-  // Only check email and handle with backend
   if (currentStep === 0) {
-   // Check email availability by attempting partial signup
+   // Check email availability
    setLoading(true);
    try {
-    const response = await fetch(`${API_BASE_URL}/api/signup`, {
+    const response = await fetch(`${API_BASE_URL}/api/check-email-availability`, {
      method: 'POST',
      headers: {
       'Content-Type': 'application/json',
      },
      credentials: 'include',
      body: JSON.stringify({
-      email: formData.email,
-      username: 'temp',
-      handle: 'temp123',
-      password: 'TempPass123',
-      confirmPassword: 'TempPass123'
+      email: formData.email
      })
     });
 
     const data = await response.json();
 
-    if (!response.ok && data.error) {
-     // Check if error is about email
-     if (data.error.toLowerCase().includes('email')) {
-      setError(data.error);
-      setLoading(false);
-      return false;
-     }
+    if (!response.ok) {
+     setError(data.error || 'Failed to check email availability');
+     setLoading(false);
+     return false;
     }
+
+    if (!data.available) {
+     setError(data.error || 'Email already in use');
+     setLoading(false);
+     return false;
+    }
+
+    // Email is available
+    setLoading(false);
+    return true;
    } catch (err) {
-    console.error('Backend check error:', err);
+    console.error('Email check error:', err);
+    setError('Network error. Please try again.');
+    setLoading(false);
+    return false;
    }
-   setLoading(false);
   } else if (currentStep === 2) {
    // Check handle availability
    setLoading(true);
    try {
     const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
-    const response = await fetch(`${API_BASE_URL}/api/signup`, {
+    const response = await fetch(`${API_BASE_URL}/api/check-handle-availability`, {
      method: 'POST',
      headers: {
       'Content-Type': 'application/json',
      },
      credentials: 'include',
      body: JSON.stringify({
-      email: 'temp@temp.com',
-      username: 'temp',
-      handle: handle,
-      password: 'TempPass123',
-      confirmPassword: 'TempPass123'
+      handle: handle
      })
     });
 
     const data = await response.json();
 
-    if (!response.ok && data.error) {
-     // Check if error is about handle
-     if (data.error.toLowerCase().includes('handle')) {
-      setError(data.error);
-      setLoading(false);
-      return false;
-     }
+    if (!response.ok) {
+     setError(data.error || 'Failed to check handle availability');
+     setLoading(false);
+     return false;
     }
+
+    if (!data.available) {
+     setError(data.error || 'Handle already taken');
+     setLoading(false);
+     return false;
+    }
+
+    // Handle is available
+    setLoading(false);
+    return true;
    } catch (err) {
-    console.error('Backend check error:', err);
+    console.error('Handle check error:', err);
+    setError('Network error. Please try again.');
+    setLoading(false);
+    return false;
    }
-   setLoading(false);
   }
 
   return true;

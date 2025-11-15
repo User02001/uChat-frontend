@@ -87,6 +87,16 @@
     word-break: break-word;
 }
 
+@media (pointer: coarse) {
+    .messageContent {
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-touch-callout: none;
+    }
+}
+
 .messagesContainer {
     flex: 1;
     overflow-y: auto;
@@ -143,7 +153,6 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    padding-top: 2px;
     position: relative;
 }
 
@@ -158,8 +167,9 @@
 
 .reactionPopup {
     position: absolute;
-    bottom: 25px;
-    right: 15px;
+    bottom: 100%;
+    right: 335px;
+    margin-bottom: 35px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease;
@@ -219,5 +229,280 @@
         left: 50%;
         top: -70px;
         transform: translateX(-50%);
+    }
+}
+
+/* ============================================
+   MEDIA CONTENT STYLES
+   ============================================ */
+.mediaContent {
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.videoWrapper {
+    max-width: 400px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.audioPlayer {
+    max-width: 350px;
+    background: var(--file-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.audioHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.audioIcon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+:root[data-theme="light"] .audioIcon :global(.fa-music),
+:root:not([data-theme]) .audioIcon :global(.fa-music) {
+    color: #808080;
+}
+
+:root[data-theme="dark"] .audioIcon :global(.fa-music) {
+    color: #ffd800;
+}
+
+.audioInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.audioTitle {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.audioSubtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.audioDownloadBtn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+    .audioDownloadBtn:hover {
+        background: var(--bg-tertiary);
+        border-color: var(--button-primary);
+        color: var(--button-primary);
+    }
+
+    .audioDownloadBtn:active {
+        transform: scale(0.95);
+    }
+
+.audioControls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.audioPlayBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--button-primary);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+    .audioPlayBtn:hover {
+        background: var(--button-primary-hover);
+        transform: scale(1.05);
+    }
+
+    .audioPlayBtn:active {
+        transform: scale(0.95);
+    }
+
+.audioProgress {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.audioProgressBar {
+    width: 100%;
+    height: 10px;
+    background: var(--border);
+    border-radius: 15px;
+    cursor: pointer;
+    position: relative;
+}
+
+.audioProgressFill {
+    height: 100%;
+    background: var(--button-primary);
+    border-radius: 15px;
+    transition: width 0.1s linear;
+}
+
+.audioTime {
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+}
+
+.fileContainer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--file-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    max-width: 350px;
+    margin-top: 4px;
+}
+
+    .fileContainer:hover {
+        background: var(--file-bg-hover);
+        box-shadow: 0 2px 8px var(--shadow-light);
+    }
+
+.fileIconWrapper {
+    font-size: 28px;
+    min-width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.fileDetails {
+    flex: 1;
+    min-width: 0;
+}
+
+.fileName {
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.fileSize {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.fileDownloadBtn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 7px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+    .fileDownloadBtn:hover {
+        background: var(--button-primary);
+        border-color: var(--button-primary);
+        color: white;
+    }
+
+    .fileDownloadBtn:active {
+        transform: scale(0.97);
+    }
+
+@media (max-width: 768px) {
+    .videoWrapper {
+        max-width: 300px;
+    }
+
+    .audioPlayer,
+    .fileContainer {
+        max-width: 280px;
+    }
+
+    .audioIcon {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    .audioTitle {
+        font-size: 13px;
+    }
+
+    .audioPlayBtn {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .audioDownloadBtn span {
+        display: none;
+    }
+
+    .fileIconWrapper {
+        font-size: 24px;
+    }
+
+    .fileDownloadBtn span {
+        display: none;
+    }
+
+    .fileDownloadBtn {
+        padding: 7px 10px;
     }
 }

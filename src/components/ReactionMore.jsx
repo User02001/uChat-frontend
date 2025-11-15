@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './ReactionMore.css';
 
-const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, message }) => {
- // Map emojis to the reaction types expected by the backend
- const reactions = [
+const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, message, onDelete, isOwnMessage, onReport }) => {
+ const popupRef = useRef(null);
+ const [adjustedStyle, setAdjustedStyle] = useState({});
+
+ const baseReactions = [
   { emoji: '👍', type: 'like' },
   { emoji: '❤️', type: 'love' },
   { emoji: '😂', type: 'happy' },
@@ -13,6 +15,10 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, me
   { emoji: '💀', type: 'skull' },
   { icon: 'fa-reply', type: 'reply' }
  ];
+
+ const reactions = isOwnMessage
+  ? [...baseReactions, { icon: 'fa-trash', type: 'delete' }]
+  : [...baseReactions, { icon: 'fa-flag', type: 'report' }];
 
  const handleReactionClick = (reactionType) => {
   onAddReaction(messageId, reactionType);
@@ -24,53 +30,11 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, me
   onClose();
  };
 
- const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
- const getAdjustedPosition = () => {
-  // On mobile, center horizontally
-  if (isTouchDevice) {
-   return {
-    x: window.innerWidth / 2,
-    y: position.y,
-    transform: 'translate(-50%, 0)'
-   };
-  }
-  // Desktop: position to the right of message, aligned with top
-  const popupWidth = 280;
-  const popupHeight = 60;
-  const padding = 12;
-  let adjustedX = position.x;
-  let adjustedY = position.y;
-  let transform = 'translate(0, -100%)';
-
-  // Check if it overflows right edge
-  if (adjustedX + popupWidth + padding > window.innerWidth) {
-   // Position to the left of the message instead
-   const messageRect = document.querySelector(`[data-message-id]`)?.getBoundingClientRect();
-   if (messageRect) {
-    adjustedX = messageRect.left - 10;
-    transform = 'translate(-100%, -100%)';
-   }
-  }
-
-  // Check if it overflows bottom
-  if (adjustedY + popupHeight > window.innerHeight - padding) {
-   adjustedY = window.innerHeight - padding - popupHeight;
-  }
-
-  // Check if it overflows top
-  if (adjustedY < padding) {
-   adjustedY = padding;
-  }
-
-  return { x: adjustedX, y: adjustedY, transform };
- };
-
- const adjustedPos = getAdjustedPosition();
-
  return (
   <div
+   ref={popupRef}
    className="reaction-more-popup"
+   style={adjustedStyle}
    onClick={(e) => e.stopPropagation()}
    role="dialog"
    aria-label="Add reaction"
@@ -80,12 +44,25 @@ const ReactionMore = ({ messageId, onAddReaction, onClose, position, onReply, me
      <button
       key={index}
       className="reaction-more-btn"
-      onClick={() => reaction.type === 'reply' ? handleReplyClick() : handleReactionClick(reaction.type)}
-      title={reaction.emoji ? `React with ${reaction.emoji}` : 'Reply'}
-      aria-label={reaction.emoji ? `React with ${reaction.emoji}` : 'Reply'}
+      onClick={() => {
+       if (reaction.type === 'reply') {
+        handleReplyClick();
+       } else if (reaction.type === 'delete') {
+        onDelete(message);
+        onClose();
+       } else if (reaction.type === 'report') {
+        onReport(message);
+        onClose();
+       } else {
+        handleReactionClick(reaction.type);
+       }
+      }}
+      title={reaction.emoji ? `React with ${reaction.emoji}` : reaction.type === 'reply' ? 'Reply' : reaction.type === 'delete' ? 'Delete' : 'Report'}
+      aria-label={reaction.emoji ? `React with ${reaction.emoji}` : reaction.type === 'reply' ? 'Reply' : reaction.type === 'delete' ? 'Delete' : 'Report'}
       type="button"
+      style={reaction.type === 'delete' ? { color: '#ff4757' } : reaction.type === 'report' ? { color: '#fbbf24' } : {}}
      >
-      {reaction.emoji || <i className="fas fa-reply"></i>}
+      {reaction.emoji || <i className={`fas ${reaction.icon}`}></i>}
      </button>
     ))}
    </div>

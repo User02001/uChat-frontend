@@ -1,5 +1,5 @@
 {
-    "lastUpdated": "October 2, 2025",
+    "lastUpdated": "November 15th at 8:03PM, 2025",
     "sections": [
         {
             "id": "introduction",
@@ -56,7 +56,7 @@
                     "title": "Data We Collect:",
                     "items": [
                         "Account information (username, email, profile picture)",
-                        "Messages and media files you send (stored as plain text)",
+                        "Messages and media files you send (text messages encrypted at rest)",
                         "Device and usage information",
                         "IP addresses and connection metadata"
                     ]
@@ -154,11 +154,11 @@
                 "paragraphs": [
                     "HTTPS encryption protects data during transmission between your device and our servers.",
                     "Passwords are securely hashed and salted. We cannot see or recover your password.",
-                    "However, messages and user data are stored as PLAIN TEXT in our database and are NOT encrypted at rest.",
+                    "However, messages and user data are encrypted at rest and is stored in our servers.",
                     "Server administrators can technically access message content for system maintenance, moderation, and technical purposes.",
-                    "Messages are transmitted and stored without end-to-end encryption.",
+                    "Messages are transmitted and stored with encrypted at rest technology.",
                     "DO NOT use uChat to share: passwords, credit card information, banking details, social security numbers, private documents, confidential business communications, medical information, or any other sensitive data.",
-                    "Use uChat ONLY for casual conversations that you are comfortable being stored as plain text.",
+                    "Use uChat ONLY for casual conversations that you are comfortable with.",
                     "By using uChat, you explicitly acknowledge these security limitations and accept all associated risks."
                 ],
                 "list": {

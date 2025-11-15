@@ -1,5 +1,5 @@
 {
-    "lastUpdated": "October 2, 2025",
+    "lastUpdated": "November 15th at 8:05PM, 2025",
     "sections": [
         {
             "id": "introduction",
@@ -30,7 +30,7 @@
                     "title": "Personal Information:",
                     "items": [
                         "Account details: username, email address, profile picture",
-                        "Messages and content you send (stored as PLAIN TEXT)",
+                        "Messages and content you send (encrypted at rest)",
                         "Media files and attachments you upload",
                         "Account settings and preferences"
                     ]
@@ -79,11 +79,11 @@
                 "intro": "IMPORTANT: Understanding how your data is stored is crucial to making informed decisions about using uChat.",
                 "paragraphs": [
                     "All data is stored on servers operated by UFOnic, located in Mongolia.",
-                    "Messages and user content are stored as PLAIN TEXT in our database without encryption at rest.",
-                    "Only your password is encrypted using secure hashing and salting methods. We cannot see or recover your password.",
+                    "Messages and user content are stored as encrypted blob in our database. It means your data is encrypted at rest.",
+                    "Passwords are encrypted using secure hashing and salting methods. We cannot see or recover your password.",
                     "Server administrators have technical access to the database and can view message content if necessary for system maintenance, moderation, or technical support.",
-                    "While data is encrypted during transmission (HTTPS), it is NOT encrypted while stored on our servers.",
-                    "This means your messages are vulnerable if our servers are compromised, accessed without authorization, or subject to legal requests.",
+                    "Your data is encrypted during transmission (HTTPS), and is stored on our servers.",
+                    "This means your messages are moderately safe.",
                     "We retain your data while your account is active and for 30 days after account deletion, unless required by law to retain it longer."
                 ],
                 "list": {
@@ -155,12 +155,12 @@
                     "We use HTTPS encryption to protect data transmitted between your device and our servers.",
                     "Passwords are securely hashed and salted using industry-standard methods.",
                     "We implement session management and authentication to prevent unauthorized account access.",
-                    "However, we do NOT provide end-to-end encryption, and messages are stored as plain text.",
+                    "However, we do NOT provide end-to-end encryption, instead messages are encrypted at rest.",
                     "No security system is perfect. There is always a risk of unauthorized access, data breaches, or technical failures.",
                     "Given these limitations, you use uChat at your own risk and should never share sensitive information."
                 ],
                 "list": {
-                    "title": "DO NOT Share on uChat:",
+                    "title": "What not to share on uChat:",
                     "items": [
                         "Passwords or authentication credentials",
                         "Credit card numbers or banking information",

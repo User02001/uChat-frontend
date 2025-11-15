@@ -13,12 +13,12 @@
                         {
                             "id": "gs-1",
                             "title": "How do I create an account?",
-                            "content": "Creating an account on uChat is straightforward. Click 'Sign Up' on the homepage or use the Google sign-in button for instant access. If using email, enter your address, username, and a secure password. You'll receive a 7-digit verification code via email—enter it to complete setup. Once verified, you can start adding contacts using the search bar."
+                            "content": "Creating an account on uChat is straightforward. Click 'Sign Up' on the homepage or use the Google sign-in button for instant access. If using email, enter your address, username, and a secure password. You'll receive a 7-digit verification code via email—enter it to complete setup. Once verified, you can start adding contacts using the search bar. If you need further instruction, the sign up page itself gives you a VERY detailed instruction on how to do it."
                         },
                         {
                             "id": "gs-2",
                             "title": "What is a handle and how do I choose one?",
-                            "content": "Your handle is your unique identifier on uChat, similar to @yourname on other platforms. Handles must be 3–20 characters long and completely unique—no two users can share the same handle. Choose something memorable and distinctive that represents you well."
+                            "content": "Your handle is your unique identifier on uChat, similar to @yourname on other platforms. Imagine two users choose the same name 'Steven' because it is their name. Now you are confused which one is the real Steven. In this case, since handles MUST be different, you can easily tell which one is which. Handles must be 3–20 characters long and completely unique—no two users can share the same handle. Choose something memorable and distinctive that represents you well."
                         }
                     ]
                 },
@@ -29,7 +29,7 @@
                         {
                             "id": "gs-3",
                             "title": "How do I send my first message?",
-                            "content": "Once logged in, select a contact from your list or search for someone to start chatting. Type your message in the text box at the bottom and press Enter or click send. All text messages are protected by full end-to-end encryption, ensuring only you and your recipient can read them."
+                            "content": "Once logged in, select a contact from your list or search for someone to start chatting. Type your message in the text box at the bottom and press Enter or click send. All text messages are protected encryption-at-rest, ensuring security."
                         },
                         {
                             "id": "gs-4",
@@ -53,12 +53,12 @@
                         {
                             "id": "msg-1",
                             "title": "How do I send a photo or file?",
-                            "content": "Click the attachment icon (paperclip) in the message input area to send media or documents. Select images, videos, documents, or any file type from your device. uChat supports all file types up to 1 GB each. Note: media and files are currently not end-to-end encrypted, but this feature is in development."
+                            "content": "Click the attachment icon (paperclip) in the message input area to send media or documents. Select images, videos, documents, or any file type from your device. uChat supports all file types up to 1 GB each. Note: media and files are currently not end-to-end encrypted. YOU MAY NOT SHARE FILES THAT ARE MALICIOUS OR GOES AGAINST OUR TERMS AND CONDITIONS."
                         },
                         {
                             "id": "msg-2",
                             "title": "What are reactions and how do I use them?",
-                            "content": "Reactions let you respond quickly without typing. Hover over any message (or tap on mobile) and click the emoji icon. Choose from emojis like 👍 ❤️ 😂 and more. Reactions are securely linked to messages but aren't part of the encrypted content."
+                            "content": "Reactions let you respond quickly without typing. Hover over any message (or hold the message you want to react to) and click the emoji icon. Choose from emojis like 👍 ❤️ 😂 and more. Reactions are securely linked to messages but aren't part of the encrypted content."
                         }
                     ]
                 },
@@ -74,7 +74,7 @@
                         {
                             "id": "msg-4",
                             "title": "How do I know if my message was read?",
-                            "content": "uChat doesn't show read receipts to prioritize privacy and security. Displaying read receipts could compromise end-to-end encryption privacy, so we've chosen not to implement this feature."
+                            "content": "Read receipts aren't currently available but may be added as an optional feature in the future."
                         }
                     ]
                 },
@@ -85,7 +85,7 @@
                         {
                             "id": "msg-5",
                             "title": "How does message encryption work in uChat?",
-                            "content": "Every text message uses full end-to-end encryption (E2EE). Messages are encrypted on your device before sending, and only the recipient's device has the private key to decrypt them. uChat servers never see readable messages—they only pass encrypted data. Even we cannot decrypt your messages. E2EE currently applies to text messages only; media encryption support is being added soon."
+                            "content": "Every text message goes to our servers and gets encrypted at rest. This means WE cannot read your messages, however IF any situations that we are forced to such as illegal content sharing evidence etc to be shared with law enforcement, we may have access to your messages. BUT please note that we will NEVER read your messages even if we feel like it and even trying to read the messages are complicated and useless for us. You can choose to trust us or not, ultimately your choice."
                         }
                     ]
                 }
@@ -116,46 +116,6 @@
             ]
         },
         {
-            "id": "groups",
-            "name": "Group Chats",
-            "icon": "fas fa-user-friends",
-            "description": "Create and manage group conversations with multiple participants",
-            "subcategories": [
-                {
-                    "id": "creating-groups",
-                    "name": "Creating Groups",
-                    "articles": [
-                        {
-                            "id": "grp-1",
-                            "title": "How do I create a group chat?",
-                            "content": "Click the 'New Group' button in your chat list. Give your group a name and optional description, then add members from your contacts. You can also customize the group icon if desired. Once created, all members can send messages, share files, and participate."
-                        },
-                        {
-                            "id": "grp-2",
-                            "title": "What's the maximum number of people in a group?",
-                            "content": "uChat supports group chats with up to 256 members. For larger communities, we recommend using our Communities feature which supports unlimited members with extra moderation tools."
-                        }
-                    ]
-                },
-                {
-                    "id": "group-settings",
-                    "name": "Group Settings",
-                    "articles": [
-                        {
-                            "id": "grp-3",
-                            "title": "How do I leave a group chat?",
-                            "content": "Open the chat, click the group name at the top, scroll down and select 'Leave Group'. You'll no longer receive messages from that group, but your local chat history remains. Admins can remove members but cannot prevent them from leaving voluntarily."
-                        },
-                        {
-                            "id": "grp-4",
-                            "title": "What are group admin permissions?",
-                            "content": "Admins can add or remove members, change the group name and icon, manage settings, assign other admins, and moderate content. The group creator is automatically an admin and can promote other members to admin status."
-                        }
-                    ]
-                }
-            ]
-        },
-        {
             "id": "privacy",
             "name": "Privacy & Security",
             "icon": "fas fa-shield-alt",
@@ -168,17 +128,17 @@
                         {
                             "id": "prv-1",
                             "title": "How secure are my messages?",
-                            "content": "uChat implements true end-to-end encryption (E2EE) for all text messages. Messages are encrypted on your device before being sent and remain encrypted while traveling through uChat's servers. Only the recipient's device can decrypt them using their private key. Even uChat's servers cannot read your messages. Currently, E2EE applies to text messages only, while media uses standard HTTPS encryption until full E2EE media support is released."
+                            "content": "Every text message goes to our servers and gets encrypted at rest. This means WE cannot read your messages, however IF any situations that we are forced to such as illegal content sharing evidence etc to be shared with law enforcement, we may have access to your messages. BUT please note that we will NEVER read your messages even if we feel like it and even trying to read the messages are complicated and useless for us. You can choose to trust us or not, ultimately your choice."
                         },
                         {
                             "id": "prv-2",
-                            "title": "What exactly is End-to-End Encryption (E2EE)?",
-                            "content": "E2EE ensures only the sender and receiver can read a message. Encryption keys are created and stored locally on each device—not on uChat's servers. When you send a message, it's encrypted using the recipient's public key. Only their private key (stored on their device) can decrypt it. If intercepted or if servers were compromised, attackers would only see meaningless encrypted text."
+                            "title": "What exactly is Encrypted At Rest?",
+                            "content": "Encrypted at rest means your messages are fully encrypted before getting stored in our servers, which can only be unlocked with a key that is tied to your account. Unlike E2EE where even WE cannot access your messages, in this case, if we are REQUIRED to for VALID reasons, we can access your messages since your keys are stored on our servers too."
                         },
                         {
                             "id": "prv-3",
-                            "title": "How does uChat's E2EE system work internally?",
-                            "content": "When you start chatting, uChat's backend helps exchange public keys between devices. Each message is encrypted client-side with your key pair using strong cryptography (Sodium/NaCl library). The server simply passes the ciphertext along—it never accesses your encryption keys or decrypted data. On the recipient's side, their client decrypts the message locally. Media encryption is under development."
+                            "title": "How does uChat's Encrypted At Rest works internally?",
+                            "content": "When you start chatting, our servers picks up the message and automatically generates a private key consisting of complex and long characters, and uses that key to mathmatically encrypt/turn your message into unreadable garbage. Then the message is sent to the other user with the key which only THEY possess and no one else (except our servers) and is decrypted back into your original message."
                         }
                     ]
                 },
@@ -189,7 +149,7 @@
                         {
                             "id": "prv-4",
                             "title": "How do I enable two-factor authentication?",
-                            "content": "Two-factor authentication isn't currently supported. Our focus is on perfecting end-to-end encryption first, which already ensures your private messages remain unreadable to anyone else, including us. 2FA may be added in future updates."
+                            "content": "Two-factor authentication isn't currently supported. Our focus is on perfecting encrypted at rest first, which already ensures your private messages remain unreadable to anyone else. 2FA may be added in future updates."
                         },
                         {
                             "id": "prv-5",
@@ -210,7 +170,7 @@
                         {
                             "id": "prv-7",
                             "title": "Who are unverified users?",
-                            "content": "Unverified users haven't confirmed their email addresses. They could be bots, scam accounts, or users spreading inappropriate content. Don't share personal information, send money, or click suspicious links from unverified users. Block and report immediately if behavior is suspicious. If you are unverified, verify your email by following the homepage banner instructions."
+                            "content": "Unverified users are users who haven't confirmed their email addresses. They could be bots, scam accounts, or users spreading inappropriate content. Don't share personal information, send money, or click suspicious links from unverified users. Block and report immediately if behavior is suspicious. If you are unverified, verify your email by following the homepage banner instructions."
                         }
                     ]
                 }
@@ -240,7 +200,7 @@
                         {
                             "id": "set-2",
                             "title": "Can I customize notification settings?",
-                            "content": "The web version doesn't support notifications. For notification features, download the uChat Windows App from the Downloads page. The desktop app provides full notification support with customizable settings."
+                            "content": "The web version only displays notifications if uChat is open as a tab in your browser and is active. Otherwise, it won't work. To make sure you get notifications all the time, download the Desktop app or use the android app."
                         }
                     ]
                 },
@@ -275,7 +235,7 @@
                         {
                             "id": "acc-2",
                             "title": "Can I have multiple accounts?",
-                            "content": "Yes, you can register multiple accounts with different emails. Remember that each account has its own unique encryption keys and cannot decrypt the others' messages. You'll need to log in and out to switch between accounts."
+                            "content": "Yes, you can register multiple accounts with different emails. Remember that each account has its own unique encryption keys and cannot decrypt the others' messages. You'll need to log in and out to switch between accounts. However, be reminded that you may not use multiple accounts to ABUSE the platform, such as disturbing other people or spamming, engaging in inappropriate activies etc."
                         }
                     ]
                 },
@@ -297,7 +257,7 @@
                         {
                             "id": "acc-4",
                             "title": "How do I verify my email address?",
-                            "content": "After creating your account, we'll send a 7-digit verification code to your email. Enter it to confirm your email address. If you didn't receive it, check your spam folder or click 'Resend Code'. It might take up to 5 minutes to arrive."
+                            "content": "After creating your account, we'll send a 7-digit verification code to your email. Enter it to confirm your email address. If you didn't receive it, check your spam folder or click 'Resend Code'. It might take up to 5 minutes to arrive. Sorry for the delay :("
                         }
                     ]
                 }

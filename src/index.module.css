@@ -610,6 +610,9 @@ body, html {
         cursor: pointer;
         font-size: 14px;
         font-weight: 500;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
     }
 
         .userMenu button:hover {
@@ -618,6 +621,11 @@ body, html {
 
         .userMenu button:active {
             transform: scale(0.98);
+        }
+
+        .userMenu button i,
+        .userMenu button img {
+            flex-shrink: 0;
         }
 
 /* ============================================
@@ -2188,7 +2196,7 @@ html, body, * {
 .messagesContainer {
     flex: 1;
     overflow-y: auto;
-    padding: 8px 0px;
+    padding: 20px 0px;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary);
@@ -2780,6 +2788,58 @@ html, body, * {
     .messageAudio {
         max-width: 280px;
     }
+}
+
+/* ============================================
+   FILE ICON COLORS (for inline file displays)
+   ============================================ */
+.fileIconWrapper :global(.fa-file-pdf) {
+    color: var(--file-icon-pdf) !important;
+}
+
+.fileIconWrapper :global(.fa-file-word) {
+    color: var(--file-icon-word) !important;
+}
+
+.fileIconWrapper :global(.fa-file-excel) {
+    color: var(--file-icon-excel) !important;
+}
+
+.fileIconWrapper :global(.fa-file-powerpoint) {
+    color: var(--file-icon-powerpoint) !important;
+}
+
+.fileIconWrapper :global(.fa-file-alt),
+.fileIconWrapper :global(.fa-file-csv) {
+    color: var(--file-icon-text) !important;
+}
+
+.fileIconWrapper :global(.fa-file-archive) {
+    color: var(--file-icon-archive) !important;
+}
+
+.fileIconWrapper :global(.fa-file-video) {
+    color: var(--file-icon-video) !important;
+}
+
+.fileIconWrapper :global(.fa-file-audio) {
+    color: var(--file-icon-audio) !important;
+}
+
+.fileIconWrapper :global(.fa-file-code) {
+    color: var(--file-icon-code) !important;
+}
+
+.fileIconWrapper :global(.fa-file-image) {
+    color: var(--file-icon-video) !important;
+}
+
+.fileIconWrapper :global(.fa-cog) {
+    color: var(--file-icon-executable) !important;
+}
+
+.fileIconWrapper :global(.fa-file) {
+    color: var(--file-icon-default) !important;
 }
 /* ============================================
    END OF CSS MODULE

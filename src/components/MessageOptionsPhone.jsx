@@ -8,6 +8,7 @@ const MessageOptionsPhone = ({
  onAddReaction,
  onRemoveReaction,
  onDelete,
+ onReport,
  onClose,
  currentUserReactions
 }) => {
@@ -196,10 +197,18 @@ const MessageOptionsPhone = ({
       </button>
      )}
 
-     {isOwnMessage && (
+     {isOwnMessage ? (
       <button className={`${styles.actionButton} ${styles.deleteAction}`} onClick={handleDelete}>
        <i className="fas fa-trash"></i>
        <span>Delete</span>
+      </button>
+     ) : (
+      <button className={`${styles.actionButton} ${styles.reportAction}`} onClick={() => {
+       if (onReport) onReport(message);
+       handleClose();
+      }}>
+       <i className="fas fa-flag"></i>
+       <span>Report</span>
       </button>
      )}
     </div>

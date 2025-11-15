@@ -60,6 +60,10 @@ export const useAppLogic = () => {
  const [showMediaViewer, setShowMediaViewer] = useState(null);
  const [showMessageOptionsPhone, setShowMessageOptionsPhone] = useState(null);
  const [messagesContainerVisible, setMessagesContainerVisible] = useState(true);
+ const [showStatusModal, setShowStatusModal] = useState(false);
+ const [userForcedStatus, setUserForcedStatus] = useState(null);
+ const [showReportModal, setShowReportModal] = useState(null);
+ const [showWarning, setShowWarning] = useState(false);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -210,9 +214,6 @@ export const useAppLogic = () => {
    const currentActiveContact = activeContactRef.current;
    const currentUser = userRef.current;
 
-   // Messages are already decrypted by the server - no client-side decryption needed
-
-   // If this message belongs to the currently open chat, append it
    if (
     currentActiveContact &&
     currentUser &&
@@ -230,33 +231,10 @@ export const useAppLogic = () => {
      }
      return updated;
     });
-   }
 
-   // Update contact preview
-   if (currentUser) {
-    const peerId = (message.sender_id === currentUser.id)
-     ? message.receiver_id
-     : message.sender_id;
-
-    const previewText =
-     message.message_type === "image"
-      ? "📷 Sent an image"
-      : message.message_type === "file"
-       ? `📎 ${message.file_name || "File"}`
-       : message.content || "";
-
-    setContacts((prev) =>
-     prev.map((c) =>
-      c.id === peerId
-       ? {
-        ...c,
-        lastMessage: previewText,
-        lastMessageTime: message.timestamp || c.lastMessageTime,
-        lastSenderId: message.sender_id,
-       }
-       : c
-     )
-    );
+    if (socketRef.current && socketRef.current.connected) {
+     socketRef.current.emit("mark_as_read", { contact_id: currentActiveContact.id });
+    }
    }
 
    setTypingUsers((prev) => {
@@ -373,19 +351,17 @@ export const useAppLogic = () => {
   socket.on("contact_updated", (data) => {
    const currentActive = activeContactRef.current;
 
-   // lastMessage is already decrypted by server
    setContacts((prev) =>
     prev.map((contact) => {
      if (contact.id === data.contact_id) {
-      const isActive =
-       currentActive && currentActive.id === data.contact_id;
+      const isActive = currentActive && currentActive.id === data.contact_id;
 
       return {
        ...contact,
        lastMessage: data.lastMessage,
        lastMessageTime: data.lastMessageTime,
        last_seen: data.last_seen || contact.last_seen,
-       unread: isActive ? false : data.unread,
+       unread: isActive ? false : (data.unread || false),
        username: data.username || contact.username,
        avatar_url: data.avatar_url || contact.avatar_url,
        handle: data.handle || contact.handle,
@@ -441,6 +417,20 @@ export const useAppLogic = () => {
     },
    }));
   });
+
+  socket.on('new_warning', () => {
+   setShowWarning(true);
+  });
+
+  socket.on('account_banned', (data) => {
+   setError(`Your account has been banned: ${data.reason}`);
+   setTimeout(() => {
+    if (socketRef.current) {
+     socketRef.current.disconnect();
+    }
+    window.location.href = '/login';
+   }, 3000);
+  });
  }, []);
 
  // Load contacts from server
@@ -475,7 +465,9 @@ export const useAppLogic = () => {
    setMessages(messageCacheRef.current[contactId]);
    setIsLoadingMessages(false);
 
+   // Mark as read when opening chat
    if (socketRef.current.connected) {
+    socketRef.current.emit("mark_as_read", { contact_id: contactId });
     socketRef.current.emit("load_messages", {
      contact_id: contactId,
      before_id: null,
@@ -483,6 +475,7 @@ export const useAppLogic = () => {
     });
    } else {
     const onConnectOnce = () => {
+     socketRef.current.emit("mark_as_read", { contact_id: contactId });
      socketRef.current.emit("load_messages", {
       contact_id: contactId,
       before_id: null,
@@ -508,6 +501,9 @@ export const useAppLogic = () => {
   }
 
   if (socketRef.current.connected) {
+   if (!beforeId) {
+    socketRef.current.emit("mark_as_read", { contact_id: contactId });
+   }
    socketRef.current.emit("load_messages", {
     contact_id: contactId,
     before_id: beforeId,
@@ -515,6 +511,9 @@ export const useAppLogic = () => {
    });
   } else {
    const onConnectOnce = () => {
+    if (!beforeId) {
+     socketRef.current.emit("mark_as_read", { contact_id: contactId });
+    }
     socketRef.current.emit("load_messages", {
      contact_id: contactId,
      before_id: beforeId,
@@ -528,6 +527,48 @@ export const useAppLogic = () => {
 
  const [hasMoreMessages, setHasMoreMessages] = useState(true);
  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
+
+ const handleReportMessage = (message) => {
+  setShowReportModal(message);
+ };
+
+ const handleSubmitReport = async (messageId, category) => {
+  if (!socketRef.current) {
+   setError('Not connected to server');
+   return;
+  }
+
+  socketRef.current.emit('report_message', {
+   message_id: messageId,
+   category: category
+  });
+
+  // Listen for confirmation
+  socketRef.current.once('report_submitted', (data) => {
+   setError(data.message); // Use error toast to show success message
+   setTimeout(() => setError(''), 3000);
+  });
+
+  socketRef.current.once('report_error', (data) => {
+   setError(data.error);
+  });
+ };
+
+ const checkForWarnings = useCallback(async () => {
+  try {
+   const res = await fetch(`${API_BASE_URL}/api/warnings/active`, {
+    credentials: 'include'
+   });
+   if (res.ok) {
+    const data = await res.json();
+    if (data.warnings.length > 0) {
+     setShowWarning(true);
+    }
+   }
+  } catch (error) {
+   console.error('Failed to check warnings:', error);
+  }
+ }, []);
 
  // Search for users
  const searchUsers = useCallback(async (query) => {
@@ -584,6 +625,28 @@ export const useAppLogic = () => {
    setError("Failed to add contact");
   }
  }, [navigate]);
+
+ const handleSetStatus = async (status) => {
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/set-status`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+     'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ status: status === 'online' ? null : status })
+   });
+
+   if (response.ok) {
+    const data = await response.json();
+    setUserForcedStatus(data.forced_status);
+    setUser(prev => ({ ...prev, forced_status: data.forced_status }));
+   }
+  } catch (error) {
+   console.error('Failed to set status:', error);
+   setError('Failed to update status');
+  }
+ };
 
  // Select a contact and load messages
  const selectContact = useCallback(
@@ -900,21 +963,90 @@ export const useAppLogic = () => {
         ? "📷 Sent an image"
         : message.message_type === "file"
          ? `📎 ${message.file_name}`
-         : message.content || "New message";
+         : (message.content && (message.content.startsWith('https://media.tenor.com/') || message.content.startsWith('https://media.giphy.com/')))
+          ? "🎞️ Sent a GIF"
+          : message.content || "New message";
 
-      const notification = new Notification(notificationTitle, {
-       body: notificationBody,
-       icon: senderAvatarUrl
-        ? `${API_BASE_URL}${senderAvatarUrl}`
-        : "/resources/default_avatar.png",
-       tag: `message-${message.id}`,
-       requireInteraction: false,
-      });
+      const avatarSrc = senderAvatarUrl
+       ? `${API_BASE_URL}${senderAvatarUrl}`
+       : "/resources/default_avatar.png";
 
-      notification.onclick = () => {
-       window.focus();
-       notification.close();
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+       const canvas = document.createElement("canvas");
+       const size = 512;
+       canvas.width = size;
+       canvas.height = size;
+       const ctx = canvas.getContext("2d");
+       ctx.imageSmoothingEnabled = true;
+       ctx.imageSmoothingQuality = "high";
+
+       ctx.save();
+       ctx.beginPath();
+       ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+       ctx.closePath();
+       ctx.clip();
+
+       ctx.drawImage(img, 0, 0, size, size);
+       ctx.restore();
+
+       const logo = new Image();
+       logo.crossOrigin = "anonymous";
+       logo.onload = () => {
+        const logoSize = size * 0.3;
+        const logoX = size - logoSize - size * 0.05;
+        const logoY = size - logoSize - size * 0.05;
+
+        ctx.beginPath();
+        ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+
+        canvas.toBlob((blob) => {
+        const roundedIconUrl = URL.createObjectURL(blob);
+
+        const notification = new Notification(notificationTitle, {
+         body: notificationBody,
+         icon: roundedIconUrl,
+         tag: `message-${message.id}`,
+         requireInteraction: false,
+        });
+
+        notification.onclick = () => {
+         window.focus();
+         notification.close();
+        };
+
+        notification.onclose = () => {
+         URL.revokeObjectURL(roundedIconUrl);
+        };
+
+         setTimeout(() => {
+          URL.revokeObjectURL(roundedIconUrl);
+         }, 30000);
+        });
+       };
+       logo.src = "/resources/favicon.png";
       };
+
+      img.onerror = () => {
+       const notification = new Notification(notificationTitle, {
+        body: notificationBody,
+        icon: "/resources/default_avatar.png",
+        tag: `message-${message.id}`,
+        requireInteraction: false,
+       });
+
+       notification.onclick = () => {
+        window.focus();
+        notification.close();
+       };
+      };
+
+      img.src = avatarSrc;
      } else if (Notification.permission !== "denied") {
       Notification.requestPermission();
      }
@@ -928,8 +1060,9 @@ export const useAppLogic = () => {
   const handleClickOutside = (event) => {
    if (
     showUserMenu &&
-    !event.target.closest(".user-profile") &&
-    !event.target.closest(".mobile-avatar")
+    !event.target.closest('.user-profile') &&
+    !event.target.closest('.user-menu-btn') &&
+    !event.target.closest('.mobile-header-actions')
    ) {
     setShowUserMenu(false);
    }
@@ -942,7 +1075,7 @@ export const useAppLogic = () => {
     setSearchQuery("");
     setSearchResults([]);
    }
-   if (showSearch && !event.target.closest(".search-section") && !event.target.closest(".search-results")) {
+   if (showSearch && !event.target.closest('.search-section') && !event.target.closest('.search-results')) {
     setShowSearch(false);
     setShowMobileSearch(false);
     setSearchQuery("");
@@ -1090,7 +1223,10 @@ export const useAppLogic = () => {
  useEffect(() => {
   const syncContacts = () => {
    if (socketRef.current && socketRef.current.connected) {
-    socketRef.current.emit("request_contacts_update");
+    // Pass the active contact ID so server knows not to mark it as unread
+    socketRef.current.emit("request_contacts_update", {
+     active_contact_id: activeContactRef.current?.id
+    });
    }
   };
 
@@ -1196,6 +1332,13 @@ export const useAppLogic = () => {
   };
  }, []);
 
+ // Check for warnings on mount and user change
+ useEffect(() => {
+  if (user && !loading) {
+   checkForWarnings();
+  }
+ }, [user, loading, checkForWarnings]);
+
  return {
   // State
   user,
@@ -1296,6 +1439,14 @@ export const useAppLogic = () => {
   setShowMessageOptionsPhone,
   messagesContainerVisible,
   setMessagesContainerVisible,
+  showStatusModal,
+  setShowStatusModal,
+  userForcedStatus,
+  setUserForcedStatus,
+  showReportModal,
+  setShowReportModal,
+  showWarning,
+  setShowWarning,
 
   // Refs
   socketRef,
@@ -1324,5 +1475,9 @@ export const useAppLogic = () => {
   loadLastContact,
   handleMessageNotification,
   emitActivity,
+  handleSetStatus,
+  handleReportMessage,
+  handleSubmitReport,
+  checkForWarnings,
  };
 };

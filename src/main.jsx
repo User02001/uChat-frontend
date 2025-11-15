@@ -2,6 +2,7 @@ import { StrictMode, lazy, Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
 import styles from './index.module.css'
+import Moderation from './pages/Moderation';
 
 // Warning message
 const imageUrl = "https://uchat.ufonic.xyz/resources/favicon.png";
@@ -47,6 +48,7 @@ const Help = lazy(() => import('./pages/Help.jsx'))
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions.jsx'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'))
 const Welp = lazy(() => import('./pages/Welp.jsx'))
+const ModerationPage = lazy(() => import('./pages/Moderation.jsx'))
 
 // Wrapper component with aggressive cleanup
 const AppRoutes = () => {
@@ -78,6 +80,7 @@ const AppRoutes = () => {
     <Route path="/privacy" element={<PrivacyPolicy key="privacy" />} />
     <Route path="/help" element={<Help key="help" />} />
     <Route path="/welp" element={<Welp key="welp" />} />
+    <Route path="/moderation" element={<Moderation key="moderation" />} />"
     <Route path="/" element={<Navigate to="/chat" replace />} />
     <Route path="*" element={<Navigate to="/login" replace />} />
    </Routes>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import lottie from 'lottie-web';
 import { useAppLogic } from "./hooks/useAppLogic";
+import WarningForModeration from "./components/WarningForModeration";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
 import { API_BASE_URL, SOCKET_URL } from "./config";
@@ -10,6 +11,7 @@ import ContactsSkeleton from "./components/ContactsSkeleton";
 import Reaction from "./components/Reaction";
 import ReactionMore from "./components/ReactionMore";
 import DeleteModal from "./components/DeleteModal";
+import ReportModal from "./components/ReportModal";
 import VerificationModal from "./components/VerificationModal";
 import UnverifiedModal from "./components/UnverifiedModal";
 import linkify from "./hooks/linkify.jsx";
@@ -22,7 +24,8 @@ import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
-import MessageDiscord from "./components/MessageDiscord";
+import MessageDiscord, { AudioPlayer } from "./components/MessageDiscord";
+import StatusModal from "./components/StatusModal";
 
 const App = () => {
 
@@ -77,6 +80,10 @@ const App = () => {
   showMediaViewer, setShowMediaViewer,
   showMessageOptionsPhone, setShowMessageOptionsPhone,
   messagesContainerVisible, setMessagesContainerVisible,
+  showStatusModal, setShowStatusModal,
+  userForcedStatus, setUserForcedStatus,
+  showReportModal, setShowReportModal,
+  showWarning, setShowWarning,
 
   // Refs
   socketRef,
@@ -103,6 +110,10 @@ const App = () => {
   saveLastContact,
   loadLastContact,
   handleMessageNotification,
+  handleSetStatus,
+  handleReportMessage,
+  handleSubmitReport,
+  checkForWarnings,
  } = useAppLogic();
 
  const handleDragStart = (e) => {
@@ -551,42 +562,112 @@ const App = () => {
  // Get file icon based on extension
  const getFileIcon = (fileType) => {
   const iconMap = {
+   // Documents
    pdf: "fas fa-file-pdf",
    doc: "fas fa-file-word",
    docx: "fas fa-file-word",
-   txt: "fas fa-file-alt",
+   odt: "fas fa-file-word",
    rtf: "fas fa-file-alt",
+   txt: "fas fa-file-alt",
+   md: "fas fa-file-alt",
+
+   // Spreadsheets
+   xlsx: "fas fa-file-excel",
+   xls: "fas fa-file-excel",
+   csv: "fas fa-file-csv",
+   ods: "fas fa-file-excel",
+
+   // Presentations
+   pptx: "fas fa-file-powerpoint",
+   ppt: "fas fa-file-powerpoint",
+   odp: "fas fa-file-powerpoint",
+   key: "fas fa-file-powerpoint",
+
+   // Archives
    zip: "fas fa-file-archive",
    rar: "fas fa-file-archive",
    "7z": "fas fa-file-archive",
    tar: "fas fa-file-archive",
    gz: "fas fa-file-archive",
+   bz2: "fas fa-file-archive",
+   xz: "fas fa-file-archive",
+
+   // Videos
    mp4: "fas fa-file-video",
    avi: "fas fa-file-video",
    mkv: "fas fa-file-video",
    mov: "fas fa-file-video",
    wmv: "fas fa-file-video",
+   flv: "fas fa-file-video",
+   webm: "fas fa-file-video",
+   m4v: "fas fa-file-video",
+   mpg: "fas fa-file-video",
+   mpeg: "fas fa-file-video",
+
+   // Audio
    mp3: "fas fa-file-audio",
    wav: "fas fa-file-audio",
    flac: "fas fa-file-audio",
    aac: "fas fa-file-audio",
-   xlsx: "fas fa-file-excel",
-   xls: "fas fa-file-excel",
-   csv: "fas fa-file-csv",
-   pptx: "fas fa-file-powerpoint",
-   ppt: "fas fa-file-powerpoint",
+   ogg: "fas fa-file-audio",
+   m4a: "fas fa-file-audio",
+   wma: "fas fa-file-audio",
+   opus: "fas fa-file-audio",
+
+   // Code
    js: "fas fa-file-code",
+   jsx: "fas fa-file-code",
+   ts: "fas fa-file-code",
+   tsx: "fas fa-file-code",
    html: "fas fa-file-code",
+   htm: "fas fa-file-code",
    css: "fas fa-file-code",
+   scss: "fas fa-file-code",
+   sass: "fas fa-file-code",
+   less: "fas fa-file-code",
    py: "fas fa-file-code",
    java: "fas fa-file-code",
    cpp: "fas fa-file-code",
    c: "fas fa-file-code",
+   h: "fas fa-file-code",
+   hpp: "fas fa-file-code",
+   cs: "fas fa-file-code",
    php: "fas fa-file-code",
+   rb: "fas fa-file-code",
+   go: "fas fa-file-code",
+   rs: "fas fa-file-code",
+   swift: "fas fa-file-code",
+   kt: "fas fa-file-code",
+   sql: "fas fa-file-code",
+   sh: "fas fa-file-code",
+   bash: "fas fa-file-code",
+   json: "fas fa-file-code",
+   xml: "fas fa-file-code",
+   yaml: "fas fa-file-code",
+   yml: "fas fa-file-code",
+
+   // Images
+   jpg: "fas fa-file-image",
+   jpeg: "fas fa-file-image",
+   png: "fas fa-file-image",
+   gif: "fas fa-file-image",
+   bmp: "fas fa-file-image",
+   svg: "fas fa-file-image",
+   webp: "fas fa-file-image",
+   ico: "fas fa-file-image",
+   tiff: "fas fa-file-image",
+   tif: "fas fa-file-image",
+
+   // Executables
    exe: "fas fa-cog",
    msi: "fas fa-cog",
    app: "fas fa-cog",
    deb: "fas fa-cog",
+   rpm: "fas fa-cog",
+   dmg: "fas fa-cog",
+   apk: "fas fa-cog",
+
+   // Default
    default: "fas fa-file",
   };
   return iconMap[fileType?.toLowerCase()] || iconMap.default;
@@ -777,12 +858,14 @@ const App = () => {
   lastMessageIdRef.current = newLastId;
 
   if (isInitialLoad) {
-   if (container && container.scrollHeight > 0) {
-    container.scrollTop = container.scrollHeight;
+   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-     setMessagesContainerVisible(true);
+     if (container && container.scrollHeight > 0) {
+      container.scrollTop = container.scrollHeight + 9999;
+      setMessagesContainerVisible(true);
+     }
     });
-   }
+   });
    return;
   }
 
@@ -793,7 +876,7 @@ const App = () => {
    requestAnimationFrame(() => {
     requestAnimationFrame(() => {
      if (container) {
-      container.scrollTop = container.scrollHeight;
+      container.scrollTop = container.scrollHeight + 9999;
      }
     });
    });
@@ -889,7 +972,10 @@ const App = () => {
           draggable="false"
           title="View Your Own Profile"
          />
-         <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
+         <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
+           user?.forced_status === 'away' ? 'away' :
+            userStatuses[user?.id] === 'away' ? 'away' : 'online'
+          }`}></div>
         </div>
         <div className={styles.userInfo}>
          <span className={styles.username}>
@@ -919,18 +1005,72 @@ const App = () => {
             CEO
            </span>
           )}
+          {user?.email === "ufonic.official@gmail.com" && (
+           <button
+            onClick={() => window.location.href = '/moderation'}
+            style={{
+             marginTop: '10px',
+             padding: '8px 12px',
+             background: '#ef4444',
+             color: 'white',
+             border: 'none',
+             borderRadius: '6px',
+             cursor: 'pointer',
+             fontSize: '12px',
+             fontWeight: '600',
+             display: 'flex',
+             alignItems: 'center',
+             gap: '6px'
+            }}
+           >
+            <i className="fas fa-shield-alt"></i>
+            Moderation
+           </button>
+          )}
          </span>
          <span className={styles.handle}>@{user?.handle}</span>
         </div>
         <button
          className={styles.userMenuBtn}
-         onClick={() => setShowUserMenu(!showUserMenu)}
+         onClick={(e) => {
+          e.stopPropagation();
+          setShowUserMenu(!showUserMenu);
+         }}
         >
-         ⋮
+         <i className="fas fa-chevron-down"></i>
         </button>
         {showUserMenu && (
          <div className={styles.userMenu}>
-          <button onClick={handleLogout}>Logout</button>
+          <button onClick={() => {
+           setShowProfileModal(user);
+           setShowUserMenu(false);
+          }}>
+           <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+           My Profile
+          </button>
+          <button onClick={() => {
+           setShowStatusModal(true);
+           setShowUserMenu(false);
+          }}>
+           {userStatuses[user?.id] === 'away' ? (
+            <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+             <img
+              src="/resources/icons/away-icon.svg"
+              alt="Status"
+              style={{ width: '18px', height: '18px' }}
+             />
+            </span>
+           ) : (
+            <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+             <i className="fas fa-circle" style={{ fontSize: '14px', color: '#4caf50' }}></i>
+            </span>
+           )}
+           Set Status
+          </button>
+          <button onClick={handleLogout} style={{ color: '#ff4757' }}>
+           <i className="fas fa-sign-out-alt" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+           Logout
+          </button>
          </div>
         )}
        </div>
@@ -1039,26 +1179,68 @@ const App = () => {
         <span className={styles.mobileLogoText}>uChat</span>
        </div>
        <div className={styles.mobileHeaderActions}>
-        <div
-         className={styles.contactAvatarContainer}
-         onClick={() => setShowUserMenu(!showUserMenu)}
+        <button
+         className={styles.userMenuBtn}
+         onClick={(e) => {
+          e.stopPropagation();
+          setShowUserMenu(!showUserMenu);
+         }}
+         style={{ background: 'transparent', border: 'none', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
-         <img
-          src={
-           user?.avatar_url
-            ? `${API_BASE_URL}${user.avatar_url}`
-            : "/resources/default_avatar.png"
-          }
-          alt="Profile"
-          draggable="false"
-          className={styles.mobileAvatar}
-         />
-         <div className={`status-indicator ${userStatuses[user?.id] === "away" ? "away" : "online"}`}></div>
-        </div>
+         <div className={styles.contactAvatarContainer}>
+          <img
+           src={
+            user?.avatar_url
+             ? `${API_BASE_URL}${user.avatar_url}`
+             : "/resources/default_avatar.png"
+           }
+           alt="Profile"
+           draggable="false"
+           className={styles.mobileAvatar}
+          />
+          <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
+            user?.forced_status === 'away' ? 'away' :
+             userStatuses[user?.id] === 'away' ? 'away' : 'online'
+           }`}></div>
+         </div>
+         <i className="fas fa-chevron-down" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}></i>
+        </button>
        </div>
        {showUserMenu && (
         <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
-         <button onClick={handleLogout}>Logout</button>
+         <button onClick={() => {
+          setShowProfileModal(user);
+          setShowUserMenu(false);
+         }}>
+          <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+          My Profile
+         </button>
+         <button onClick={() => {
+          setShowStatusModal(true);
+          setShowUserMenu(false);
+         }}>
+          {userStatuses[user?.id] === 'away' ? (
+           <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img
+             src="/resources/icons/away-icon.svg"
+             alt="Status"
+             style={{ width: '18px', height: '18px' }}
+            />
+           </span>
+          ) : (
+           <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+            <i className="fas fa-circle" style={{ fontSize: '14px', color: '#4caf50' }}></i>
+           </span>
+          )}
+          Set Status
+         </button>
+         <button onClick={() => {
+          handleLogout();
+          setShowUserMenu(false);
+         }} style={{ color: '#ff4757' }}>
+          <i className="fas fa-sign-out-alt" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+          Logout
+         </button>
         </div>
        )}
       </div>
@@ -1528,6 +1710,8 @@ const App = () => {
              setShowReactionPopup={setShowReactionPopup}
              onLongPress={(msg) => setShowMessageOptionsPhone(msg)}
              onReply={handleReplyToMessage}
+             onDelete={setDeleteConfirm}
+             onReport={handleReportMessage}
              allMessages={messages}
             >
              {message.deleted ? (
@@ -1552,7 +1736,7 @@ const App = () => {
                style={{
                 cursor: 'pointer',
                 maxWidth: '300px',
-                marginTop: '4px'
+                margin: '8px 0'
                }}
               >
                <img
@@ -1566,23 +1750,119 @@ const App = () => {
                 }}
                />
               </div>
-             ) : message.message_type === "file" && message.file_type && ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'].includes(message.file_type.toLowerCase()) ? (
-              <audio controls style={{ maxWidth: '100%', marginTop: '4px' }}>
-               <source src={`${API_BASE_URL}${message.file_path}`} type={`audio/${message.file_type}`} />
-              </audio>
+             ) : message.message_type === "file" && message.file_type && ['mp4', 'webm', 'ogg', 'mov'].includes(message.file_type.toLowerCase()) ? (
+              <div style={{ margin: '8px 0' }}>
+               <VideoPlayer
+                src={`${API_BASE_URL}${message.file_path}`}
+                inChat={true}
+                onExpand={() => setShowMediaViewer({
+                 url: message.file_path,
+                 name: message.file_name || 'Video',
+                 type: 'video'
+                })}
+               />
+              </div>
+             ) : message.message_type === "file" && message.file_type && ['mp3', 'wav', 'flac', 'aac', 'm4a'].includes(message.file_type.toLowerCase()) ? (
+              <div style={{ margin: '8px 0' }}>
+               <AudioPlayer
+                src={`${API_BASE_URL}${message.file_path}`}
+                fileName={message.file_name}
+               />
+              </div>
              ) : message.message_type === "file" ? (
+              <div style={{ margin: '8px 0' }}>
+               <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                background: 'var(--file-bg)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                transition: 'all 0.2s ease',
+                maxWidth: '350px'
+               }}
+               onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--file-bg-hover)';
+                e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-light)';
+               }}
+               onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--file-bg)';
+                e.currentTarget.style.boxShadow = 'none';
+               }}>
+                <div className={styles.fileIconWrapper} style={{ fontSize: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                 <i className={getFileIcon(message.file_type)}></i>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                 <div style={{ fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '14px', marginBottom: '2px' }}>
+                  {message.file_name || 'File'}
+                 </div>
+                 {message.file_size && (
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                   {formatFileSize(message.file_size)}
+                  </div>
+                 )}
+                </div>
+                <button
+                 onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(`${API_BASE_URL}${message.file_path}`, '_blank');
+                 }}
+                 style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  flexShrink: 0
+                 }}
+                 onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--button-primary)';
+                  e.currentTarget.style.borderColor = 'var(--button-primary)';
+                  e.currentTarget.style.color = 'white';
+                 }}
+                 onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                 }}
+                 title="Download file"
+                >
+                 <i className="fas fa-download"></i>
+                 <span>Download</span>
+                </button>
+               </div>
+              </div>
+             ) : message.content && (message.content.startsWith('https://media.tenor.com/') || message.content.startsWith('https://media.giphy.com/')) ? (
               <div
-               onClick={() => window.open(`${API_BASE_URL}${message.file_path}`, '_blank')}
+               onClick={() => setShowMediaViewer({
+                url: message.content,
+                name: 'GIF',
+                type: 'image'
+               })}
                style={{
                 cursor: 'pointer',
-                padding: '12px',
-                background: 'var(--file-bg)',
-                borderRadius: '8px',
-                marginTop: '4px'
+                maxWidth: '300px',
+                margin: '8px 0'
                }}
               >
-               <i className={getFileIcon(message.file_type)} style={{ marginRight: '8px' }}></i>
-               {message.file_name || 'File'}
+               <img
+                src={message.content}
+                alt="GIF"
+                style={{
+                 width: '100%',
+                 height: 'auto',
+                 borderRadius: '8px',
+                 display: 'block'
+                }}
+               />
               </div>
              ) : (
               <div>{message.content}</div>
@@ -2342,6 +2622,7 @@ const App = () => {
      onAddReaction={handleAddReaction}
      onRemoveReaction={handleRemoveReaction}
      onDelete={setDeleteConfirm}
+     onReport={handleReportMessage}
      onClose={() => setShowMessageOptionsPhone(null)}
      currentUserReactions={
       messageReactions[showMessageOptionsPhone.id]
@@ -2351,6 +2632,30 @@ const App = () => {
        : []
      }
     />
+   )}
+   {showStatusModal && (
+    <StatusModal
+     onClose={() => setShowStatusModal(false)}
+     onSelectStatus={handleSetStatus}
+     currentStatus={
+      user?.forced_status === 'offline' ? 'offline' :
+       user?.forced_status === 'away' ? 'away' :
+        userForcedStatus === 'offline' ? 'offline' :
+         userForcedStatus === 'away' ? 'away' :
+          userStatuses[user?.id] === 'away' ? 'away' :
+           'online'
+     }
+    />
+   )}
+   {showReportModal && (
+    <ReportModal
+     message={showReportModal}
+     onClose={() => setShowReportModal(null)}
+     onSubmit={handleSubmitReport}
+    />
+   )}
+   {showWarning && (
+    <WarningForModeration onClose={() => setShowWarning(false)} />
    )}
   </>
  );
