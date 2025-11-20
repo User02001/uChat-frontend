@@ -1,6 +1,7 @@
 import { StrictMode, lazy, Suspense, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom'
+import './global.css'
 import styles from './index.module.css'
 import Moderation from './pages/Moderation';
 
