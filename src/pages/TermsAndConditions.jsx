@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './TermsAndConditions.css';
 import { API_BASE_URL } from '../config';
 import termsData from './termsData.json';
+import styles from "../index.module.css";
 
 const TermsAndConditions = () => {
  const navigate = useNavigate();
