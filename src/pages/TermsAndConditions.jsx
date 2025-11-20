@@ -14,6 +14,21 @@ const TermsAndConditions = () => {
  }, []);
 
  useEffect(() => {
+  const fontAwesomeLink = document.createElement('link');
+  fontAwesomeLink.rel = 'stylesheet';
+  fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+  fontAwesomeLink.integrity = 'sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==';
+  fontAwesomeLink.crossOrigin = 'anonymous';
+  document.head.appendChild(fontAwesomeLink);
+
+  return () => {
+   if (document.head.contains(fontAwesomeLink)) {
+    document.head.removeChild(fontAwesomeLink);
+   }
+  };
+ }, []);
+
+ useEffect(() => {
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 
