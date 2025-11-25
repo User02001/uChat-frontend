@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppLogic } from "./hooks/useAppLogic";
-import { DotLottiePlayer } from '@dotlottie/react-player';
+import lottie from 'lottie-web';
 import WarningForModeration from "./components/WarningForModeration";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
@@ -715,6 +715,28 @@ const App = () => {
   previousScrollHeight.current = 0;
  }, [activeContact?.id]);
 
+ const splashRef = useRef(null);
+ const animRef = useRef(null);
+
+ useEffect(() => {
+  if (loading && splashRef.current && !animRef.current) {
+   animRef.current = lottie.loadAnimation({
+    container: splashRef.current,
+    renderer: 'canvas', // ← CHANGE FROM 'svg' TO 'canvas'
+    loop: true,
+    autoplay: true,
+    path: '/splash.json' // Consider converting to /splash.lottie
+   });
+
+   return () => {
+    if (animRef.current) {
+     animRef.current.destroy();
+     animRef.current = null;
+    }
+   };
+  }
+ }, [loading]);
+
  return (
   <>
    {loading && (
@@ -727,12 +749,7 @@ const App = () => {
      zIndex: 999999,
      pointerEvents: 'all'
     }}>
-     <DotLottiePlayer
-      src="/splash.lottie"
-      loop
-      autoplay
-      className={styles.loadingSpinner}
-     />
+     <div ref={splashRef} className={styles.loadingSpinner}></div>
      <div className={styles.splashBranding}>
       <p className={styles.splashBrandingText}>Made by</p>
       <div className={styles.splashBrandingLogo}>
