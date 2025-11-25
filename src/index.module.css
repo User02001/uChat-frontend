@@ -79,6 +79,7 @@ body, html {
     --file-icon-code: #0366d6;
     --file-icon-executable: #6f42c1;
     --file-icon-default: #6c757d;
+    --border-tooltip: #222222;
 }
 
 /* ============================================
@@ -136,6 +137,7 @@ body, html {
     --file-icon-code: #74c0fc;
     --file-icon-executable: #9775fa;
     --file-icon-default: #adb5bd;
+    --border-tooltip: #848484;
 }
 
 /* ============================================
@@ -450,7 +452,7 @@ body, html {
     flex-direction: column;
     position: relative;
     z-index: 10;
-    margin-left: 60px;
+    margin-left: 72px;
 }
 
 .sidebarHeader {

@@ -1,32 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './Sidebar.css';
+import styles from './Sidebar.module.css';
+import { useSidebarLogic } from '../hooks/useSidebarLogic';
 
-const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout }) => {
+const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL }) => {
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
- const [isDarkMode, setIsDarkMode] = useState(false);
  const moreMenuRef = useRef(null);
 
- const [isElectron, setIsElectron] = useState(false); // detect electron who we dont have to display downloads button
-
- useEffect(() => {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-  setIsDarkMode(mediaQuery.matches);
-
-  const handleChange = (e) => setIsDarkMode(e.matches);
-  mediaQuery.addEventListener('change', handleChange);
-
-  return () => mediaQuery.removeEventListener('change', handleChange);
- }, []);
-
- useEffect(() => {
-  document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
- }, [isDarkMode]);
-
- useEffect(() => {
-  // Detect if running in Electron
-  setIsElectron(window.navigator.userAgent.toLowerCase().includes('electron'));
- }, []);
+ const { isElectron } = useSidebarLogic();
 
  const handleTabClick = (tab) => {
   setActiveTab(tab);
@@ -39,12 +20,6 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
   }
   if (tab === 'downloads') {
    window.location.href = '/downloads';
-  }
-  if (tab === 'terms') {
-   window.location.href = '/terms';
-  }
-  if (tab === 'privacy') {
-   window.location.href = '/privacy';
   }
   if (tab === 'calls') {
    window.location.href = '/calls';
@@ -76,77 +51,84 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
   };
  }, [showMore]);
 
+ const visibleContacts = contacts.slice(0, 6);
+
  return (
-  <div className={`nav-sidebar ${showMobileChat ? 'mobile-hidden' : ''} ${showMobileSearch ? 'search-hidden' : ''}`}>
-   <div className="nav-buttons">
-    <button
-     className={`nav-btn ${activeTab === 'chats' ? 'active' : ''}`}
-     title="Chats"
-     onClick={() => handleTabClick('chats')}
-    >
+  <div className={`${styles.navSidebar} ${showMobileChat ? styles.mobileHidden : ''} ${showMobileSearch ? styles.searchHidden : ''}`}>
+   <div className={styles.navButtons}>
+    <div className={styles.navLogo}>
      <img
-      src="/resources/icons/chats.svg"
-      alt="Chats"
-      className="nav-icon nav-icon-chats"
+      src="/resources/icons/sidebar_logo.svg"
+      alt="uChat"
+      className={styles.navLogoIcon}
+      draggable="false"
      />
-    </button>
+    </div>
+
+    <div className={styles.navSeparator}></div>
+
+    {visibleContacts.map((contact) => (
+     <button
+      key={contact.id}
+      className={`${styles.navBtn} ${styles.navContactBtn} ${activeContact?.id === contact.id ? styles.active : ''}`}
+      onClick={() => onSelectContact && onSelectContact(contact)}
+     >
+      <img
+       src={
+        contact.avatar_url
+         ? `${API_BASE_URL}${contact.avatar_url}`
+         : "/resources/default_avatar.png"
+       }
+       alt=""
+       className={styles.navContactAvatar}
+       draggable="false"
+      />
+      <span className={styles.navTooltip}>{contact.username}</span>
+     </button>
+    ))}
    </div>
 
-   <div className="nav-bottom">
+   <div className={styles.navBottom}>
+    <div className={styles.navSeparator}></div>
+
     <button
-     className={`nav-btn ${activeTab === 'help' ? 'active' : ''}`}
-     title="Help Center"
+     className={`${styles.navBtn} ${activeTab === 'help' ? styles.active : ''}`}
      onClick={() => handleTabClick('help')}
     >
      <i className="fas fa-question-circle"></i>
+     <span className={styles.navTooltip}>Help Center</span>
     </button>
 
     {!isElectron && (
      <button
-      className={`nav-btn ${activeTab === 'downloads' ? 'active' : ''}`}
-      title="Downloads"
+      className={`${styles.navBtn} ${activeTab === 'downloads' ? styles.active : ''}`}
       onClick={() => handleTabClick('downloads')}
      >
       <i className="fas fa-download"></i>
+      <span className={styles.navTooltip}>Download uChat</span>
      </button>
     )}
 
     <button
-     className={`nav-btn ${activeTab === 'profile' ? 'active' : ''}`}
-     title="Profile"
+     className={`${styles.navBtn} ${activeTab === 'profile' ? styles.active : ''}`}
      onClick={() => handleTabClick('profile')}
     >
      <i className="fas fa-user-circle"></i>
+     <span className={styles.navTooltip}>Profile</span>
     </button>
 
     <button
-     className={`nav-btn ${activeTab === 'terms' ? 'active' : ''}`}
-     title="Terms & Conditions"
-     onClick={() => handleTabClick('terms')}
-    >
-     <i className="fas fa-file-contract"></i>
-    </button>
-
-    <button
-     className={`nav-btn ${activeTab === 'privacy' ? 'active' : ''}`}
-     title="Privacy Policy"
-     onClick={() => handleTabClick('privacy')}
-    >
-     <i className="fas fa-user-shield"></i>
-    </button>
-
-    <button
-     className="nav-btn logout-btn"
-     title="Logout"
+     className={`${styles.navBtn} ${styles.logoutBtn}`}
      onClick={onLogout}
     >
      <i className="fas fa-sign-out-alt"></i>
+     <span className={styles.navTooltip}>Logout</span>
     </button>
    </div>
 
-   <div className="mobile-nav">
+   <div className={styles.mobileNav}>
     <button
-     className={`mobile-nav-btn ${activeTab === 'chats' ? 'active' : ''}`}
+     className={`${styles.mobileNavBtn} ${activeTab === 'chats' ? styles.active : ''}`}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -169,7 +151,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
      <span>Chats</span>
     </button>
     <button
-     className={`mobile-nav-btn ${activeTab === 'calls' ? 'active' : ''}`}
+     className={`${styles.mobileNavBtn} ${activeTab === 'calls' ? styles.active : ''}`}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -192,7 +174,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
      <span>Calls</span>
     </button>
     <button
-     className={`mobile-nav-btn ${activeTab === 'groups' ? 'active' : ''}`}
+     className={`${styles.mobileNavBtn} ${activeTab === 'groups' ? styles.active : ''}`}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -215,7 +197,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
      <span>Groups</span>
     </button>
     <button
-     className="mobile-nav-btn"
+     className={styles.mobileNavBtn}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -240,9 +222,9 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
     </button>
 
     {showMore && (
-     <div className="mobile-more-menu">
+     <div className={styles.mobileMoreMenu}>
       <button
-       className="mobile-more-item"
+       className={styles.mobileMoreItem}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -267,7 +249,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
        <span>Help Center</span>
       </button>
       <button
-       className="mobile-more-item"
+       className={styles.mobileMoreItem}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -292,57 +274,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout })
        <span>Profile</span>
       </button>
       <button
-       className="mobile-more-item"
-       onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleTabClick('terms');
-        setShowMore(false);
-       }}
-       onTouchStart={() => { }}
-       onTouchEnd={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleTabClick('terms');
-        setShowMore(false);
-       }}
-       style={{
-        cursor: 'pointer',
-        userSelect: 'none',
-        WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation'
-       }}
-      >
-       <i className="fas fa-file-contract"></i>
-       <span>T&C</span>
-      </button>
-      <button
-       className="mobile-more-item"
-       onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleTabClick('privacy');
-        setShowMore(false);
-       }}
-       onTouchStart={() => { }}
-       onTouchEnd={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        handleTabClick('privacy');
-        setShowMore(false);
-       }}
-       style={{
-        cursor: 'pointer',
-        userSelect: 'none',
-        WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation'
-       }}
-      >
-       <i className="fas fa-user-shield"></i>
-       <span>Privacy</span>
-      </button>
-      <button
-       className="mobile-more-item logout-item"
+       className={`${styles.mobileMoreItem} ${styles.logoutItem}`}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
