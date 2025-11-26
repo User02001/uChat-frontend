@@ -30,6 +30,8 @@ import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 
 const App = () => {
+ // Block ALL heavy operations during splash
+ const [splashComplete, setSplashComplete] = useState(false);
 
  const {
   // State
@@ -720,12 +722,21 @@ const App = () => {
 
  useEffect(() => {
   if (loading && splashRef.current && !animRef.current) {
-   animRef.current = lottie.loadAnimation({
-    container: splashRef.current,
-    renderer: 'canvas', // ← CHANGE FROM 'svg' TO 'canvas'
-    loop: true,
-    autoplay: true,
-    path: '/splash.json' // Consider converting to /splash.lottie
+   // Render on animation frame for better performance
+   requestAnimationFrame(() => {
+    animRef.current = lottie.loadAnimation({
+     container: splashRef.current,
+     renderer: 'canvas',
+     loop: true,
+     autoplay: true,
+     path: '/splash.json',
+     rendererSettings: {
+      preserveAspectRatio: 'xMidYMid slice',
+      clearCanvas: true,
+      progressiveLoad: true,
+      hideOnTransparent: true
+     }
+    });
    });
 
    return () => {
@@ -734,8 +745,11 @@ const App = () => {
      animRef.current = null;
     }
    };
+  } else if (!loading && !splashComplete) {
+   // Mark splash as complete
+   setSplashComplete(true);
   }
- }, [loading]);
+ }, [loading, splashComplete]);
 
  return (
   <>
@@ -751,7 +765,7 @@ const App = () => {
     }}>
      <div ref={splashRef} className={styles.loadingSpinner}></div>
      <div className={styles.splashBranding}>
-      <p className={styles.splashBrandingText}>Made by</p>
+      <p className={styles.splashBrandingText}>Owned by...</p>
       <div className={styles.splashBrandingLogo}>
        <img
         src="/resources/icons/ufonic.svg"
@@ -759,7 +773,7 @@ const App = () => {
         className={styles.splashBrandingIcon}
         draggable="false"
        />
-       <span className={styles.splashBrandingName}>UFOnic</span>
+       <span className={styles.splashBrandingName}>UFOnic!</span>
       </div>
      </div>
     </div>

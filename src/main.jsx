@@ -90,9 +90,7 @@ const AppRoutes = () => {
 }
 
 createRoot(document.getElementById('root')).render(
- <StrictMode>
-  <Router>
-   <AppRoutes />
-  </Router>
- </StrictMode>
+ <Router>
+  <AppRoutes />
+ </Router>
 )

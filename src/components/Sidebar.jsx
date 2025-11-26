@@ -5,6 +5,7 @@ import { useSidebarLogic } from '../hooks/useSidebarLogic';
 const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL }) => {
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
+ const [clickedButtons, setClickedButtons] = useState(new Set());
  const moreMenuRef = useRef(null);
 
  const { isElectron } = useSidebarLogic();
@@ -33,6 +34,18 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
   if (tab === 'settings') {
    window.location.href = '/settings';
   }
+ };
+
+ const handleButtonClick = (buttonId) => {
+  setClickedButtons(prev => new Set(prev).add(buttonId));
+ };
+
+ const handleButtonMouseLeave = (buttonId) => {
+  setClickedButtons(prev => {
+   const newSet = new Set(prev);
+   newSet.delete(buttonId);
+   return newSet;
+  });
  };
 
  useEffect(() => {
@@ -70,8 +83,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
     {visibleContacts.map((contact) => (
      <button
       key={contact.id}
-      className={`${styles.navBtn} ${styles.navContactBtn} ${activeContact?.id === contact.id ? styles.active : ''}`}
-      onClick={() => onSelectContact && onSelectContact(contact)}
+      className={`${styles.navBtn} ${styles.navContactBtn} ${activeContact?.id === contact.id ? styles.active : ''} ${clickedButtons.has(`contact-${contact.id}`) ? styles.hideTooltip : ''}`}
+      onClick={() => {
+       handleButtonClick(`contact-${contact.id}`);
+       onSelectContact && onSelectContact(contact);
+      }}
+      onMouseLeave={() => handleButtonMouseLeave(`contact-${contact.id}`)}
      >
       <img
        src={
@@ -92,8 +109,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
     <div className={styles.navSeparator}></div>
 
     <button
-     className={`${styles.navBtn} ${activeTab === 'help' ? styles.active : ''}`}
-     onClick={() => handleTabClick('help')}
+     className={`${styles.navBtn} ${activeTab === 'help' ? styles.active : ''} ${clickedButtons.has('help') ? styles.hideTooltip : ''}`}
+     onClick={() => {
+      handleButtonClick('help');
+      handleTabClick('help');
+     }}
+     onMouseLeave={() => handleButtonMouseLeave('help')}
     >
      <i className="fas fa-question-circle"></i>
      <span className={styles.navTooltip}>Help Center</span>
@@ -101,8 +122,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
 
     {!isElectron && (
      <button
-      className={`${styles.navBtn} ${activeTab === 'downloads' ? styles.active : ''}`}
-      onClick={() => handleTabClick('downloads')}
+      className={`${styles.navBtn} ${activeTab === 'downloads' ? styles.active : ''} ${clickedButtons.has('downloads') ? styles.hideTooltip : ''}`}
+      onClick={() => {
+       handleButtonClick('downloads');
+       handleTabClick('downloads');
+      }}
+      onMouseLeave={() => handleButtonMouseLeave('downloads')}
      >
       <i className="fas fa-download"></i>
       <span className={styles.navTooltip}>Download uChat</span>
@@ -110,16 +135,24 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
     )}
 
     <button
-     className={`${styles.navBtn} ${activeTab === 'profile' ? styles.active : ''}`}
-     onClick={() => handleTabClick('profile')}
+     className={`${styles.navBtn} ${activeTab === 'profile' ? styles.active : ''} ${clickedButtons.has('profile') ? styles.hideTooltip : ''}`}
+     onClick={() => {
+      handleButtonClick('profile');
+      handleTabClick('profile');
+     }}
+     onMouseLeave={() => handleButtonMouseLeave('profile')}
     >
      <i className="fas fa-user-circle"></i>
      <span className={styles.navTooltip}>Profile</span>
     </button>
 
     <button
-     className={`${styles.navBtn} ${styles.logoutBtn}`}
-     onClick={onLogout}
+     className={`${styles.navBtn} ${styles.logoutBtn} ${clickedButtons.has('logout') ? styles.hideTooltip : ''}`}
+     onClick={() => {
+      handleButtonClick('logout');
+      onLogout();
+     }}
+     onMouseLeave={() => handleButtonMouseLeave('logout')}
     >
      <i className="fas fa-sign-out-alt"></i>
      <span className={styles.navTooltip}>Logout</span>

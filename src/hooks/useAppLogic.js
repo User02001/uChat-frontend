@@ -108,13 +108,16 @@ export const useAppLogic = () => {
    if (response.ok) {
     const data = await response.json();
     setUser(data.user);
-    initializeSocket(messagesContainerRef);
-    loadContacts();
 
-    // Delay to let splash animation play fully
+    // Delay to let splash animation play fully - THEN do heavy stuff
     setTimeout(() => {
      setLoading(false);
-    }, 1300);
+     // Initialize socket and load contacts AFTER animation
+     setTimeout(() => {
+      initializeSocket(messagesContainerRef);
+      loadContacts();
+     }, 100);
+    }, 2000);
    } else {
     navigate("/login", { replace: true });
    }
@@ -1163,10 +1166,21 @@ export const useAppLogic = () => {
   detectWindowsAndManageDisplay();
  }, []);
 
- // Initialize auth on mount
+ // Initialize auth on mount - but defer heavy stuff
  useEffect(() => {
+  // Start auth check but don't block rendering
   checkAuth();
  }, [checkAuth]);
+
+ // Defer all heavy background tasks until after splash
+ useEffect(() => {
+  if (!loading) {
+   // These were causing lag during splash
+   requestIdleCallback(() => {
+    // Any heavy initialization goes here
+   }, { timeout: 2000 });
+  }
+ }, [loading]);
 
  // Request notification permission
  useEffect(() => {

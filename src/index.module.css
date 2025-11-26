@@ -151,9 +151,24 @@ body, html {
 /* ============================================
    GLOBAL TRANSITIONS
    ============================================ */
+/* ============================================
+   GLOBAL TRANSITIONS
+   ============================================ */
 * {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
+
+/* Disable ALL transitions during loading */
+.appLoading,
+.appLoading * {
+    transition: none !important;
+    animation: none !important;
+}
+
+    .appLoading .loadingSpinner,
+    .appLoading .loadingSpinner * {
+        transition: none !important;
+    }
 
 /* ============================================
    APP LOADING STATE
@@ -173,7 +188,13 @@ body, html {
 .loadingSpinner {
     width: min(50vmin, 420px);
     height: min(50vmin, 420px);
+    will-change: contents;
+    transform: translateZ(0);
 }
+
+    .loadingSpinner canvas {
+        will-change: transform;
+    }
 
 .splashBranding {
     position: absolute;
