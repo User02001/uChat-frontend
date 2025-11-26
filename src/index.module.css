@@ -1205,8 +1205,8 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
+    width: 42px;
+    height: 42px;
     flex-shrink: 0;
     margin-right: 5px;
 }
@@ -2229,7 +2229,7 @@ html, body, * {
     will-change: scroll-position;
     overflow-anchor: none;
     position: relative;
-    transition: opacity 0.15s ease-in;
+    opacity: 1;
 }
 
 .messagesContainerHidden {

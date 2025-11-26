@@ -89,7 +89,12 @@ const AppRoutes = () => {
  )
 }
 
-createRoot(document.getElementById('root')).render(
+const mountId = `_${Math.random().toString(36).substr(2, 9)}_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 9)}`;
+const mountPoint = document.createElement('div');
+mountPoint.id = mountId;
+document.body.appendChild(mountPoint);
+
+createRoot(mountPoint).render(
  <Router>
   <AppRoutes />
  </Router>

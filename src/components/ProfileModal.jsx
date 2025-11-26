@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { API_BASE_URL } from '../config';
 import './ProfileModal.css';
+import SVG from 'react-inlinesvg';
 
 const ProfileModal = ({
  user,
@@ -131,7 +132,7 @@ const ProfileModal = ({
      <h2 className="profile-modal-username-pm">
       {user.username}
       {!user.is_verified && (
-       <img
+       <SVG
         src="/resources/icons/unverified.svg"
         alt="Unverified"
         className="profile-modal-unverified-icon-pm"
@@ -240,7 +241,7 @@ const ProfileModal = ({
        </div>
       </div>
       <div className="profile-modal-info-item-pm">
-       <img
+       <SVG
         src={user.is_verified ? "/resources/icons/verified.svg" : "/resources/icons/unverified.svg"}
         alt={user.is_verified ? "Verified" : "Unverified"}
         className="profile-modal-info-icon-img-pm"

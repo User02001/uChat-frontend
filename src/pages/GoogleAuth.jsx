@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Login.module.css';
 import { API_BASE_URL } from '../config';
+import SVG from 'react-inlinesvg';
 
 const GoogleAuth = () => {
  const navigate = useNavigate();
@@ -147,7 +148,7 @@ const GoogleAuth = () => {
        justifyContent: 'center',
        marginBottom: '24px'
       }}>
-       <img
+       <SVG
         src="/resources/main-logo.svg"
         alt="uChat Logo"
         className={styles.mainLogo}
@@ -179,7 +180,7 @@ const GoogleAuth = () => {
       justifyContent: 'center',
       marginBottom: '24px'
      }}>
-      <img
+      <SVG
        src="/resources/main-logo.svg"
        alt="uChat Logo"
        className={styles.mainLogo}

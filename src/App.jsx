@@ -28,6 +28,7 @@ import MessageDiscord, { AudioPlayer } from "./components/MessageDiscord";
 import StartOfChat from "./components/StartOfChat";
 import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
+import SVG from 'react-inlinesvg';
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -643,12 +644,16 @@ const App = () => {
    }
   }
 
-  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 150 && messages.length > 0) {
+  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 50 && messages.length > 0) {
    const oldestMessage = messages[0];
    if (oldestMessage) {
     setLoadingMoreMessages(true);
     previousScrollHeight.current = container.scrollHeight;
-    loadMessages(activeContact.id, oldestMessage.id);
+
+    // Add artificial delay
+    setTimeout(() => {
+     loadMessages(activeContact.id, oldestMessage.id);
+    }, 300);
    }
   }
  }, [activeContact, messages, hasMoreMessages, loadingMoreMessages, loadMessages]);
@@ -683,15 +688,27 @@ const App = () => {
   lastMessageIdRef.current = newLastId;
 
   if (isInitialLoad) {
+   // IMMEDIATELY hide container BEFORE any rendering
+   container.style.visibility = 'hidden';
+
+   // Force synchronous layout calculation
+   container.offsetHeight;
+
+   // Scroll instantly while invisible
+   container.scrollTop = container.scrollHeight + 9999;
+
+   // Make visible on next frame
    requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-     if (container && container.scrollHeight > 0) {
-      container.scrollTop = container.scrollHeight + 9999;
-      setMessagesContainerVisible(true);
-     }
-    });
+    container.style.visibility = 'visible';
+    setMessagesContainerVisible(true);
    });
    return;
+  }
+
+  // Ensure visibility is set for empty chats with StartOfChat
+  if (messages.length === 0 && container.style.visibility === 'hidden') {
+   container.style.visibility = 'visible';
+   setMessagesContainerVisible(true);
   }
 
   const canAutoScroll =
@@ -715,6 +732,11 @@ const App = () => {
   setShouldScrollToBottom(true);
   setHasMoreMessages(true);
   previousScrollHeight.current = 0;
+
+  // Hide messages container immediately when switching contacts
+  if (messagesContainerRef.current) {
+   messagesContainerRef.current.style.visibility = 'hidden';
+  }
  }, [activeContact?.id]);
 
  const splashRef = useRef(null);
@@ -765,15 +787,14 @@ const App = () => {
     }}>
      <div ref={splashRef} className={styles.loadingSpinner}></div>
      <div className={styles.splashBranding}>
-      <p className={styles.splashBrandingText}>Owned by...</p>
       <div className={styles.splashBrandingLogo}>
-       <img
+       <SVG
         src="/resources/icons/ufonic.svg"
         alt="UFOnic"
         className={styles.splashBrandingIcon}
         draggable="false"
        />
-       <span className={styles.splashBrandingName}>UFOnic!</span>
+       <span className={styles.splashBrandingName}>UFOnic</span>
       </div>
      </div>
     </div>
@@ -825,53 +846,6 @@ const App = () => {
         <div className={styles.userInfo}>
          <span className={styles.username}>
           {user?.username}
-          {user?.email === "ufonic.official@gmail.com" && (
-           <span
-            style={{
-             display: "inline-flex",
-             alignItems: "center",
-             gap: "6px",
-             padding: "2px 6px",
-             marginLeft: "8px",
-             borderRadius: "6px",
-             fontSize: "10px",
-             lineHeight: 1,
-             background: "#6b7280", // neutral gray that's visible on light & dark
-             color: "#ffffff",
-             verticalAlign: "middle"
-            }}
-            title="CEO"
-           >
-            <img
-             src="/resources/icons/lightning.svg"
-             alt=""
-             style={{ width: "12px", height: "12px", display: "inline-block" }}
-            />
-            CEO
-           </span>
-          )}
-          {user?.email === "ufonic.official@gmail.com" && (
-           <button
-            onClick={() => window.location.href = '/moderation'}
-            style={{
-             marginTop: '10px',
-             padding: '8px 12px',
-             background: '#ef4444',
-             color: 'white',
-             border: 'none',
-             borderRadius: '6px',
-             cursor: 'pointer',
-             fontSize: '12px',
-             fontWeight: '600',
-             display: 'flex',
-             alignItems: 'center',
-             gap: '6px'
-            }}
-           >
-            <i className="fas fa-shield-alt"></i>
-            Moderation
-           </button>
-          )}
          </span>
          <span className={styles.handle}>@{user?.handle}</span>
         </div>
@@ -899,7 +873,7 @@ const App = () => {
           }}>
            {userStatuses[user?.id] === 'away' ? (
             <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-             <img
+             <SVG
               src="/resources/icons/away-icon.svg"
               alt="Status"
               style={{ width: '18px', height: '18px' }}
@@ -967,34 +941,6 @@ const App = () => {
             <div className={styles.searchUserInfo}>
              <span className={styles.searchUsername}>
               {result.username}
-              {(
-               (result?.email && result.email.toLowerCase() === 'ufonic.official@gmail.com') ||
-               (result?.handle && result.handle.toLowerCase() === 'ufonic')
-              ) && (
-                <span
-                 style={{
-                  marginLeft: 6,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  background: '#6b7280',
-                  color: '#fff',
-                  padding: '1px 6px',
-                  borderRadius: 6,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  lineHeight: 1
-                 }}
-                >
-                 <img
-                  src="/resources/icons/lightning.svg"
-                  alt=""
-                  style={{ width: 12, height: 12, display: 'inline-block' }}
-                  draggable="false"
-                 />
-                 <span>CEO</span>
-                </span>
-               )}
              </span>
              <span className={styles.searchHandle}>
               @{result.handle}
@@ -1066,7 +1012,7 @@ const App = () => {
          }}>
           {userStatuses[user?.id] === 'away' ? (
            <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-            <img
+            <SVG
              src="/resources/icons/away-icon.svg"
              alt="Status"
              style={{ width: '18px', height: '18px' }}
@@ -1155,34 +1101,6 @@ const App = () => {
              <div className={styles.searchUserInfo}>
               <span className={styles.searchUsername}>
                {result.username}
-               {(
-                (result?.email && result.email.toLowerCase() === 'ufonic.official@gmail.com') ||
-                (result?.handle && result.handle.toLowerCase() === 'ufonic')
-               ) && (
-                 <span
-                  style={{
-                   marginLeft: 6,
-                   display: 'inline-flex',
-                   alignItems: 'center',
-                   gap: 4,
-                   background: '#6b7280',
-                   color: '#fff',
-                   padding: '1px 6px',
-                   borderRadius: 6,
-                   fontSize: 10,
-                   fontWeight: 700,
-                   lineHeight: 1
-                  }}
-                 >
-                  <img
-                   src="/resources/icons/lightning.svg"
-                   alt=""
-                   style={{ width: 12, height: 12, display: 'inline-block' }}
-                   draggable="false"
-                  />
-                  <span>CEO</span>
-                 </span>
-                )}
               </span>
               <span className={styles.searchHandle}>
                @{result.handle}
@@ -1257,36 +1175,8 @@ const App = () => {
            <div className={styles.contactMain}>
             <span className={styles.contactName}>
              {contact.username}
-             {(
-              (contact?.email && contact.email.toLowerCase() === 'ufonic.official@gmail.com') ||
-              (contact?.handle && contact.handle.toLowerCase() === 'ufonic')
-             ) && (
-               <span
-                style={{
-                 marginLeft: 6,
-                 display: 'inline-flex',
-                 alignItems: 'center',
-                 gap: 4,
-                 background: '#6b7280',
-                 color: '#fff',
-                 padding: '1px 6px',
-                 borderRadius: 6,
-                 fontSize: 10,
-                 fontWeight: 700,
-                 lineHeight: 1
-                }}
-               >
-                <img
-                 src="/resources/icons/lightning.svg"
-                 alt=""
-                 style={{ width: 12, height: 12, display: 'inline-block' }}
-                 draggable="false"
-                />
-                <span>CEO</span>
-               </span>
-              )}
              {!contact.is_verified && (
-              <img
+              <SVG
                src="/resources/icons/unverified.svg"
                alt="Unverified"
                className={styles.unverifiedIcon}
@@ -1362,37 +1252,9 @@ const App = () => {
           <div className={styles.chatUsernameContainer}>
            <span className={styles.chatUsername}>
             {activeContact.username}
-            {(
-             (activeContact?.email && activeContact.email.toLowerCase() === 'ufonic.official@gmail.com') ||
-             (activeContact?.handle && activeContact.handle.toLowerCase() === 'ufonic')
-            ) && (
-              <span
-               style={{
-                marginLeft: 6,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                background: '#6b7280',
-                color: '#fff',
-                padding: '1px 6px',
-                borderRadius: 6,
-                fontSize: 10,
-                fontWeight: 700,
-                lineHeight: 1
-               }}
-              >
-               <img
-                src="/resources/icons/lightning.svg"
-                alt=""
-                style={{ width: 12, height: 12, display: 'inline-block' }}
-                draggable="false"
-               />
-               <span>CEO</span>
-              </span>
-             )}
            </span>
            {!activeContact.is_verified && (
-            <img
+            <SVG
              src="/resources/icons/unverified.svg"
              alt="Unverified"
              className={styles.unverifiedIcon}
@@ -1444,9 +1306,10 @@ const App = () => {
         </div>
 
         <div
-         className={`${styles.messagesContainer} ${isLoadingMessages === true || (messages.length === 0 && isLoadingMessages !== false) ? styles.messagesContainerHidden : ''}`}
+         className={`${styles.messagesContainer} ${isLoadingMessages === true && messages.length === 0 ? styles.messagesContainerHidden : ''}`}
          ref={messagesContainerRef}
          onScroll={handleScroll}
+         style={isLoadingMessages === false && messages.length === 0 ? { visibility: 'visible', opacity: 1 } : undefined}
         >
          {isLoadingMessages === true && messages.length === 0 && (
           <div style={{
@@ -1459,13 +1322,13 @@ const App = () => {
            <div className={styles.loadingSpinner}></div>
           </div>
          )}
-         {(isLoadingMessages === false && messages.length === 0) || (!hasMoreMessages && messages.length > 0) ? (
+         {((isLoadingMessages === false && messages.length === 0) || (!hasMoreMessages && messages.length > 0 && !loadingMoreMessages)) && (
           <StartOfChat
            contact={activeContact}
            onProfileClick={setShowProfileModal}
            API_BASE_URL={API_BASE_URL}
           />
-         ) : null}
+         )}
          {loadingMoreMessages && (
           <div style={{
            position: 'absolute',
@@ -1751,7 +1614,7 @@ const App = () => {
            title={isOffline ? "Offline - can't send files" : "Attach file"}
            disabled={isOffline}
           >
-           <img src="/resources/icons/attachment.svg" alt="Attach" draggable="false" />
+           <SVG src="/resources/icons/attachment.svg" alt="Attach" draggable="false" />
           </button>
           <button
            type="button"
@@ -1760,7 +1623,7 @@ const App = () => {
            title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
           >
-           <img src="/resources/icons/gif.svg" alt="GIF" draggable="false" />
+           <SVG src="/resources/icons/gif.svg" alt="GIF" draggable="false" />
           </button>
           <input
            type="text"
@@ -1788,7 +1651,7 @@ const App = () => {
            className={styles.sendButton}
            disabled={!messageText.trim() || isOffline}
           >
-           <img src="/resources/icons/send.svg" alt="Send" draggable="false" />
+           <SVG src="/resources/icons/send.svg" alt="Send" draggable="false" />
           </button>
          </form>
         </div>

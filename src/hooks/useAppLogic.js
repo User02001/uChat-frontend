@@ -354,8 +354,8 @@ export const useAppLogic = () => {
   socket.on("contact_updated", (data) => {
    const currentActive = activeContactRef.current;
 
-   setContacts((prev) =>
-    prev.map((contact) => {
+   setContacts((prev) => {
+    const updated = prev.map((contact) => {
      if (contact.id === data.contact_id) {
       const isActive = currentActive && currentActive.id === data.contact_id;
 
@@ -375,8 +375,14 @@ export const useAppLogic = () => {
       };
      }
      return contact;
-    })
-   );
+    });
+
+    return updated.sort((a, b) => {
+     const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+     const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+     return timeB - timeA;
+    });
+   });
   });
 
   socket.on("typing_status", (data) => {

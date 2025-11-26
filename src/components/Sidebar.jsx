@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './Sidebar.module.css';
 import { useSidebarLogic } from '../hooks/useSidebarLogic';
+import SVG from 'react-inlinesvg';
 
 const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL }) => {
  const [activeTab, setActiveTab] = useState('chats');
@@ -70,7 +71,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
   <div className={`${styles.navSidebar} ${showMobileChat ? styles.mobileHidden : ''} ${showMobileSearch ? styles.searchHidden : ''}`}>
    <div className={styles.navButtons}>
     <div className={styles.navLogo}>
-     <img
+     <SVG
       src="/resources/icons/sidebar_logo.svg"
       alt="uChat"
       className={styles.navLogoIcon}

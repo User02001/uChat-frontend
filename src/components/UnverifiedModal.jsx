@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import styles from "./UnverifiedModal.module.css";
+import SVG from 'react-inlinesvg';
 
 const UnverifiedModal = ({ username, onClose }) => {
  return createPortal(
@@ -9,7 +10,7 @@ const UnverifiedModal = ({ username, onClose }) => {
     onClick={(e) => e.stopPropagation()}
    >
     <h3>
-     <img
+     <SVG
       src="/resources/icons/unverified.svg"
       alt="Unverified"
       className={styles.unverifiedIcon}
@@ -35,7 +36,7 @@ const UnverifiedModal = ({ username, onClose }) => {
     </div>
     <p className={styles.unverifiedInfo}>
      Verified users won't have this broken lock (
-     <img
+     <SVG
       src="/resources/icons/unverified.svg"
       alt="Unverified"
       className={styles.unverifiedIconModal1}

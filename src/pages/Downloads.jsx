@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Downloads.css';
+import SVG from 'react-inlinesvg';
 
 const Downloads = () => {
  const [releases, setReleases] = useState([]);
@@ -115,7 +116,7 @@ const Downloads = () => {
    <div className="downloads-content">
     <div className="downloads-header">
      <div className="logo-section">
-      <img
+      <SVG
        src="/resources/main-logo.svg"
        alt="uChat"
        className="app-logo"
