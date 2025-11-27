@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styles from './MessageDiscord.module.css';
+import * as stylex from '@stylexjs/stylex';
+import { styles } from '../styles/message';
 import { API_BASE_URL } from '../config';
 import ReactionMore from './ReactionMore';
 import Reaction from './Reaction';
 import Reply from './Reply';
 import VideoPlayer from './VideoPlayer';
 
-const MessageDiscord = ({
+const Message = ({
  message,
  user,
  activeContact,
@@ -33,6 +34,7 @@ const MessageDiscord = ({
  const senderData = isSent ? user : activeContact;
  const longPressTimerRef = useRef(null);
  const [pressing, setPressing] = useState(false);
+ const [isHovered, setIsHovered] = useState(false);
  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
 
  const handleTouchStart = (e) => {
@@ -72,18 +74,23 @@ const MessageDiscord = ({
 
  return (
   <div
-   className={`${styles.messageRow} ${isGrouped ? styles.grouped : ''}`}
+   {...stylex.props(
+    styles.messageRow,
+    isGrouped ? styles.messageRowGrouped : styles.messageRowNotGrouped
+   )}
    id={`message-${message.id}`}
    data-message-id={message.id}
    onTouchStart={handleTouchStart}
    onTouchEnd={handleTouchEnd}
    onTouchMove={handleTouchMove}
+   onMouseEnter={() => setIsHovered(true)}
+   onMouseLeave={() => setIsHovered(false)}
    style={pressing ? { background: 'var(--bg-tertiary)' } : {}}
   >
-   <div className={styles.avatarColumn}>
+   <div {...stylex.props(styles.avatarColumn)}>
     {showHeader && (
      <div
-      className={styles.avatarContainer}
+      {...stylex.props(styles.avatarContainer)}
       onClick={() => onProfileClick(senderData)}
      >
       <img
@@ -93,7 +100,7 @@ const MessageDiscord = ({
          : "/resources/default_avatar.png"
        }
        alt={senderData.username}
-       className={styles.avatar}
+       {...stylex.props(styles.avatar)}
        draggable="false"
       />
       <div
@@ -107,10 +114,10 @@ const MessageDiscord = ({
      </div>
     )}
    </div>
-   <div className={styles.contentColumn}>
+   <div {...stylex.props(styles.contentColumn)}>
     {showHeader && !message.deleted && (
-     <div className={styles.messageHeader}>
-      <span className={styles.username}>
+     <div {...stylex.props(styles.messageHeader)}>
+      <span {...stylex.props(styles.username)}>
        {senderData.username}
        {senderData?.email?.toLowerCase() === 'ufonic.official@gmail.com' && (
         <span
@@ -138,7 +145,7 @@ const MessageDiscord = ({
         </span>
        )}
       </span>
-      <span className={styles.timestamp}>
+      <span {...stylex.props(styles.timestamp)}>
        {new Date(message.timestamp + "Z").toLocaleTimeString([], {
         hour: 'numeric',
         minute: '2-digit',
@@ -147,7 +154,7 @@ const MessageDiscord = ({
       </span>
      </div>
     )}
-    <div className={styles.messageContent}>
+    <div {...stylex.props(styles.messageContent)}>
      {message.reply_to && (() => {
       const replyToMessage = allMessages?.find(m => m.id === message.reply_to);
       if (!replyToMessage) return null;
@@ -190,7 +197,10 @@ const MessageDiscord = ({
     </div>
    </div>
    {!message.deleted && !isTouchDevice && (
-    <div className={styles.reactionPopup}>
+    <div {...stylex.props(
+     styles.reactionPopup,
+     isHovered && styles.reactionPopupVisible
+    )}>
      <ReactionMore
       messageId={message.id}
       onAddReaction={onAddReaction}
@@ -264,35 +274,35 @@ export const AudioPlayer = ({ src, fileName }) => {
  };
 
  return (
-  <div className={styles.audioPlayer}>
-   <div className={styles.audioHeader}>
-    <div className={styles.audioIcon}>
+  <div {...stylex.props(styles.audioPlayer)}>
+   <div {...stylex.props(styles.audioHeader)}>
+    <div {...stylex.props(styles.audioIcon)}>
      <i className="fas fa-music"></i>
     </div>
-    <div className={styles.audioInfo}>
-     <div className={styles.audioTitle}>{fileName || 'Audio File'}</div>
-     <div className={styles.audioSubtitle}>Audio • {formatTime(duration)}</div>
+    <div {...stylex.props(styles.audioInfo)}>
+     <div {...stylex.props(styles.audioTitle)}>{fileName || 'Audio File'}</div>
+     <div {...stylex.props(styles.audioSubtitle)}>Audio • {formatTime(duration)}</div>
     </div>
     <button
-     className={styles.audioDownloadBtn}
+     {...stylex.props(styles.audioDownloadBtn)}
      onClick={() => window.open(src, '_blank')}
      title="Download"
     >
      <i className="fas fa-download"></i>
     </button>
    </div>
-   <div className={styles.audioControls}>
-    <button className={styles.audioPlayBtn} onClick={togglePlay}>
+   <div {...stylex.props(styles.audioControls)}>
+    <button {...stylex.props(styles.audioPlayBtn)} onClick={togglePlay}>
      <i className={`fas fa-${isPlaying ? 'pause' : 'play'}`}></i>
     </button>
-    <div className={styles.audioProgress}>
-     <div className={styles.audioProgressBar} onClick={handleProgressClick}>
+    <div {...stylex.props(styles.audioProgress)}>
+     <div {...stylex.props(styles.audioProgressBar)} onClick={handleProgressClick}>
       <div
-       className={styles.audioProgressFill}
+       {...stylex.props(styles.audioProgressFill)}
        style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
       ></div>
      </div>
-     <div className={styles.audioTime}>
+     <div {...stylex.props(styles.audioTime)}>
       <span>{formatTime(currentTime)}</span>
       <span>{formatTime(duration)}</span>
      </div>
@@ -303,4 +313,4 @@ export const AudioPlayer = ({ src, fileName }) => {
  );
 };
 
-export default MessageDiscord;
+export default Message;

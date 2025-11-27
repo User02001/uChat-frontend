@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styles from './Sidebar.module.css';
+import * as stylex from '@stylexjs/stylex';
+import { styles } from '../styles/sidebar';
 import { useSidebarLogic } from '../hooks/useSidebarLogic';
 import SVG from 'react-inlinesvg';
 
@@ -7,6 +8,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
  const [clickedButtons, setClickedButtons] = useState(new Set());
+ const [hoveredButton, setHoveredButton] = useState(null);
  const moreMenuRef = useRef(null);
 
  const { isElectron } = useSidebarLogic();
@@ -68,28 +70,41 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
  const visibleContacts = contacts.slice(0, 6);
 
  return (
-  <div className={`${styles.navSidebar} ${showMobileChat ? styles.mobileHidden : ''} ${showMobileSearch ? styles.searchHidden : ''}`}>
-   <div className={styles.navButtons}>
-    <div className={styles.navLogo}>
+  <div {...stylex.props(
+   styles.navSidebar,
+   showMobileChat && styles.mobileHidden,
+   showMobileSearch && styles.searchHidden
+  )}>
+   <div {...stylex.props(styles.navButtons)}>
+    <div {...stylex.props(styles.navLogo)}>
      <SVG
       src="/resources/icons/sidebar_logo.svg"
       alt="uChat"
-      className={styles.navLogoIcon}
+      {...stylex.props(styles.navLogoIcon)}
       draggable="false"
      />
     </div>
 
-    <div className={styles.navSeparator}></div>
+    <div {...stylex.props(styles.navSeparator)}></div>
 
     {visibleContacts.map((contact) => (
      <button
       key={contact.id}
-      className={`${styles.navBtn} ${styles.navContactBtn} ${activeContact?.id === contact.id ? styles.active : ''} ${clickedButtons.has(`contact-${contact.id}`) ? styles.hideTooltip : ''}`}
+      {...stylex.props(
+       styles.navBtn,
+       styles.navContactBtn,
+       activeContact?.id === contact.id && styles.active,
+       activeContact?.id === contact.id && styles.navContactBtnActive,
+      )}
       onClick={() => {
        handleButtonClick(`contact-${contact.id}`);
        onSelectContact && onSelectContact(contact);
       }}
-      onMouseLeave={() => handleButtonMouseLeave(`contact-${contact.id}`)}
+      onMouseEnter={() => !clickedButtons.has(`contact-${contact.id}`) && setHoveredButton(`contact-${contact.id}`)}
+      onMouseLeave={() => {
+       handleButtonMouseLeave(`contact-${contact.id}`);
+       setHoveredButton(null);
+      }}
      >
       <img
        src={
@@ -98,71 +113,117 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
          : "/resources/default_avatar.png"
        }
        alt=""
-       className={styles.navContactAvatar}
+       {...stylex.props(styles.navContactAvatar)}
        draggable="false"
       />
-      <span className={styles.navTooltip}>{contact.username}</span>
+      <span {...stylex.props(
+       styles.navTooltip,
+       hoveredButton === `contact-${contact.id}` && !clickedButtons.has(`contact-${contact.id}`) && styles.navTooltipVisible
+      )}>{contact.username}</span>
      </button>
     ))}
    </div>
 
-   <div className={styles.navBottom}>
-    <div className={styles.navSeparator}></div>
+   <div {...stylex.props(styles.navBottom)}>
+    <div {...stylex.props(styles.navSeparator)}></div>
 
     <button
-     className={`${styles.navBtn} ${activeTab === 'help' ? styles.active : ''} ${clickedButtons.has('help') ? styles.hideTooltip : ''}`}
+     {...stylex.props(
+      styles.navBtn,
+      activeTab === 'help' && styles.active,
+     )}
      onClick={() => {
       handleButtonClick('help');
       handleTabClick('help');
      }}
-     onMouseLeave={() => handleButtonMouseLeave('help')}
+     onMouseEnter={() => !clickedButtons.has('help') && setHoveredButton('help')}
+     onMouseLeave={() => {
+      handleButtonMouseLeave('help');
+      setHoveredButton(null);
+     }}
     >
      <i className="fas fa-question-circle"></i>
-     <span className={styles.navTooltip}>Help Center</span>
+     <span {...stylex.props(
+      styles.navTooltip,
+      hoveredButton === 'help' && !clickedButtons.has('help') && styles.navTooltipVisible
+     )}>Help Center</span>
     </button>
 
     {!isElectron && (
      <button
-      className={`${styles.navBtn} ${activeTab === 'downloads' ? styles.active : ''} ${clickedButtons.has('downloads') ? styles.hideTooltip : ''}`}
+      {...stylex.props(
+       styles.navBtn,
+       activeTab === 'downloads' && styles.active,
+      )}
       onClick={() => {
        handleButtonClick('downloads');
        handleTabClick('downloads');
       }}
-      onMouseLeave={() => handleButtonMouseLeave('downloads')}
+      onMouseEnter={() => !clickedButtons.has('downloads') && setHoveredButton('downloads')}
+      onMouseLeave={() => {
+       handleButtonMouseLeave('downloads');
+       setHoveredButton(null);
+      }}
      >
       <i className="fas fa-download"></i>
-      <span className={styles.navTooltip}>Download uChat</span>
+      <span {...stylex.props(
+       styles.navTooltip,
+       hoveredButton === 'downloads' && !clickedButtons.has('downloads') && styles.navTooltipVisible
+      )}>Download uChat</span>
      </button>
     )}
 
     <button
-     className={`${styles.navBtn} ${activeTab === 'profile' ? styles.active : ''} ${clickedButtons.has('profile') ? styles.hideTooltip : ''}`}
+     {...stylex.props(
+      styles.navBtn,
+      activeTab === 'profile' && styles.active,
+     )}
      onClick={() => {
       handleButtonClick('profile');
       handleTabClick('profile');
      }}
-     onMouseLeave={() => handleButtonMouseLeave('profile')}
+     onMouseEnter={() => !clickedButtons.has('profile') && setHoveredButton('profile')}
+     onMouseLeave={() => {
+      handleButtonMouseLeave('profile');
+      setHoveredButton(null);
+     }}
     >
      <i className="fas fa-user-circle"></i>
-     <span className={styles.navTooltip}>Profile</span>
+     <span {...stylex.props(
+      styles.navTooltip,
+      hoveredButton === 'profile' && !clickedButtons.has('profile') && styles.navTooltipVisible
+     )}>Profile</span>
     </button>
 
     <button
-     className={`${styles.navBtn} ${styles.logoutBtn} ${clickedButtons.has('logout') ? styles.hideTooltip : ''}`}
+     {...stylex.props(
+      styles.navBtn,
+      styles.logoutBtn,
+     )}
      onClick={() => {
       handleButtonClick('logout');
       onLogout();
      }}
-     onMouseLeave={() => handleButtonMouseLeave('logout')}
+     onMouseEnter={() => !clickedButtons.has('logout') && setHoveredButton('logout')}
+     onMouseLeave={() => {
+      handleButtonMouseLeave('logout');
+      setHoveredButton(null);
+     }}
     >
      <i className="fas fa-sign-out-alt"></i>
-     <span className={styles.navTooltip}>Logout</span>
+     <span {...stylex.props(
+      styles.navTooltip,
+      hoveredButton === 'logout' && !clickedButtons.has('logout') && styles.navTooltipVisible
+     )}>Logout</span>
     </button>
    </div>
 
-   <div className={styles.mobileNav}>
+   <div {...stylex.props(styles.mobileNav)}>
     <button
-     className={`${styles.mobileNavBtn} ${activeTab === 'chats' ? styles.active : ''}`}
+     {...stylex.props(
+      styles.mobileNavBtn,
+      activeTab === 'chats' && styles.mobileNavBtnActive
+     )}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -181,11 +242,18 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i className="fas fa-comment-dots"></i>
-     <span>Chats</span>
+     <i {...stylex.props(
+      styles.mobileNavBtnIcon,
+      activeTab === 'chats' && styles.mobileNavBtnIconActive
+     )} className="fas fa-comment-dots"></i>
+     <span {...stylex.props(styles.mobileNavBtnText)}>Chats</span>
     </button>
+
     <button
-     className={`${styles.mobileNavBtn} ${activeTab === 'calls' ? styles.active : ''}`}
+     {...stylex.props(
+      styles.mobileNavBtn,
+      activeTab === 'calls' && styles.mobileNavBtnActive
+     )}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -204,11 +272,18 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i className="fas fa-phone"></i>
-     <span>Calls</span>
+     <i {...stylex.props(
+      styles.mobileNavBtnIcon,
+      activeTab === 'calls' && styles.mobileNavBtnIconActive
+     )} className="fas fa-phone"></i>
+     <span {...stylex.props(styles.mobileNavBtnText)}>Calls</span>
     </button>
+
     <button
-     className={`${styles.mobileNavBtn} ${activeTab === 'groups' ? styles.active : ''}`}
+     {...stylex.props(
+      styles.mobileNavBtn,
+      activeTab === 'groups' && styles.mobileNavBtnActive
+     )}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -227,11 +302,15 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i className="fas fa-users"></i>
-     <span>Groups</span>
+     <i {...stylex.props(
+      styles.mobileNavBtnIcon,
+      activeTab === 'groups' && styles.mobileNavBtnIconActive
+     )} className="fas fa-users"></i>
+     <span {...stylex.props(styles.mobileNavBtnText)}>Groups</span>
     </button>
+
     <button
-     className={styles.mobileNavBtn}
+     {...stylex.props(styles.mobileNavBtn)}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -251,14 +330,14 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i className="fas fa-ellipsis-h"></i>
-     <span>More</span>
+     <i {...stylex.props(styles.mobileNavBtnIcon)} className="fas fa-ellipsis-h"></i>
+     <span {...stylex.props(styles.mobileNavBtnText)}>More</span>
     </button>
 
     {showMore && (
-     <div className={styles.mobileMoreMenu}>
+     <div {...stylex.props(styles.mobileMoreMenu)}>
       <button
-       className={styles.mobileMoreItem}
+       {...stylex.props(styles.mobileMoreItem)}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -279,11 +358,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
         touchAction: 'manipulation'
        }}
       >
-       <i className="fas fa-question-circle"></i>
+       <i {...stylex.props(styles.mobileMoreItemIcon)} className="fas fa-question-circle"></i>
        <span>Help Center</span>
       </button>
+
       <button
-       className={styles.mobileMoreItem}
+       {...stylex.props(styles.mobileMoreItem)}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -304,11 +384,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
         touchAction: 'manipulation'
        }}
       >
-       <i className="fas fa-user-circle"></i>
+       <i {...stylex.props(styles.mobileMoreItemIcon)} className="fas fa-user-circle"></i>
        <span>Profile</span>
       </button>
+
       <button
-       className={`${styles.mobileMoreItem} ${styles.logoutItem}`}
+       {...stylex.props(styles.mobileMoreItem)}
        onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -333,7 +414,7 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
         touchAction: 'manipulation'
        }}
       >
-       <i className="fas fa-sign-out-alt"></i>
+       <i {...stylex.props(styles.mobileMoreItemIcon)} className="fas fa-sign-out-alt"></i>
        <span>Logout</span>
       </button>
      </div>

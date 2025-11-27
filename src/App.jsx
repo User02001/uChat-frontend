@@ -26,12 +26,14 @@ import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
-import MessageDiscord, { AudioPlayer } from "./components/MessageDiscord";
+import Message, { AudioPlayer } from "./components/Message";
 import StartOfChat from "./components/StartOfChat";
 import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 import SVG from 'react-inlinesvg';
 import 'virtual:stylex.css'
+import { styles as chatStyles } from './styles/chat';
+import { styles as inputStyles } from './styles/inputs';
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -901,18 +903,18 @@ const App = () => {
         <div className={styles.searchInputContainer}>
          <input
           type="text"
-          placeholder="Search users..."
+          placeholder="Search for people..."
           value={searchQuery}
           onChange={(e) => {
            setSearchQuery(e.target.value);
            setShowSearch(true);
           }}
           onFocus={() => setShowSearch(true)}
-          className={styles.searchInput}
+          {...stylex.props(sx.searchInput)}
          />
          {showSearch && (
           <button
-           className={styles.searchClose}
+           {...stylex.props(sx.searchClose)}
            onClick={() => {
             setSearchExiting(true);
             setTimeout(() => {
@@ -1223,7 +1225,11 @@ const App = () => {
       {activeContact ? (
        <>
         <div
-         className={`${styles.chatHeader} ${isMobile ? (showChatContent ? styles.fadeIn : styles.fadeOut) : ""}`}
+         {...stylex.props(
+          chatStyles.chatHeader,
+          isMobile && showChatContent && chatStyles.fadeIn,
+          isMobile && !showChatContent && chatStyles.fadeOut
+         )}
         >
          {isMobile && (
           <button
@@ -1242,7 +1248,7 @@ const App = () => {
            alt={activeContact.username}
            onClick={() => setShowProfileModal(activeContact)}
            style={{ cursor: 'pointer' }}
-           className={styles.chatAvatar}
+           {...stylex.props(chatStyles.chatAvatar)}
            title={`View ${activeContact.username}'s Profile`}
           />
          <div
@@ -1251,16 +1257,16 @@ const App = () => {
            }`}
          ></div>
          </div>
-         <div className={styles.chatUserInfo}>
-          <div className={styles.chatUsernameContainer}>
-           <span className={styles.chatUsername}>
+         <div {...stylex.props(chatStyles.chatUserInfo)}>
+          <div {...stylex.props(chatStyles.chatUsernameContainer)}>
+           <span {...stylex.props(chatStyles.chatUsername)}>
             {activeContact.username}
            </span>
            {!activeContact.is_verified && (
             <SVG
              src="/resources/icons/unverified.svg"
              alt="Unverified"
-             className={styles.unverifiedIcon}
+             {...stylex.props(chatStyles.chatUnverifiedIcon)}
              onClick={() =>
               setShowUnverifiedModal(activeContact.username)
              }
@@ -1269,12 +1275,12 @@ const App = () => {
            )}
            {!(isMobile && showMobileChat) && (
             <>
-             <span className={styles.chatAka}>aka</span>
-             <span className={styles.chatHandle}>@{activeContact.handle}</span>
+             <span {...stylex.props(chatStyles.chatAka)}>aka</span>
+             <span {...stylex.props(chatStyles.chatHandle)}>@{activeContact.handle}</span>
             </>
            )}
           </div>
-          <span className={styles.chatStatus}>
+          <span {...stylex.props(chatStyles.chatStatus)}>
            {userStatuses[activeContact.id] === "online"
             ? "Available Now"
             : userStatuses[activeContact.id] === "away"
@@ -1309,7 +1315,7 @@ const App = () => {
         </div>
 
         <div
-         className={`${styles.messagesContainer} ${isLoadingMessages === true && messages.length === 0 ? styles.messagesContainerHidden : ''}`}
+         {...stylex.props(chatStyles.messagesContainer, isLoadingMessages === true && messages.length === 0 && styles.messagesContainerHidden)}
          ref={messagesContainerRef}
          onScroll={handleScroll}
          style={isLoadingMessages === false && messages.length === 0 ? { visibility: 'visible', opacity: 1 } : undefined}
@@ -1358,7 +1364,7 @@ const App = () => {
            const showHeader = !isSameSenderAsPrev;
 
            return (
-            <MessageDiscord
+            <Message
              key={message.id}
              message={message}
              user={user}
@@ -1533,7 +1539,7 @@ const App = () => {
              ) : (
               <div>{message.content}</div>
              )}
-            </MessageDiscord>
+            </Message>
            );
           })
          )}
@@ -1580,13 +1586,13 @@ const App = () => {
         </div>
 
         <div
-         className={`${styles.messageInputArea} ${dragOver ? styles.dragOver : ""} ${isMobile ? (showChatContent ? styles.fadeIn : styles.fadeOut) : ""}`}
+         {...stylex.props(inputStyles.messageInputArea, dragOver && styles.dragOver, isMobile && showChatContent && chatStyles.fadeIn, isMobile && !showChatContent && chatStyles.fadeOut)}
          onDragOver={handleDragOver}
          onDragLeave={handleDragLeave}
          onDrop={handleDrop}
         >
          {typingUsers.has(activeContact?.id) && (
-          <div className={styles.typingIndicatorFloating}>
+          <div {...stylex.props(chatStyles.typingIndicatorFloating)}>
            <span>{activeContact.username} is typing...</span>
           </div>
          )}
@@ -1600,7 +1606,7 @@ const App = () => {
            e.preventDefault();
            if (!isOffline) sendMessage();
           }}
-          className={styles.messageInputContainer}
+          {...stylex.props(inputStyles.messageInputContainer)}
          >
           <input
            type="file"
@@ -1612,21 +1618,21 @@ const App = () => {
           />
           <button
            type="button"
-           className={styles.attachmentButton}
+           {...stylex.props(inputStyles.attachmentButton)}
            onClick={() => fileInputRef.current?.click()}
            title={isOffline ? "Offline - can't send files" : "Attach file"}
            disabled={isOffline}
           >
-           <SVG src="/resources/icons/attachment.svg" alt="Attach" draggable="false" />
+           <SVG src="/resources/icons/attachment.svg" alt="Attach" draggable="false" style={{ width: '24px', height: '24px' }} />
           </button>
           <button
            type="button"
-           className={styles.gifButton}
+           {...stylex.props(inputStyles.gifButton)}
            onClick={() => setShowGifPicker(true)}
            title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
           >
-           <SVG src="/resources/icons/gif.svg" alt="GIF" draggable="false" />
+           <SVG src="/resources/icons/gif.svg" alt="GIF" draggable="false" style={{ width: '24px', height: '24px' }} />
           </button>
           <input
            type="text"
@@ -1638,7 +1644,7 @@ const App = () => {
              ? "You're offline - can't send messages"
              : "What u thinkin?"
            }
-           className={styles.messageInput}
+           {...stylex.props(inputStyles.messageInput)}
            autoComplete="off"
            autoCapitalize="sentences"
            autoCorrect="on"
@@ -1651,16 +1657,16 @@ const App = () => {
           />
           <button
            type="submit"
-           className={styles.sendButton}
+           {...stylex.props(inputStyles.sendButton)}
            disabled={!messageText.trim() || isOffline}
           >
-           <SVG src="/resources/icons/send.svg" alt="Send" draggable="false" />
+           <SVG src="/resources/icons/send.svg" alt="Send" draggable="false" style={{ width: '24px', height: '24px' }} />
           </button>
          </form>
         </div>
        </>
       ) : !isMobile ? (
-       <div className={styles.noChatSelected}>
+        <div {...stylex.props(chatStyles.noChatSelected)}>
         <h2>Welcome to uChat</h2>
         <p>Select a contact to start chatting</p>
        </div>

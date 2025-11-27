@@ -664,53 +664,6 @@ body, html {
     align-items: center;
 }
 
-.searchInput {
-    width: 100%;
-    padding: 14px 20px;
-    border: 1px solid var(--border);
-    border-radius: 25px;
-    font-size: 16px;
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    font-weight: 400;
-    -webkit-appearance: none;
-    -webkit-border-radius: 25px;
-}
-
-    .searchInput:focus {
-        outline: none;
-    }
-
-    .searchInput::placeholder {
-        color: var(--text-secondary);
-    }
-
-.searchClose {
-    position: absolute;
-    right: 12px;
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-    .searchClose:hover {
-        background: var(--border);
-        color: var(--text-primary);
-        transform: scale(1.1);
-    }
-
-    .searchClose:active {
-        transform: scale(0.9);
-    }
-
 .searchResults {
     position: absolute;
     top: 100%;
@@ -784,29 +737,6 @@ body, html {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-.addContactBtn {
-    padding: 8px 16px;
-    border: 1px solid var(--accent-blue);
-    background: transparent;
-    color: var(--accent-blue);
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    flex-shrink: 0;
-    min-width: 60px;
-}
-
-    .addContactBtn:hover {
-        background: var(--accent-blue);
-        color: white;
-        transform: scale(1.05);
-    }
-
-    .addContactBtn:active {
-        transform: scale(0.95);
-    }
 
 /* ============================================
    CONTACTS LIST
