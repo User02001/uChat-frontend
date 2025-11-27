@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { stylex } from 'vite-plugin-stylex-dev'
 import fs from 'fs'
 
 export default defineConfig({
  plugins: [
   react(),
+  stylex(),
   nodePolyfills({
    globals: {
     Buffer: true,
@@ -19,7 +21,7 @@ export default defineConfig({
   modules: {
    generateScopedName:
     process.env.NODE_ENV === 'production'
-     ? '_[hash:base64:6]'
+     ? '_[hash:base64:8]_[hash:base64:8]_[hash:base64:8]'
      : '[name]__[local]__[hash:base64:3]',
   }
  },
