@@ -831,12 +831,12 @@ body, html {
 }
 
 :global(.status-indicator) {
-    width: 12px;
-    height: 12px;
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
     position: absolute;
-    bottom: 2px;
-    right: 2px;
+    bottom: -1px;
+    right: -4px;
     border: 2px solid var(--bg-primary);
     background-size: cover;
     background-position: center;

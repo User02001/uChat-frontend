@@ -1075,20 +1075,8 @@ export const useAppLogic = () => {
    ) {
     setShowUserMenu(false);
    }
-   if (
-    showMobileSearch &&
-    !event.target.closest(".mobile-search-overlay") &&
-    !event.target.closest(".mobile-search-back")
-   ) {
-    setShowMobileSearch(false);
-    setSearchQuery("");
-    setSearchResults([]);
-   }
    if (showSearch && !event.target.closest('.search-section') && !event.target.closest('.search-results')) {
     setShowSearch(false);
-    setShowMobileSearch(false);
-    setSearchQuery("");
-    setSearchResults([]);
    }
    if (
     showReactionPopup &&
@@ -1101,7 +1089,7 @@ export const useAppLogic = () => {
 
   document.addEventListener("click", handleClickOutside);
   return () => document.removeEventListener("click", handleClickOutside);
- }, [showUserMenu, showSearch, showReactionPopup, showMobileSearch]);
+ }, [showUserMenu, showSearch, showReactionPopup]);
 
  // Network status
  useEffect(() => {

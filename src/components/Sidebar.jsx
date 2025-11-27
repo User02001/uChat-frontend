@@ -28,15 +28,6 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
   if (tab === 'calls') {
    window.location.href = '/calls';
   }
-  if (tab === 'groups') {
-   window.location.href = '/groups';
-  }
-  if (tab === 'stories') {
-   window.location.href = '/stories';
-  }
-  if (tab === 'settings') {
-   window.location.href = '/settings';
-  }
  };
 
  const handleButtonClick = (buttonId) => {
@@ -222,12 +213,12 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
     <button
      {...stylex.props(
       styles.mobileNavBtn,
-      activeTab === 'chats' && styles.mobileNavBtnActive
+      activeTab === 'chats'
      )}
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleTabClick('chats');
+      // do nothing
      }}
      onTouchStart={() => { }}
      onTouchEnd={(e) => {
@@ -242,12 +233,18 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i {...stylex.props(
-      styles.mobileNavBtnIcon,
-      activeTab === 'chats' && styles.mobileNavBtnIconActive
-     )} className="fas fa-comment-dots"></i>
+     <img
+      src="resources/icons/chats_mobile.svg"
+      alt=""
+      {...stylex.props(
+       styles.mobileNavBtnIcon,
+       activeTab === 'chats' && styles.mobileNavBtnIconActive
+      )}
+      draggable={false}
+     />
      <span {...stylex.props(styles.mobileNavBtnText)}>Chats</span>
     </button>
+
 
     <button
      {...stylex.props(
@@ -257,13 +254,11 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
      onClick={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleTabClick('calls');
      }}
      onTouchStart={() => { }}
      onTouchEnd={(e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleTabClick('calls');
      }}
      style={{
       cursor: 'pointer',
@@ -272,41 +267,16 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i {...stylex.props(
-      styles.mobileNavBtnIcon,
-      activeTab === 'calls' && styles.mobileNavBtnIconActive
-     )} className="fas fa-phone"></i>
+     <img
+      src="resources/icons/calls.svg"
+      alt=""
+      {...stylex.props(
+       styles.mobileNavBtnIcon,
+       activeTab === 'calls' && styles.mobileNavBtnIconActive
+      )}
+      draggable={false}
+     />
      <span {...stylex.props(styles.mobileNavBtnText)}>Calls</span>
-    </button>
-
-    <button
-     {...stylex.props(
-      styles.mobileNavBtn,
-      activeTab === 'groups' && styles.mobileNavBtnActive
-     )}
-     onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleTabClick('groups');
-     }}
-     onTouchStart={() => { }}
-     onTouchEnd={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleTabClick('groups');
-     }}
-     style={{
-      cursor: 'pointer',
-      userSelect: 'none',
-      WebkitTapHighlightColor: 'transparent',
-      touchAction: 'manipulation'
-     }}
-    >
-     <i {...stylex.props(
-      styles.mobileNavBtnIcon,
-      activeTab === 'groups' && styles.mobileNavBtnIconActive
-     )} className="fas fa-users"></i>
-     <span {...stylex.props(styles.mobileNavBtnText)}>Groups</span>
     </button>
 
     <button
@@ -330,7 +300,14 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <i {...stylex.props(styles.mobileNavBtnIcon)} className="fas fa-ellipsis-h"></i>
+     <img
+      src="resources/icons/more.svg"
+      alt=""
+      {...stylex.props(
+       styles.mobileNavBtnIcon,
+      )}
+      draggable={false}
+     />
      <span {...stylex.props(styles.mobileNavBtnText)}>More</span>
     </button>
 

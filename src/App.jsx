@@ -844,8 +844,8 @@ const App = () => {
           title="View Your Own Profile"
          />
          <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
-           user?.forced_status === 'away' ? 'away' :
-            userStatuses[user?.id] === 'away' ? 'away' : 'online'
+          user?.forced_status === 'away' ? 'away' :
+           userStatuses[user?.id] === 'away' ? 'away' : 'online'
           }`}></div>
         </div>
         <div className={styles.userInfo}>
@@ -995,8 +995,8 @@ const App = () => {
            className={styles.mobileAvatar}
           />
           <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
-            user?.forced_status === 'away' ? 'away' :
-             userStatuses[user?.id] === 'away' ? 'away' : 'online'
+           user?.forced_status === 'away' ? 'away' :
+            userStatuses[user?.id] === 'away' ? 'away' : 'online'
            }`}></div>
          </div>
          <i className="fas fa-chevron-down" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}></i>
@@ -1251,11 +1251,11 @@ const App = () => {
            {...stylex.props(chatStyles.chatAvatar)}
            title={`View ${activeContact.username}'s Profile`}
           />
-         <div
-          className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-           onlineUsers.includes(activeContact.id) ? "online" : "offline"
-           }`}
-         ></div>
+          <div
+           className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+            onlineUsers.includes(activeContact.id) ? "online" : "offline"
+            }`}
+          ></div>
          </div>
          <div {...stylex.props(chatStyles.chatUserInfo)}>
           <div {...stylex.props(chatStyles.chatUsernameContainer)}>
@@ -1454,14 +1454,14 @@ const App = () => {
                 transition: 'all 0.2s ease',
                 maxWidth: '350px'
                }}
-               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--file-bg-hover)';
-                e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-light)';
-               }}
-               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--file-bg)';
-                e.currentTarget.style.boxShadow = 'none';
-               }}>
+                onMouseEnter={(e) => {
+                 e.currentTarget.style.background = 'var(--file-bg-hover)';
+                 e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-light)';
+                }}
+                onMouseLeave={(e) => {
+                 e.currentTarget.style.background = 'var(--file-bg)';
+                 e.currentTarget.style.boxShadow = 'none';
+                }}>
                 <div className={styles.fileIconWrapper} style={{ fontSize: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                  <i className={getFileIcon(message.file_type)}></i>
                 </div>
@@ -1666,7 +1666,7 @@ const App = () => {
         </div>
        </>
       ) : !isMobile ? (
-        <div {...stylex.props(chatStyles.noChatSelected)}>
+       <div {...stylex.props(chatStyles.noChatSelected)}>
         <h2>Welcome to uChat</h2>
         <p>Select a contact to start chatting</p>
        </div>

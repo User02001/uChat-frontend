@@ -119,31 +119,6 @@ const Message = ({
      <div {...stylex.props(styles.messageHeader)}>
       <span {...stylex.props(styles.username)}>
        {senderData.username}
-       {senderData?.email?.toLowerCase() === 'ufonic.official@gmail.com' && (
-        <span
-         style={{
-          marginLeft: 6,
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          background: '#6b7280',
-          color: '#fff',
-          padding: '1px 6px',
-          borderRadius: 6,
-          fontSize: 10,
-          fontWeight: 700,
-          lineHeight: 1
-         }}
-        >
-         <img
-          src="/resources/icons/lightning.svg"
-          alt=""
-          style={{ width: 12, height: 12, display: 'inline-block' }}
-          draggable="false"
-         />
-         <span>CEO</span>
-        </span>
-       )}
       </span>
       <span {...stylex.props(styles.timestamp)}>
        {new Date(message.timestamp + "Z").toLocaleTimeString([], {

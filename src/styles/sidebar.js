@@ -1,5 +1,16 @@
 import * as stylex from '@stylexjs/stylex';
 
+const mobileMenuSlideIn = stylex.keyframes({
+ from: {
+  opacity: 0,
+  transform: 'translateY(10px)',
+ },
+ to: {
+  opacity: 1,
+  transform: 'translateY(0)',
+ },
+});
+
 export const styles = stylex.create({
  // Main nav sidebar container
  navSidebar: {
@@ -18,7 +29,7 @@ export const styles = stylex.create({
 
   '@media (max-width: 768px)': {
    width: '100%',
-   height: '80px',
+   height: '70px',
    position: 'fixed',
    bottom: 0,
    top: 'auto',
@@ -246,7 +257,7 @@ export const styles = stylex.create({
    alignItems: 'center',
    height: '100%',
    position: 'relative',
-   gap: '48px',
+   gap: '72px',
    padding: '0 12px',
   },
  },
@@ -281,11 +292,14 @@ export const styles = stylex.create({
  },
 
  mobileNavBtnIcon: {
-  fontSize: '18px',
+  width: '20px',
+  height: '20px',
   marginBottom: '4px',
+  display: 'block',
 
   '@media (max-width: 480px)': {
-   fontSize: '16px',
+   width: '25px',
+   height: '25px',
   },
  },
 
@@ -314,9 +328,8 @@ export const styles = stylex.create({
   padding: '8px 0',
   marginBottom: '8px',
   minWidth: '140px',
-  opacity: 0,
   transform: 'translateY(10px)',
-  animationName: 'mobileMenuSlideIn',
+  animationName: mobileMenuSlideIn,
   animationDuration: '0.2s',
   animationTimingFunction: 'ease',
   animationFillMode: 'forwards',
