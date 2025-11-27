@@ -7,7 +7,9 @@ import fs from 'fs'
 export default defineConfig({
  plugins: [
   react(),
-  stylex(),
+  stylex({
+   classNamePrefix: 'u',
+  }),
   nodePolyfills({
    globals: {
     Buffer: true,
