@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { useAppLogic } from "./hooks/useAppLogic";
+import { styles as sx } from "./styles";
 import lottie from 'lottie-web';
 import WarningForModeration from "./components/WarningForModeration";
 import Sidebar from "./components/Sidebar";
@@ -31,33 +32,6 @@ import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 import SVG from 'react-inlinesvg';
 import 'virtual:stylex.css'
-
-const sx = stylex.create({
- addContactBtn: {
-  padding: '8px 16px',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '#0084ff',
-  backgroundColor: 'transparent',
-  color: '#0084ff',
-  borderRadius: '20px',
-  fontSize: '13px',
-  fontWeight: '500',
-  cursor: 'pointer',
-  flexShrink: 0,
-  minWidth: '60px',
-  transitionProperty: 'all',
-  transitionDuration: '0.2s',
-  ':hover': {
-   backgroundColor: '#0084ff',
-   color: 'white',
-   transform: 'scale(1.05)',
-  },
-  ':active': {
-   transform: 'scale(0.95)',
-  }
- }
-});
 
 const App = () => {
  // Block ALL heavy operations during splash
