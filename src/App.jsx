@@ -1125,11 +1125,7 @@ const App = () => {
       {activeContact ? (
        <>
         <div
-         {...stylex.props(
-          chatStyles.chatHeader,
-          isMobile && showChatContent && chatStyles.fadeIn,
-          isMobile && !showChatContent && chatStyles.fadeOut
-         )}
+         {...stylex.props(chatStyles.chatHeader)}
         >
          {isMobile && (
           <button
@@ -1308,17 +1304,38 @@ const App = () => {
                style={{
                 cursor: 'pointer',
                 maxWidth: '300px',
-                margin: '8px 0'
+                margin: '8px 0',
+                position: 'relative',
+                width: '100%',
+                paddingBottom: message.media_height && message.media_width
+                 ? `${(message.media_height / message.media_width) * 100}%`
+                 : '75%',
+                background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeletonLoading 1.5s infinite',
+                borderRadius: '8px',
+                overflow: 'hidden'
                }}
               >
                <img
                 src={`${API_BASE_URL}${message.file_path}`}
                 alt="Shared image"
+                onLoad={(e) => {
+                 e.target.style.opacity = '1';
+                 e.target.parentElement.style.animation = 'none';
+                 e.target.parentElement.style.background = 'transparent';
+                }}
                 style={{
+                 position: 'absolute',
+                 top: 0,
+                 left: 0,
                  width: '100%',
-                 height: 'auto',
+                 height: '100%',
+                 objectFit: 'cover',
                  borderRadius: '8px',
-                 display: 'block'
+                 display: 'block',
+                 opacity: 0,
+                 transition: 'opacity 0.3s ease'
                 }}
                />
               </div>
@@ -1422,17 +1439,38 @@ const App = () => {
                style={{
                 cursor: 'pointer',
                 maxWidth: '300px',
-                margin: '8px 0'
+                margin: '8px 0',
+                position: 'relative',
+                width: '100%',
+                paddingBottom: message.media_height && message.media_width 
+                  ? `${(message.media_height / message.media_width) * 100}%`
+                  : '100%',
+                background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'skeletonLoading 1.5s infinite',
+                borderRadius: '8px',
+                overflow: 'hidden'
                }}
               >
                <img
                 src={message.content}
                 alt="GIF"
+                onLoad={(e) => {
+                 e.target.style.opacity = '1';
+                 e.target.parentElement.style.animation = 'none';
+                 e.target.parentElement.style.background = 'transparent';
+                }}
                 style={{
+                 position: 'absolute',
+                 top: 0,
+                 left: 0,
                  width: '100%',
-                 height: 'auto',
+                 height: '100%',
+                 objectFit: 'cover',
                  borderRadius: '8px',
-                 display: 'block'
+                 display: 'block',
+                 opacity: 0,
+                 transition: 'opacity 0.3s ease'
                 }}
                />
               </div>
@@ -1486,7 +1524,7 @@ const App = () => {
         </div>
 
         <div
-         {...stylex.props(inputStyles.messageInputArea, dragOver && styles.dragOver, isMobile && showChatContent && chatStyles.fadeIn, isMobile && !showChatContent && chatStyles.fadeOut)}
+         {...stylex.props(inputStyles.messageInputArea, dragOver && styles.dragOver)}
          onDragOver={handleDragOver}
          onDragLeave={handleDragLeave}
          onDrop={handleDrop}

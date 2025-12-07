@@ -136,17 +136,4 @@ export const styles = stylex.create({
   backgroundColor: 'var(--bg-primary)',
   animation: 'fadeIn 0.5s ease',
  },
-
- fadeIn: {
-  opacity: 1,
-  animationName: 'fadeIn',
-  animationDuration: '0.3s',
-  animationTimingFunction: 'ease-in-out',
- },
- fadeOut: {
-  opacity: 0,
-  animationName: 'fadeOut',
-  animationDuration: '0.3s',
-  animationTimingFunction: 'ease-in-out',
- },
 });

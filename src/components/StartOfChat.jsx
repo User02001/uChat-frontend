@@ -20,8 +20,9 @@ const StartOfChat = ({ contact, onProfileClick, API_BASE_URL }) => {
    <h1 className={styles.username}>{contact.username}</h1>
    <p className={styles.handle}>@{contact.handle}</p>
    <p className={styles.message}>
-    This is the very start of your chatting history with {contact.username}.
+    Your conversation with {contact.username} has started here!
    </p>
+   <div className={styles.separator}></div>
   </div>
  );
 };

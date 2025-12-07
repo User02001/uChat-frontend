@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 
 export const useMessageScroll = ({
  messages,
@@ -65,7 +65,7 @@ export const useMessageScroll = ({
  }, [activeContact, messages, hasMoreMessages, loadingMoreMessages, loadMessages, messagesContainerRef, setLoadingMoreMessages]);
 
  // Main scroll effect
- useEffect(() => {
+ useLayoutEffect(() => {
   if (!messages || messages.length === 0) return;
 
   const container = messagesContainerRef.current;
