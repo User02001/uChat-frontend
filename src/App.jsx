@@ -30,6 +30,7 @@ import Message, { AudioPlayer } from "./components/Message";
 import StartOfChat from "./components/StartOfChat";
 import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
+import { useMessageScroll } from "./hooks/useMessageScroll";
 import SVG from 'react-inlinesvg';
 import 'virtual:stylex.css'
 import { styles as chatStyles } from './styles/chat';
@@ -620,129 +621,28 @@ const App = () => {
   }, 200);
  };
 
- // Handle scroll for lazy loading
  const messagesContainerRef = useRef(null);
- const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true);
- const previousScrollHeight = useRef(0);
 
- const userScrollLockRef = useRef(false);
- const clearLockTimeoutRef = useRef(null);
+ const { handleScroll, userScrollLockRef } = useMessageScroll({
+  messages,
+  activeContact,
+  user,
+  loadingMoreMessages,
+  hasMoreMessages,
+  loadMessages,
+  messagesContainerRef,
+  setLoadingMoreMessages,
+  setMessagesContainerVisible,
+  setHasMoreMessages
+ });
 
- const handleScroll = useCallback(() => {
-  const container = messagesContainerRef.current;
-  if (!container || !activeContact) return;
-
-  const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-
-  const LOCK_AT = 200;
-  const UNLOCK_AT = 8;
-
-  if (distanceFromBottom > LOCK_AT) {
-   if (!userScrollLockRef.current) {
-    userScrollLockRef.current = true;
-    setShouldScrollToBottom(false);
-   }
-  } else if (distanceFromBottom <= UNLOCK_AT) {
-   if (userScrollLockRef.current) {
-    userScrollLockRef.current = false;
-    setShouldScrollToBottom(true);
-   }
-  }
-
-  if (!loadingMoreMessages && hasMoreMessages && container.scrollTop < 50 && messages.length > 0) {
-   const oldestMessage = messages[0];
-   if (oldestMessage) {
-    setLoadingMoreMessages(true);
-    previousScrollHeight.current = container.scrollHeight;
-
-    // Add artificial delay
-    setTimeout(() => {
-     loadMessages(activeContact.id, oldestMessage.id);
-    }, 300);
-   }
-  }
- }, [activeContact, messages, hasMoreMessages, loadingMoreMessages, loadMessages]);
-
- const lastMessageIdRef = useRef(null);
-
+ // Force visibility for empty chats (StartOfChat scenario)
  useEffect(() => {
-  if (!messages || messages.length === 0) return;
-
-  const container = messagesContainerRef.current;
-  if (!container) return;
-
-  if (!loadingMoreMessages && previousScrollHeight.current) {
-   const delta = container.scrollHeight - previousScrollHeight.current;
-   container.scrollTop = container.scrollTop + delta;
-   previousScrollHeight.current = 0;
-   return;
-  }
-
-  const lastMsg = messages[messages.length - 1];
-  const isMine = user && lastMsg && lastMsg.sender_id === user.id;
-
-  const prevLastId = lastMessageIdRef.current;
-  const newLastId = lastMsg?.id ?? null;
-  const lastChanged = prevLastId !== newLastId;
-
-  const nearBottom =
-   container.scrollHeight - container.scrollTop - container.clientHeight < 80;
-
-  const isInitialLoad = prevLastId === null;
-
-  lastMessageIdRef.current = newLastId;
-
-  if (isInitialLoad) {
-   // IMMEDIATELY hide container BEFORE any rendering
-   container.style.visibility = 'hidden';
-
-   // Force synchronous layout calculation
-   container.offsetHeight;
-
-   // Scroll instantly while invisible
-   container.scrollTop = container.scrollHeight + 9999;
-
-   // Make visible on next frame
-   requestAnimationFrame(() => {
-    container.style.visibility = 'visible';
-    setMessagesContainerVisible(true);
-   });
-   return;
-  }
-
-  // Ensure visibility is set for empty chats with StartOfChat
-  if (messages.length === 0 && container.style.visibility === 'hidden') {
-   container.style.visibility = 'visible';
+  if (messagesContainerRef.current && messages.length === 0 && isLoadingMessages === false) {
+   messagesContainerRef.current.style.visibility = 'visible';
    setMessagesContainerVisible(true);
   }
-
-  const canAutoScroll =
-   (lastChanged && isMine && !userScrollLockRef.current) || (lastChanged && nearBottom && !userScrollLockRef.current);
-
-  if (canAutoScroll) {
-   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-     if (container) {
-      container.scrollTop = container.scrollHeight + 9999;
-     }
-    });
-   });
-  }
- }, [messages, user, loadingMoreMessages]);
-
- // Reset scroll tracking when switching contacts
- useEffect(() => {
-  lastMessageIdRef.current = null;
-  userScrollLockRef.current = false;
-  setShouldScrollToBottom(true);
-  setHasMoreMessages(true);
-  previousScrollHeight.current = 0;
-
-  // Hide messages container immediately when switching contacts
-  if (messagesContainerRef.current) {
-   messagesContainerRef.current.style.visibility = 'hidden';
-  }
- }, [activeContact?.id]);
+ }, [messages.length, isLoadingMessages, activeContact?.id]);
 
  const splashRef = useRef(null);
  const animRef = useRef(null);
