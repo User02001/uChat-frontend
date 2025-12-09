@@ -1,8 +1,7 @@
 import React from 'react';
-import { API_BASE_URL } from '../../config';
 import { AudioPlayer } from '../Message';
 
-const AudioMessage = ({ message }) => {
+const AudioMessage = ({ message, API_BASE_URL }) => {
  return (
   <div style={{ margin: '8px 0' }}>
    <AudioPlayer

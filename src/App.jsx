@@ -26,7 +26,12 @@ import "./pages/downloads-recommend.css";
 import "./pages/calls.css";
 import MediaViewer from "./components/MediaViewer";
 import VideoPlayer from "./components/VideoPlayer";
-import Message, { AudioPlayer } from "./components/Message";
+import Message from "./components/Message";
+import ImageMessage from "./components/media/ImageMessage";
+import VideoMessage from "./components/media/VideoMessage";
+import AudioMessage from "./components/media/AudioMessage";
+import FileMessage from "./components/media/FileMessage";
+import GifMessage from "./components/media/GifMessage";
 import StartOfChat from "./components/StartOfChat";
 import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
@@ -35,6 +40,12 @@ import SVG from 'react-inlinesvg';
 import 'virtual:stylex.css'
 import { styles as chatStyles } from './styles/chat';
 import { styles as inputStyles } from './styles/inputs';
+import IncomingCallNotification from "./components/calls/IncomingCallNotification";
+import MinimizedCall from "./components/calls/MinimizedCall";
+import ActiveCall from "./components/calls/ActiveCall";
+import IncomingScreenshareNotification from "./components/calls/IncomingScreenshareNotification";
+import MinimizedScreenshare from "./components/calls/MinimizedScreenshare";
+import ActiveScreenshare from "./components/calls/ActiveScreenshare";
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -129,6 +140,29 @@ const App = () => {
 
  const { formatTimeAgo, formatInactiveTime, formatLastSeen, formatContactTime, formatFileSize, getFileIcon } = useFormatters();
 
+ const {
+  callState,
+  localVideoRef,
+  remoteVideoRef,
+  ringtoneRef,
+  startCall,
+  answerCall,
+  endCall,
+  audioEnabled,
+  enableAudio,
+  screenshareState,
+  screenshareLocalVideoRef,
+  screenshareRemoteVideoRef,
+  startScreenshare,
+  answerScreenshare,
+  endScreenshare,
+  isMicMuted,
+  isCameraOff,
+  toggleMic,
+  toggleCamera,
+  setupCallListeners
+ } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
+
  const handleDragStart = (e) => {
   const isTouchEvent = e.type === 'touchstart';
   const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
@@ -169,19 +203,13 @@ const App = () => {
  };
 
  useEffect(() => {
-  if (isDragging) {
-   window.addEventListener('mousemove', handleDragMove);
-   window.addEventListener('mouseup', handleDragEnd);
-   window.addEventListener('touchmove', handleDragMove);
-   window.addEventListener('touchend', handleDragEnd);
+  if (!isDragging) return;
 
-   return () => {
-    window.removeEventListener('mousemove', handleDragMove);
-    window.removeEventListener('mouseup', handleDragEnd);
-    window.removeEventListener('touchmove', handleDragMove);
-    window.removeEventListener('touchend', handleDragEnd);
-   };
-  }
+  const events = ['mousemove', 'touchmove', 'mouseup', 'touchend'];
+  const handlers = { mousemove: handleDragMove, touchmove: handleDragMove, mouseup: handleDragEnd, touchend: handleDragEnd };
+
+  events.forEach(event => window.addEventListener(event, handlers[event]));
+  return () => events.forEach(event => window.removeEventListener(event, handlers[event]));
  }, [isDragging, handleDragMove]);
 
  // Expose a safe quick-reply bridge for the Electron main process
@@ -211,84 +239,46 @@ const App = () => {
   }
  }, [socketRef, initializeSocket]);
 
- // Handle socket reconnection and sync
+ // Handle socket events and page visibility
  useEffect(() => {
   if (!socketRef.current) return;
 
   const handleReconnect = () => {
-   console.log('[SYNC] Socket reconnected - syncing state...');
-
-   socketRef.current.emit('sync_state', {
-    active_contact_id: activeContact?.id
-   });
-
+   socketRef.current.emit('sync_state', { active_contact_id: activeContact?.id });
    socketRef.current.emit('request_contacts_update');
    socketRef.current.emit('request_online_users');
-
-   if (activeContact) {
-    loadMessages(activeContact.id);
-   }
+   if (activeContact) loadMessages(activeContact.id);
   };
 
   const handleMessagesSnced = (data) => {
-   if (data.contact_id === activeContact?.id) {
-    setMessages(data.messages);
-   }
+   if (data.contact_id === activeContact?.id) setMessages(data.messages);
   };
 
-  const handleForceContactsRefresh = () => {
-   loadContacts();
+  const handleVisibilityChange = () => {
+   if (!document.hidden && socketRef.current?.connected) {
+    socketRef.current.emit('request_online_users');
+   }
   };
 
   socketRef.current.on('reconnect', handleReconnect);
   socketRef.current.on('messages_synced', handleMessagesSnced);
-  socketRef.current.on('force_contacts_refresh', handleForceContactsRefresh);
+  socketRef.current.on('force_contacts_refresh', loadContacts);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  if (setupCallListeners) {
+   console.log('[APP] Setting up call listeners from App.jsx');
+   setupCallListeners();
+  }
 
   return () => {
    if (socketRef.current) {
     socketRef.current.off('reconnect', handleReconnect);
     socketRef.current.off('messages_synced', handleMessagesSnced);
-    socketRef.current.off('force_contacts_refresh', handleForceContactsRefresh);
+    socketRef.current.off('force_contacts_refresh', loadContacts);
    }
-  };
- }, [activeContact, loadMessages, loadContacts]);
-
- // Handle page visibility changes - NO SCROLL TAMPERING
- useEffect(() => {
-  const handleVisibilityChange = () => {
-   if (!document.hidden && socketRef.current && socketRef.current.connected) {
-    socketRef.current.emit('request_online_users');
-   }
-  };
-
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-
-  return () => {
    document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
- }, [activeContact]);
-
- const {
-  callState,
-  localVideoRef,
-  remoteVideoRef,
-  ringtoneRef,
-  startCall,
-  answerCall,
-  endCall,
-  audioEnabled,
-  enableAudio,
-  screenshareState,
-  screenshareLocalVideoRef,
-  screenshareRemoteVideoRef,
-  startScreenshare,
-  answerScreenshare,
-  endScreenshare,
-  isMicMuted,
-  isCameraOff,
-  toggleMic,
-  toggleCamera
- } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
+ }, [activeContact, loadMessages, loadContacts, setupCallListeners]);
 
  // Auto-hide call UI after 4 seconds
  useEffect(() => {
@@ -363,37 +353,34 @@ const App = () => {
   }
  }, [user]);
 
- // Handle screenshare local video setup
+ // Handle screenshare stream setup
  useEffect(() => {
-  if (
-   screenshareState.localStream &&
-   screenshareLocalVideoRef.current &&
-   screenshareState.isSharing
-  ) {
-   console.log("Setting up local screenshare video:", screenshareState.localStream.id);
+  if (screenshareState.localStream && screenshareLocalVideoRef.current && screenshareState.isSharing) {
    screenshareLocalVideoRef.current.srcObject = screenshareState.localStream;
    screenshareLocalVideoRef.current.muted = true;
    screenshareLocalVideoRef.current.autoplay = true;
    screenshareLocalVideoRef.current.playsInline = true;
-   screenshareLocalVideoRef.current
-    .play()
-    .catch((e) => console.log("Local screenshare play error:", e));
+   screenshareLocalVideoRef.current.play().catch(console.error);
   }
- }, [screenshareState.localStream, screenshareState.isSharing]);
 
- // Add this function to handle dismissing the recommendation (session only)
+  if (screenshareState.remoteStream && screenshareRemoteVideoRef.current && screenshareState.isViewing) {
+   screenshareRemoteVideoRef.current.srcObject = screenshareState.remoteStream;
+   screenshareRemoteVideoRef.current.muted = false;
+   screenshareRemoteVideoRef.current.play().catch(console.error);
+  }
+ }, [screenshareState.localStream, screenshareState.remoteStream, screenshareState.isSharing, screenshareState.isViewing, screenshareMinimized]);
+
+ // Utility functions
  const dismissDownloadRecommendation = () => {
   setShowDownloadRecommendation(false);
   sessionStorage.setItem("uchat-download-dismissed", "true");
  };
 
- // Add this function to handle "I already have it" checkbox
  const handleAlreadyHaveApp = () => {
   setShowDownloadRecommendation(false);
   localStorage.setItem("uchat-user-has-desktop-app", "true");
  };
 
- // Scroll to and highlight original message
  const scrollToMessage = (messageId) => {
   const messageElement = document.getElementById(`message-${messageId}`);
   if (messageElement) {
@@ -443,26 +430,14 @@ const App = () => {
   }
  };
 
- // Handle local video setup for both caller and receiver
+ // Handle video stream setup for calls
  useEffect(() => {
   if (callState.localStream && localVideoRef.current) {
-   console.log("Setting up local video from useEffect:", callState.localStream.id);
    localVideoRef.current.srcObject = callState.localStream;
    localVideoRef.current.muted = true;
    localVideoRef.current.autoplay = true;
    localVideoRef.current.playsInline = true;
    localVideoRef.current.style.transform = "scaleX(-1)";
-   localVideoRef.current
-    .play()
-    .catch((e) => console.log("Local video play error:", e));
-  }
- }, [callState.localStream, callState.isActive, callState.isIncoming]);
-
- // Re-assign video streams when minimized state changes
- useEffect(() => {
-  if (callState.localStream && localVideoRef.current) {
-   localVideoRef.current.srcObject = callState.localStream;
-   localVideoRef.current.muted = true;
    localVideoRef.current.play().catch(console.error);
   }
 
@@ -471,22 +446,7 @@ const App = () => {
    remoteVideoRef.current.muted = false;
    remoteVideoRef.current.play().catch(console.error);
   }
- }, [callMinimized]);
-
- // Re-assign screenshare streams when minimized state changes
- useEffect(() => {
-  if (screenshareState.localStream && screenshareLocalVideoRef.current && screenshareState.isSharing) {
-   screenshareLocalVideoRef.current.srcObject = screenshareState.localStream;
-   screenshareLocalVideoRef.current.muted = true;
-   screenshareLocalVideoRef.current.play().catch(console.error);
-  }
-
-  if (screenshareState.remoteStream && screenshareRemoteVideoRef.current && screenshareState.isViewing) {
-   screenshareRemoteVideoRef.current.srcObject = screenshareState.remoteStream;
-   screenshareRemoteVideoRef.current.muted = false;
-   screenshareRemoteVideoRef.current.play().catch(console.error);
-  }
- }, [screenshareMinimized]);
+ }, [callState.localStream, callState.remoteStream, callState.isActive, callState.isIncoming, callMinimized]);
 
  // Update document title and favicon based on active contact
  useEffect(() => {
@@ -1295,185 +1255,34 @@ const App = () => {
                </em>
               </div>
              ) : message.message_type === "image" ? (
-              <div
-               onClick={() => setShowMediaViewer({
-                url: message.file_path,
-                name: message.file_name || 'Image',
-                type: 'image'
-               })}
-               style={{
-                cursor: 'pointer',
-                maxWidth: '300px',
-                margin: '8px 0',
-                position: 'relative',
-                width: '100%',
-                paddingBottom: message.media_height && message.media_width
-                 ? `${(message.media_height / message.media_width) * 100}%`
-                 : '75%',
-                background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'skeletonLoading 1.5s infinite',
-                borderRadius: '8px',
-                overflow: 'hidden'
-               }}
-              >
-               <img
-                src={`${API_BASE_URL}${message.file_path}`}
-                alt="Shared image"
-                onLoad={(e) => {
-                 e.target.style.opacity = '1';
-                 e.target.parentElement.style.animation = 'none';
-                 e.target.parentElement.style.background = 'transparent';
-                }}
-                style={{
-                 position: 'absolute',
-                 top: 0,
-                 left: 0,
-                 width: '100%',
-                 height: '100%',
-                 objectFit: 'cover',
-                 borderRadius: '8px',
-                 display: 'block',
-                 opacity: 0,
-                 transition: 'opacity 0.3s ease'
-                }}
-               />
-              </div>
+              <ImageMessage
+               message={message}
+               API_BASE_URL={API_BASE_URL}
+               onOpenViewer={setShowMediaViewer}
+              />
              ) : message.message_type === "file" && message.file_type && ['mp4', 'webm', 'ogg', 'mov'].includes(message.file_type.toLowerCase()) ? (
-              <div style={{ margin: '8px 0' }}>
-               <VideoPlayer
-                src={`${API_BASE_URL}${message.file_path}`}
-                inChat={true}
-                onExpand={() => setShowMediaViewer({
-                 url: message.file_path,
-                 name: message.file_name || 'Video',
-                 type: 'video'
-                })}
-               />
-              </div>
+              <VideoMessage
+               message={message}
+               API_BASE_URL={API_BASE_URL}
+               onOpenViewer={setShowMediaViewer}
+              />
              ) : message.message_type === "file" && message.file_type && ['mp3', 'wav', 'flac', 'aac', 'm4a'].includes(message.file_type.toLowerCase()) ? (
-              <div style={{ margin: '8px 0' }}>
-               <AudioPlayer
-                src={`${API_BASE_URL}${message.file_path}`}
-                fileName={message.file_name}
-               />
-              </div>
+              <AudioMessage
+               message={message}
+               API_BASE_URL={API_BASE_URL}
+              />
              ) : message.message_type === "file" ? (
-              <div style={{ margin: '8px 0' }}>
-               <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 14px',
-                background: 'var(--file-bg)',
-                border: '1px solid var(--border)',
-                borderRadius: '10px',
-                transition: 'all 0.2s ease',
-                maxWidth: '350px'
-               }}
-                onMouseEnter={(e) => {
-                 e.currentTarget.style.background = 'var(--file-bg-hover)';
-                 e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-light)';
-                }}
-                onMouseLeave={(e) => {
-                 e.currentTarget.style.background = 'var(--file-bg)';
-                 e.currentTarget.style.boxShadow = 'none';
-                }}>
-                <div className={styles.fileIconWrapper} style={{ fontSize: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                 <i className={getFileIcon(message.file_type)}></i>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                 <div style={{ fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '14px', marginBottom: '2px' }}>
-                  {message.file_name || 'File'}
-                 </div>
-                 {message.file_size && (
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                   {formatFileSize(message.file_size)}
-                  </div>
-                 )}
-                </div>
-                <button
-                 onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(`${API_BASE_URL}${message.file_path}`, '_blank');
-                 }}
-                 style={{
-                  background: 'transparent',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  padding: '7px 12px',
-                  borderRadius: '6px',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  flexShrink: 0
-                 }}
-                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--button-primary)';
-                  e.currentTarget.style.borderColor = 'var(--button-primary)';
-                  e.currentTarget.style.color = 'white';
-                 }}
-                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                 }}
-                 title="Download file"
-                >
-                 <i className="fas fa-download"></i>
-                 <span>Download</span>
-                </button>
-               </div>
-              </div>
+              <FileMessage
+               message={message}
+               API_BASE_URL={API_BASE_URL}
+               formatFileSize={formatFileSize}
+               getFileIcon={getFileIcon}
+              />
              ) : message.content && (message.content.startsWith('https://media.tenor.com/') || message.content.startsWith('https://media.giphy.com/')) ? (
-              <div
-               onClick={() => setShowMediaViewer({
-                url: message.content,
-                name: 'GIF',
-                type: 'image'
-               })}
-               style={{
-                cursor: 'pointer',
-                maxWidth: '300px',
-                margin: '8px 0',
-                position: 'relative',
-                width: '100%',
-                paddingBottom: message.media_height && message.media_width 
-                  ? `${(message.media_height / message.media_width) * 100}%`
-                  : '100%',
-                background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
-                backgroundSize: '200% 100%',
-                animation: 'skeletonLoading 1.5s infinite',
-                borderRadius: '8px',
-                overflow: 'hidden'
-               }}
-              >
-               <img
-                src={message.content}
-                alt="GIF"
-                onLoad={(e) => {
-                 e.target.style.opacity = '1';
-                 e.target.parentElement.style.animation = 'none';
-                 e.target.parentElement.style.background = 'transparent';
-                }}
-                style={{
-                 position: 'absolute',
-                 top: 0,
-                 left: 0,
-                 width: '100%',
-                 height: '100%',
-                 objectFit: 'cover',
-                 borderRadius: '8px',
-                 display: 'block',
-                 opacity: 0,
-                 transition: 'opacity 0.3s ease'
-                }}
-               />
-              </div>
+              <GifMessage
+               message={message}
+               onOpenViewer={setShowMediaViewer}
+              />
              ) : (
               <div>{message.content}</div>
              )}
@@ -1622,152 +1431,44 @@ const App = () => {
       )}
 
      {callState.isIncoming && (
-      <div className={styles.incomingCallNotification}>
-       <div className={styles.incomingCallContent}>
-        <div className={styles.incomingCallInfo}>
-         <img
-          draggable="false"
-          src={
-           callState.contact?.avatar_url
-            ? `${API_BASE_URL}${callState.contact.avatar_url}`
-            : "/resources/default_avatar.png"
-          }
-          alt={callState.contact?.username}
-          className={styles.incomingCallAvatar}
-         />
-         <div className={styles.incomingCallText}>
-          <h4>{callState.contact?.username}</h4>
-          <p>
-           Incoming {callState.type === "video" ? "video" : "audio"}{" "}
-           call
-          </p>
-         </div>
-        </div>
-        <div className={styles.incomingCallActions}>
-         <button
-          className={styles.declineBtnSmall}
-          onClick={() => answerCall(false)}
-          title="Decline"
-         ></button>
-         <button
-          className={styles.acceptBtnSmall}
-          onClick={() => answerCall(true)}
-          title="Accept"
-         ></button>
-        </div>
-       </div>
-      </div>
+      <IncomingCallNotification
+       callState={callState}
+       API_BASE_URL={API_BASE_URL}
+       onAnswer={() => answerCall(true)}
+       onDecline={() => answerCall(false)}
+      />
      )}
 
      {screenshareState.isIncoming && (
-      <div className={styles.incomingCallNotification}>
-       <div className={styles.incomingCallContent}>
-        <div className={styles.incomingCallInfo}>
-         <img
-          draggable="false"
-          src={
-           screenshareState.contact?.avatar_url
-            ? `${API_BASE_URL}${screenshareState.contact.avatar_url}`
-            : "/resources/default_avatar.png"
-          }
-          alt={screenshareState.contact?.username}
-          className={styles.incomingCallAvatar}
-         />
-         <div className={styles.incomingCallText}>
-          <h4>{screenshareState.contact?.username}</h4>
-          <p>Wants to share their screen</p>
-         </div>
-        </div>
-        <div className={styles.incomingCallActions}>
-         <button
-          className={styles.declineBtnSmall}
-          onClick={() => answerScreenshare(false)}
-          title="Decline"
-         ></button>
-         <button
-          className={styles.acceptBtnSmall}
-          onClick={() => answerScreenshare(true)}
-          title="Accept"
-         ></button>
-        </div>
-       </div>
-      </div>
+      <IncomingScreenshareNotification
+       screenshareState={screenshareState}
+       API_BASE_URL={API_BASE_URL}
+       onAnswer={() => answerScreenshare(true)}
+       onDecline={() => answerScreenshare(false)}
+      />
      )}
 
      {(screenshareState.isActive || screenshareState.isSharing) && (
       <>
        {screenshareMinimized ? (
-        <div
-         className="modern-minimized-screenshare"
-         style={{
-          left: `${callPosition.x}px`,
-          top: `${callPosition.y}px`,
-          cursor: isDragging ? 'grabbing' : 'grab'
-         }}
-         onMouseDown={handleDragStart}
-         onTouchStart={handleDragStart}
-        >
-         <div className="modern-minimized-header">
-          <div className="modern-minimized-info">
-           <div className="modern-minimized-screenshare-icon">
-            <i className="fas fa-desktop"></i>
-           </div>
-           <div className="modern-minimized-user">
-            <h4>{screenshareState.contact?.username}</h4>
-            <p>
-             {screenshareState.isSharing ? "Sharing Screen" : "Viewing Screen"}
-            </p>
-           </div>
-          </div>
-         </div>
-
-         <div className="modern-minimized-screenshare-preview">
-          {screenshareState.isViewing && (
-           <video
-            ref={screenshareRemoteVideoRef}
-            className="modern-minimized-screenshare-video"
-            autoPlay
-            playsInline
-           />
-          )}
-          {screenshareState.isSharing && (
-           <video
-            ref={screenshareLocalVideoRef}
-            className="modern-minimized-screenshare-video"
-            autoPlay
-            playsInline
-            muted
-           />
-          )}
-         </div>
-
-         <div className="modern-minimized-controls">
-          <button
-           className="modern-minimized-btn modern-minimized-maximize"
-           onClick={(e) => {
-            e.stopPropagation();
-            setScreenshareMinimized(false);
-           }}
-           title="Maximize"
-          >
-           <i className="fas fa-expand"></i>
-          </button>
-          <button
-           className="modern-minimized-btn modern-minimized-end"
-           onClick={(e) => {
-            e.stopPropagation();
-            endScreenshare();
-           }}
-           title="Stop sharing"
-          >
-           <i className="fas fa-times"></i>
-          </button>
-         </div>
-        </div>
+        <MinimizedScreenshare
+         screenshareState={screenshareState}
+         callPosition={callPosition}
+         isDragging={isDragging}
+         screenshareLocalVideoRef={screenshareLocalVideoRef}
+         screenshareRemoteVideoRef={screenshareRemoteVideoRef}
+         onDragStart={handleDragStart}
+         onMaximize={() => setScreenshareMinimized(false)}
+         onEnd={endScreenshare}
+        />
        ) : (
-        <div
-         className="modern-screenshare-overlay"
-         onClick={() => {
+        <ActiveScreenshare
+         screenshareState={screenshareState}
+         screenshareLocalVideoRef={screenshareLocalVideoRef}
+         screenshareRemoteVideoRef={screenshareRemoteVideoRef}
+         onMinimize={() => setScreenshareMinimized(true)}
+         onEnd={endScreenshare}
+         onOverlayClick={() => {
           const controls = document.querySelector('.modern-screenshare-controls-wrapper');
           if (controls) {
            controls.classList.toggle('visible');
@@ -1778,75 +1479,7 @@ const App = () => {
            }, 3000);
           }
          }}
-        >
-         <div className="modern-screenshare-active">
-          <div className="modern-screenshare-header">
-           <div className="modern-screenshare-info">
-            <div className="modern-screenshare-icon">
-             <i className="fas fa-desktop"></i>
-            </div>
-            <div className="modern-screenshare-user">
-             <h3>
-              {screenshareState.isSharing
-               ? `Sharing with ${screenshareState.contact?.username}`
-               : screenshareState.contact?.username}
-             </h3>
-             <p>
-              {screenshareState.isSharing
-               ? "Screen Share Active"
-               : "Viewing Screen Share"}
-             </p>
-            </div>
-           </div>
-           <button
-            className="modern-screenshare-minimize-btn"
-            onClick={(e) => {
-             e.stopPropagation();
-             setScreenshareMinimized(true);
-            }}
-            title="Minimize"
-           >
-            <i className="fas fa-minus"></i>
-           </button>
-          </div>
-
-          <div className="modern-screenshare-container">
-           {screenshareState.isViewing && (
-            <video
-             ref={screenshareRemoteVideoRef}
-             className="modern-screenshare-video"
-             autoPlay
-             playsInline
-             controls={false}
-            />
-           )}
-           {screenshareState.isSharing && (
-            <video
-             ref={screenshareLocalVideoRef}
-             className="modern-screenshare-video"
-             autoPlay
-             playsInline
-             muted
-            />
-           )}
-          </div>
-
-          <div className="modern-screenshare-controls-wrapper visible">
-           <div className="modern-screenshare-controls">
-            <button
-             className="modern-screenshare-end-btn"
-             onClick={(e) => {
-              e.stopPropagation();
-              endScreenshare();
-             }}
-             title="Stop sharing"
-            >
-             <i className="fas fa-times"></i>
-            </button>
-           </div>
-          </div>
-         </div>
-        </div>
+        />
        )}
       </>
      )}
@@ -1854,91 +1487,37 @@ const App = () => {
       !callState.isIncoming && (
        <>
         {callMinimized ? (
-         <div
-          className="modern-minimized-call"
-          style={{
-           left: `${callPosition.x}px`,
-           top: `${callPosition.y}px`,
-           cursor: isDragging ? 'grabbing' : 'grab'
-          }}
-          onMouseDown={handleDragStart}
-          onTouchStart={handleDragStart}
+         <MinimizedCall
+          callState={callState}
+          API_BASE_URL={API_BASE_URL}
+          callPosition={callPosition}
+          isDragging={isDragging}
+          isMobile={isMobile}
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+          onDragStart={handleDragStart}
+          onMaximize={() => setCallMinimized(false)}
+          onEnd={endCall}
           onClick={(e) => {
            if (!isDragging && isMobile) {
             e.stopPropagation();
             setCallMinimized(false);
            }
           }}
-         >
-          <div className="modern-minimized-header">
-           <div className="modern-minimized-info">
-            <img
-             src={
-              callState.contact?.avatar_url
-               ? `${API_BASE_URL}${callState.contact.avatar_url}`
-               : "/resources/default_avatar.png"
-             }
-             alt={callState.contact?.username}
-             className="modern-minimized-avatar"
-             draggable="false"
-            />
-            <div className="modern-minimized-user">
-             <h4>{callState.contact?.username}</h4>
-             <p>{callState.type === "video" ? "Video Call" : "Audio Call"}</p>
-            </div>
-           </div>
-          </div>
-
-          {callState.type === "video" ? (
-           <div className="modern-minimized-video">
-            <video
-             ref={remoteVideoRef}
-             className="modern-minimized-remote-video"
-             autoPlay
-             playsInline
-             muted={false}
-            />
-           </div>
-          ) : (
-           <div className="modern-minimized-audio">
-            <div className="modern-minimized-audio-wave"></div>
-           </div>
-          )}
-
-          <div className="modern-minimized-controls">
-           <button
-            className="modern-minimized-btn modern-minimized-maximize"
-            onClick={(e) => {
-             e.stopPropagation();
-             setCallMinimized(false);
-            }}
-            title="Maximize"
-           >
-            <i className="fas fa-expand"></i>
-           </button>
-           <button
-            className="modern-minimized-btn modern-minimized-end"
-            onClick={(e) => {
-             e.stopPropagation();
-             endCall();
-            }}
-            title="End call"
-           >
-            <i className="fas fa-phone"></i>
-           </button>
-          </div>
-
-          <audio
-           ref={callState.type === "audio" ? remoteVideoRef : null}
-           autoPlay
-           muted={false}
-           style={{ display: "none" }}
-          />
-         </div>
+         />
         ) : (
-         <div
-          className="modern-call-overlay"
-          onClick={(e) => {
+         <ActiveCall
+          callState={callState}
+          API_BASE_URL={API_BASE_URL}
+          localVideoRef={localVideoRef}
+          remoteVideoRef={remoteVideoRef}
+          isMicMuted={isMicMuted}
+          isCameraOff={isCameraOff}
+          onToggleMic={toggleMic}
+          onToggleCamera={toggleCamera}
+          onMinimize={() => setCallMinimized(true)}
+          onEnd={endCall}
+          onOverlayClick={(e) => {
            if (e.target.closest('button')) return;
 
            const header = document.querySelector('.modern-call-header');
@@ -1971,132 +1550,7 @@ const App = () => {
             }
            }
           }}
-         >
-          <div className="modern-active-call">
-           <div className="modern-call-header">
-            <div className="modern-call-info">
-             <img
-              src={
-               callState.contact?.avatar_url
-                ? `${API_BASE_URL}${callState.contact.avatar_url}`
-                : "/resources/default_avatar.png"
-              }
-              alt={callState.contact?.username}
-              className="modern-call-avatar"
-              draggable="false"
-             />
-             <div className="modern-call-user">
-              <h3>{callState.contact?.username}</h3>
-              <p>
-               {callState.isOutgoing
-                ? "Calling..."
-                : callState.type === "video"
-                 ? "Video Call"
-                 : "Audio Call"}
-              </p>
-             </div>
-            </div>
-            <button
-             className="modern-minimize-btn"
-             onClick={(e) => {
-              e.stopPropagation();
-              setCallMinimized(true);
-             }}
-             title="Minimize"
-            >
-             <i className="fas fa-minus"></i>
-            </button>
-           </div>
-
-           {callState.type === "video" ? (
-            <div className="modern-video-container">
-             <video
-              ref={remoteVideoRef}
-              className="modern-remote-video"
-              autoPlay
-              playsInline
-              controls={false}
-              muted={false}
-             />
-             <video
-              ref={localVideoRef}
-              className="modern-local-video"
-              autoPlay
-              playsInline
-              controls={false}
-              muted={true}
-             />
-            </div>
-           ) : (
-            <div className="modern-audio-call-ui">
-             <div className="modern-audio-avatar-wrapper">
-              <img
-               src={
-                callState.contact?.avatar_url
-                 ? `${API_BASE_URL}${callState.contact.avatar_url}`
-                 : "/resources/default_avatar.png"
-               }
-               alt={callState.contact?.username}
-               draggable="false"
-               className="modern-audio-avatar"
-              />
-              <div className="modern-audio-pulse"></div>
-             </div>
-             <h3>{callState.contact?.username}</h3>
-             <p>{callState.isOutgoing ? "Calling..." : "Audio Call"}</p>
-             <audio
-              ref={remoteVideoRef}
-              autoPlay
-              muted={false}
-              style={{ display: "none" }}
-             />
-             <audio
-              ref={localVideoRef}
-              autoPlay
-              muted={true}
-              style={{ display: "none" }}
-             />
-            </div>
-           )}
-
-           <div className="modern-call-controls-wrapper">
-            <div className="modern-call-controls">
-             <button
-              className={`modern-control-btn modern-mute-btn ${isMicMuted ? 'muted' : ''}`}
-              onClick={(e) => {
-               e.stopPropagation();
-               toggleMic();
-              }}
-              title={isMicMuted ? "Unmute" : "Mute"}
-             >
-              <i className={`fas fa-microphone${isMicMuted ? '-slash' : ''}`}></i>
-             </button>
-             {callState.type === "video" && (
-              <button
-               className={`modern-control-btn modern-camera-btn ${isCameraOff ? 'camera-off' : ''}`}
-               onClick={(e) => {
-                e.stopPropagation();
-                toggleCamera();
-               }}
-               title={isCameraOff ? "Turn on camera" : "Turn off camera"}
-              >
-               <i className={`fas fa-video${isCameraOff ? '-slash' : ''}`}></i>
-              </button>
-             )}
-             <button
-              className="modern-end-call-btn"
-              onClick={(e) => {
-               e.stopPropagation();
-               endCall();
-              }}
-              title="End call"
-             >
-              <i className="fas fa-phone"></i>
-             </button>
-            </div>
-           </div>
-          </div>
-         </div>
+         />
         )}
        </>
       )}

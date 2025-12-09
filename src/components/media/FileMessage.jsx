@@ -1,21 +1,20 @@
 import React from 'react';
-import { API_BASE_URL } from '../../config';
+import styles from '../../index.module.css';
 
-const FileMessage = ({ message, formatFileSize, getFileIcon }) => {
+const FileMessage = ({ message, API_BASE_URL, formatFileSize, getFileIcon }) => {
  return (
   <div style={{ margin: '8px 0' }}>
-   <div
-    style={{
-     display: 'flex',
-     alignItems: 'center',
-     gap: '12px',
-     padding: '12px 14px',
-     background: 'var(--file-bg)',
-     border: '1px solid var(--border)',
-     borderRadius: '10px',
-     transition: 'all 0.2s ease',
-     maxWidth: '350px'
-    }}
+   <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px 14px',
+    background: 'var(--file-bg)',
+    border: '1px solid var(--border)',
+    borderRadius: '10px',
+    transition: 'all 0.2s ease',
+    maxWidth: '350px'
+   }}
     onMouseEnter={(e) => {
      e.currentTarget.style.background = 'var(--file-bg-hover)';
      e.currentTarget.style.boxShadow = '0 2px 8px var(--shadow-light)';
@@ -23,31 +22,12 @@ const FileMessage = ({ message, formatFileSize, getFileIcon }) => {
     onMouseLeave={(e) => {
      e.currentTarget.style.background = 'var(--file-bg)';
      e.currentTarget.style.boxShadow = 'none';
-    }}
-   >
-    <div
-     className="file-icon-wrapper"
-     style={{
-      fontSize: '28px',
-      minWidth: '28px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0
-     }}
-    >
+    }}>
+    <div className={styles.fileIconWrapper} style={{ fontSize: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
      <i className={getFileIcon(message.file_type)}></i>
     </div>
     <div style={{ flex: 1, minWidth: 0 }}>
-     <div style={{
-      fontWeight: '500',
-      color: 'var(--text-primary)',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      fontSize: '14px',
-      marginBottom: '2px'
-     }}>
+     <div style={{ fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '14px', marginBottom: '2px' }}>
       {message.file_name || 'File'}
      </div>
      {message.file_size && (

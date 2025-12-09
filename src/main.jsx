@@ -4,6 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import './global.css'
 import styles from './index.module.css'
 import Moderation from './pages/Moderation';
+import { disableReactDevTools } from "@fvilers/disable-react-devtools";
+
+if (process.env.NODE_ENV === "production") {
+ disableReactDevTools();
+}
 
 // Warning message
 const imageUrl = "https://uchat.ufonic.xyz/resources/favicon.png";

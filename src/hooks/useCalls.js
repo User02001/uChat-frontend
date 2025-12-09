@@ -2,11 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Peer from 'simple-peer';
 
 const ICE_SERVERS = [
- // STUN servers (for NAT traversal)
  { urls: 'stun:stun.l.google.com:19302' },
  { urls: 'stun:stun1.l.google.com:19302' },
-
- // Metered.ca TURN servers
  {
   urls: 'turn:a.relay.metered.ca:80',
   username: '0fb9f18d86c5f73d408585d8',
@@ -67,6 +64,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
  const screenshareLocalVideoRef = useRef(null);
  const screenshareRemoteVideoRef = useRef(null);
  const screenshareLocalStreamRef = useRef(null);
+ const listenersSetupRef = useRef(false);
 
  const enableAudio = useCallback(async () => {
   if (audioEnabled) return true;
@@ -83,7 +81,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    if (ringtoneRef.current && !ringtoneInitialized) {
     ringtoneRef.current.volume = 0;
     ringtoneRef.current.muted = true;
-
     setRingtoneInitialized(true);
     setAudioEnabled(true);
     return true;
@@ -96,7 +93,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   }
  }, [audioEnabled, ringtoneInitialized]);
 
- // Add click listeners to enable audio on any user interaction
  useEffect(() => {
   const handleInteraction = () => {
    enableAudio();
@@ -115,7 +111,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   };
  }, [audioEnabled, enableAudio]);
 
- // Play ringtone with fallback strategies
  const playRingtone = useCallback(async () => {
   if (!ringtoneRef.current || !audioEnabled) {
    return;
@@ -140,14 +135,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   }
  }, [audioEnabled, setError]);
 
- const testAudio = () => {
-  const audio = new Audio('/resources/ringtones/default_ringtone.mp3');
-  audio.play().then(() => {
-  }).catch(err => {
-  });
- };
-
- // Stop ringtone
  const stopRingtone = useCallback(() => {
   if (ringtoneRef.current) {
    ringtoneRef.current.pause();
@@ -155,7 +142,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   }
  }, []);
 
- // Get user media
  const getUserMedia = async (video = true) => {
   return navigator.mediaDevices.getUserMedia({
    video,
@@ -166,7 +152,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   });
  };
 
- // Set local stream to video element
  const setLocalStream = (stream) => {
   if (localVideoRef.current) {
    localVideoRef.current.srcObject = stream;
@@ -179,77 +164,16 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   localStreamRef.current = stream;
  };
 
- const createPeer = (initiator, stream) => {
-  const peer = new Peer({
-   initiator,
-   trickle: false,
-   stream,
-   config: {
-    iceServers: ICE_SERVERS
-   }
-  });
-
-  peer.on('signal', (data) => {
-   console.log('Peer signal generated:', initiator ? 'INITIATOR' : 'RECEIVER');
-   // Skip emitting the initial offer - it's already sent in startCall
-   if (!initiator || data.type !== 'offer') {
-    if (socketRef.current) {
-     socketRef.current.emit('webrtc_signal', {
-      target_id: callState.contact?.id,
-      signal: data
-     });
-    }
-   }
-  });
-
-  peer.on('stream', (remoteStream) => {
-   console.log('Received remote stream:', remoteStream.id);
-   setCallState(prev => ({
-    ...prev,
-    remoteStream,
-    isActive: true,
-    isIncoming: false,
-    isOutgoing: false
-   }));
-
-   // Set up remote video with a small delay to ensure element exists
-   setTimeout(() => {
-    if (remoteVideoRef.current && remoteStream) {
-     remoteVideoRef.current.srcObject = remoteStream;
-     remoteVideoRef.current.autoplay = true;
-     remoteVideoRef.current.playsInline = true;
-     remoteVideoRef.current.muted = false;
-     remoteVideoRef.current.play().catch(e => {
-      // Try again after a short delay
-      setTimeout(() => {
-       if (remoteVideoRef.current) {
-        remoteVideoRef.current.play().catch(console.error);
-       }
-      }, 500);
-     });
-    }
-   }, 200);
-  });
-
-  peer.on('error', (error) => {
-   console.error('Peer error:', error);
-   setError('Call connection failed');
-   endCall();
-  });
-
-  peer.on('close', () => {
-   endCall();
-  });
-
-  return peer;
- };
-
+ // FIX: Separate socket listener setup to ensure it runs properly
  const setupSocketListeners = useCallback(() => {
-  if (!socketRef.current) return;
+  if (!socketRef.current) {
+   console.log('[CALLS] No socket available');
+   return;
+  }
 
   const socket = socketRef.current;
 
-  // Remove any existing listeners first to prevent duplicates
+  // Remove old listeners if they exist
   socket.off('incoming_call');
   socket.off('call_accepted');
   socket.off('call_rejected');
@@ -261,12 +185,13 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   socket.off('screenshare_signal');
   socket.off('screenshare_ended');
 
+  console.log('[CALLS] Setting up socket listeners');
+
   // CALL LISTENERS
   socket.on('incoming_call', (data) => {
    console.log('[CALLS] Incoming call received:', data);
    stopRingtone();
 
-   // Force state update to happen immediately
    setCallState({
     isActive: false,
     isIncoming: true,
@@ -279,11 +204,11 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     callId: data.call_id
    });
 
-   // Play ringtone after state is set
    setTimeout(() => playRingtone(), 100);
   });
 
   socket.on('call_accepted', (data) => {
+   console.log('[CALLS] Call accepted:', data);
    stopRingtone();
    setCallState(prev => ({
     ...prev,
@@ -292,100 +217,166 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     callId: data.call_id
    }));
    if (data.answerSDP && peerRef.current && !peerRef.current.destroyed) {
+    console.log('[CALLS] Signaling answer SDP to peer');
     peerRef.current.signal(data.answerSDP);
    }
   });
 
   socket.on('call_rejected', () => {
+   console.log('[CALLS] Call rejected');
    stopRingtone();
    endCall();
   });
 
   socket.on('webrtc_signal', (data) => {
-   console.log('Received webrtc_signal from:', data.from_user);
+   console.log('[CALLS] Received webrtc_signal from:', data.from_user);
    if (peerRef.current && !peerRef.current.destroyed) {
     peerRef.current.signal(data.signal);
    }
   });
 
   socket.on('call_ended', () => {
+   console.log('[CALLS] Call ended by other user');
    stopRingtone();
-
-   // If we have an incoming call that hasn't been answered yet, just clear it
-   if (callState.isIncoming) {
-    setCallState({
-     isActive: false,
-     isIncoming: false,
-     isOutgoing: false,
-     type: null,
-     contact: null,
-     localStream: null,
-     remoteStream: null,
-     incomingOffer: null,
-     callId: null
-    });
-   } else {
-    endCall();
-   }
+   endCall();
   });
 
   // SCREENSHARE LISTENERS
   socket.on('screenshare_incoming', (data) => {
-   console.log('Incoming screenshare from:', data.sharer?.username);
+   console.log('[SCREENSHARE] Incoming screenshare from:', data.sharer?.username);
    setScreenshareState(prev => ({
     ...prev,
     isIncoming: true,
     contact: data.sharer,
     incomingOffer: data.offer,
-    shareId: data.share_id  // ADD THIS
+    shareId: data.share_id
    }));
   });
 
   socket.on('screenshare_accepted', (data) => {
-   console.log('Screenshare accepted by viewer, signaling answer');
+   console.log('[SCREENSHARE] Screenshare accepted');
    if (screensharePeerRef.current && !screensharePeerRef.current.destroyed && data.answerSDP) {
     screensharePeerRef.current.signal(data.answerSDP);
     setScreenshareState(prev => ({
      ...prev,
      isActive: true,
-     shareId: data.share_id  // ADD THIS
+     shareId: data.share_id
     }));
    }
   });
 
   socket.on('screenshare_rejected', () => {
-   console.log('Screenshare rejected');
+   console.log('[SCREENSHARE] Screenshare rejected');
    setError('Screenshare was declined');
    endScreenshare();
   });
 
   socket.on('screenshare_signal', (data) => {
-   console.log('Received screenshare signal from:', data.from_user);
+   console.log('[SCREENSHARE] Received signal from:', data.from_user);
    if (screensharePeerRef.current && !screensharePeerRef.current.destroyed) {
     screensharePeerRef.current.signal(data.signal);
    }
   });
 
   socket.on('screenshare_ended', (data) => {
-   console.log('Screenshare ended by other user', data);
+   console.log('[SCREENSHARE] Screenshare ended by other user');
    endScreenshare(true);
   });
 
- }, [socketRef.current]);
-
- // Set up socket listeners when socket connects - ONLY run once per socket connection
- useEffect(() => {
-  if (!socketRef.current) return;
-  const cleanup = setupSocketListeners();
+  listenersSetupRef.current = true;
+  console.log('[CALLS] Socket listeners setup complete');
 
   return () => {
-   if (cleanup) cleanup();
+   console.log('[CALLS] Cleaning up socket listeners');
+   socket.off('incoming_call');
+   socket.off('call_accepted');
+   socket.off('call_rejected');
+   socket.off('webrtc_signal');
+   socket.off('call_ended');
+   socket.off('screenshare_incoming');
+   socket.off('screenshare_accepted');
+   socket.off('screenshare_rejected');
+   socket.off('screenshare_signal');
+   socket.off('screenshare_ended');
+   listenersSetupRef.current = false;
   };
- }, [socketRef.current]);
+ }, [stopRingtone, playRingtone, setError]);
+
+ // FIX: Run setup once when socket is available and on reconnect
+ useEffect(() => {
+  if (!socketRef.current) return;
+
+  const socket = socketRef.current;
+
+  // Always clean up old listeners first
+  if (listenersSetupRef.current) {
+   console.log('[CALLS] Cleaning up old listeners before setup');
+   socket.off('incoming_call');
+   socket.off('call_accepted');
+   socket.off('call_rejected');
+   socket.off('webrtc_signal');
+   socket.off('call_ended');
+   socket.off('screenshare_incoming');
+   socket.off('screenshare_accepted');
+   socket.off('screenshare_rejected');
+   socket.off('screenshare_signal');
+   socket.off('screenshare_ended');
+   listenersSetupRef.current = false;
+  }
+
+  // Set up listeners immediately if socket is connected
+  if (socket.connected) {
+   console.log('[CALLS] Socket already connected, setting up listeners immediately');
+   setupSocketListeners();
+  }
+
+  // ALWAYS listen for connect/reconnect events
+  const onConnect = () => {
+   console.log('[CALLS] Socket connected, setting up listeners');
+   // Clean up before setting up again
+   if (listenersSetupRef.current) {
+    socket.off('incoming_call');
+    socket.off('call_accepted');
+    socket.off('call_rejected');
+    socket.off('webrtc_signal');
+    socket.off('call_ended');
+    socket.off('screenshare_incoming');
+    socket.off('screenshare_accepted');
+    socket.off('screenshare_rejected');
+    socket.off('screenshare_signal');
+    socket.off('screenshare_ended');
+    listenersSetupRef.current = false;
+   }
+   setupSocketListeners();
+  };
+
+  socket.on('connect', onConnect);
+  socket.on('reconnect', onConnect);
+
+  return () => {
+   console.log('[CALLS] useEffect cleanup');
+   socket.off('connect', onConnect);
+   socket.off('reconnect', onConnect);
+   if (listenersSetupRef.current) {
+    socket.off('incoming_call');
+    socket.off('call_accepted');
+    socket.off('call_rejected');
+    socket.off('webrtc_signal');
+    socket.off('call_ended');
+    socket.off('screenshare_incoming');
+    socket.off('screenshare_accepted');
+    socket.off('screenshare_rejected');
+    socket.off('screenshare_signal');
+    socket.off('screenshare_ended');
+    listenersSetupRef.current = false;
+   }
+  };
+ }, [setupSocketListeners]);
 
  const startCall = async (contact, type) => {
   try {
-   // Ensure socket is connected
+   console.log('[CALLS] Starting call to:', contact.username, 'type:', type);
+
    if (!socketRef.current || !socketRef.current.connected) {
     setError('Not connected to server. Retrying...');
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -427,20 +418,19 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
    peerRef.current = peer;
 
-   // Set up all event listeners before signaling
    peer.on('error', (error) => {
-    console.error('Peer error:', error);
+    console.error('[CALLS] Peer error:', error);
     setError('Call connection failed');
     endCall();
    });
 
    peer.on('close', () => {
-    console.log('Peer closed');
+    console.log('[CALLS] Peer closed');
     endCall();
    });
 
    peer.on('stream', (remoteStream) => {
-    console.log('Caller received remote stream:', remoteStream.id);
+    console.log('[CALLS] Caller received remote stream');
     setCallState(prev => ({
      ...prev,
      remoteStream,
@@ -455,20 +445,14 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
       remoteVideoRef.current.autoplay = true;
       remoteVideoRef.current.playsInline = true;
       remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.play().catch(e => {
-       setTimeout(() => {
-        if (remoteVideoRef.current) {
-         remoteVideoRef.current.play().catch(console.error);
-        }
-       }, 500);
-      });
+      remoteVideoRef.current.play().catch(console.error);
      }
     }, 200);
    });
 
-   // Signal event comes last - only after all listeners are set up
+   // FIX: Only emit the initial offer, don't set up additional signal handlers
    peer.on('signal', (data) => {
-    console.log('Initial offer generated, sending call_initiate');
+    console.log('[CALLS] Peer generated signal, sending to server');
     if (socketRef.current && socketRef.current.connected) {
      socketRef.current.emit('call_initiate', {
       receiver_id: contact.id,
@@ -476,14 +460,14 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
       offer: data
      });
     } else {
-     console.error('Socket disconnected, cannot send call initiate');
+     console.error('[CALLS] Socket disconnected, cannot send call initiate');
      setError('Connection lost');
      endCall();
     }
    });
 
   } catch (error) {
-   console.error('Failed to start call:', error);
+   console.error('[CALLS] Failed to start call:', error);
    setError('Failed to access camera/microphone');
   }
  };
@@ -492,6 +476,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   stopRingtone();
 
   if (!accept) {
+   console.log('[CALLS] Rejecting call');
    if (socketRef.current && socketRef.current.connected) {
     socketRef.current.emit('call_answer', {
      call_id: callState.callId,
@@ -515,14 +500,14 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   }
 
   try {
-   // Ensure socket is connected
+   console.log('[CALLS] Accepting call');
+
    if (!socketRef.current || !socketRef.current.connected) {
     setError('Not connected to server');
     endCall();
     return;
    }
 
-   console.log('Answering call, getting media...');
    const stream = await getUserMedia(callState.type === 'video');
    setLocalStream(stream);
 
@@ -537,20 +522,19 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
    peerRef.current = peer;
 
-   // Set up error/close handlers first
    peer.on('error', (error) => {
-    console.error('Peer error:', error);
+    console.error('[CALLS] Peer error:', error);
     setError('Call connection failed');
     endCall();
    });
 
    peer.on('close', () => {
-    console.log('Peer closed');
+    console.log('[CALLS] Peer closed');
     endCall();
    });
 
    peer.on('stream', (remoteStream) => {
-    console.log('Receiver got remote stream:', remoteStream.id);
+    console.log('[CALLS] Receiver got remote stream');
     setCallState(prev => ({
      ...prev,
      remoteStream,
@@ -564,19 +548,13 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
       remoteVideoRef.current.autoplay = true;
       remoteVideoRef.current.playsInline = true;
       remoteVideoRef.current.muted = false;
-      remoteVideoRef.current.play().catch(e => {
-       setTimeout(() => {
-        if (remoteVideoRef.current) {
-         remoteVideoRef.current.play().catch(console.error);
-        }
-       }, 500);
-      });
+      remoteVideoRef.current.play().catch(console.error);
      }
     }, 200);
    });
 
    peer.on('signal', (data) => {
-    console.log('Answer signal generated, sending to caller');
+    console.log('[CALLS] Answer signal generated, sending to caller');
     if (socketRef.current && socketRef.current.connected) {
      socketRef.current.emit('call_answer', {
       call_id: callState.callId,
@@ -585,13 +563,13 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
       answerSDP: data
      });
     } else {
-     console.error('Socket disconnected during answer');
+     console.error('[CALLS] Socket disconnected during answer');
      setError('Connection lost');
      endCall();
     }
    });
 
-   console.log('Signaling incoming offer to peer');
+   console.log('[CALLS] Signaling incoming offer to peer');
    if (callState.incomingOffer) {
     peer.signal(callState.incomingOffer);
    }
@@ -603,36 +581,26 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    }));
 
   } catch (error) {
-   console.error('Failed to answer call:', error);
+   console.error('[CALLS] Failed to answer call:', error);
    setError('Failed to access camera/microphone');
    endCall();
   }
  };
 
- // End call
  const endCall = () => {
-  // Stop ringtone
+  console.log('[CALLS] Ending call');
   stopRingtone();
 
-  // Stop screenshare if active (do this BEFORE stopping local stream)
-  const wasScreensharing = screenshareState.isActive || screenshareState.isSharing || screenshareState.isViewing;
-  if (wasScreensharing) {
-   endScreenshare();
-  }
-
-  // Stop local stream
   if (localStreamRef.current) {
    localStreamRef.current.getTracks().forEach(track => track.stop());
    localStreamRef.current = null;
   }
 
-  // Destroy peer connection
   if (peerRef.current) {
    peerRef.current.destroy();
    peerRef.current = null;
   }
 
-  // Emit call end - ALWAYS send if we have a contact, even without call_id
   if (callState.contact && socketRef.current) {
    socketRef.current.emit('call_end', {
     call_id: callState.callId,
@@ -640,7 +608,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    });
   }
 
-  // Clear video elements
   if (localVideoRef.current) {
    localVideoRef.current.srcObject = null;
   }
@@ -648,7 +615,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    remoteVideoRef.current.srcObject = null;
   }
 
-  // Reset state
   setCallState({
    isActive: false,
    isIncoming: false,
@@ -662,9 +628,10 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   });
  };
 
- // Start screenshare
  const startScreenshare = async (contact) => {
   try {
+   console.log('[SCREENSHARE] Starting screenshare to:', contact.username);
+
    const stream = await navigator.mediaDevices.getDisplayMedia({
     video: {
      cursor: "always",
@@ -673,24 +640,19 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     audio: false
    });
 
-   console.log('Screen stream obtained:', stream.id);
-
-   // Store in ref for guaranteed access during cleanup
    screenshareLocalStreamRef.current = stream;
 
-   // Handle user clicking "Stop sharing" button
    stream.getVideoTracks()[0].onended = () => {
-    console.log('Screen sharing stopped by user');
+    console.log('[SCREENSHARE] Screen sharing stopped by user');
     endScreenshare();
    };
 
-   // Set local video immediately
    if (screenshareLocalVideoRef.current) {
     screenshareLocalVideoRef.current.srcObject = stream;
     screenshareLocalVideoRef.current.muted = true;
     screenshareLocalVideoRef.current.autoplay = true;
     screenshareLocalVideoRef.current.playsInline = true;
-    screenshareLocalVideoRef.current.play().catch(e => console.log('Local screenshare play error:', e));
+    screenshareLocalVideoRef.current.play().catch(console.error);
    }
 
    setScreenshareState({
@@ -704,7 +666,6 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     incomingOffer: null
    });
 
-   // Create peer as initiator
    const peer = new Peer({
     initiator: true,
     trickle: false,
@@ -717,7 +678,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    screensharePeerRef.current = peer;
 
    peer.on('signal', (data) => {
-    console.log('Screenshare signal generated by initiator');
+    console.log('[SCREENSHARE] Signal generated');
     if (socketRef.current) {
      socketRef.current.emit('screenshare_start', {
       receiver_id: contact.id,
@@ -726,9 +687,8 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
     }
    });
 
-   // ADD THIS: Listen for share_id from server
    peer.on('connect', () => {
-    console.log('Screenshare peer connected (sharer)');
+    console.log('[SCREENSHARE] Peer connected');
     setScreenshareState(prev => ({
      ...prev,
      isActive: true
@@ -736,32 +696,31 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    });
 
    peer.on('error', (error) => {
-    // Ignore "User-Initiated Abort" errors - these are expected when hanging up
     if (error.message && error.message.includes('User-Initiated Abort')) {
-     console.log('Screenshare ended normally (viewer)');
      return;
     }
-    console.error('Screenshare peer error:', error);
+    console.error('[SCREENSHARE] Peer error:', error);
     setError('Screenshare connection failed');
     endScreenshare();
    });
 
    peer.on('close', () => {
-    console.log('Screenshare peer closed (viewer)');
+    console.log('[SCREENSHARE] Peer closed');
     endScreenshare();
    });
 
   } catch (error) {
-   console.error('Failed to accept screenshare:', error);
+   console.error('[SCREENSHARE] Failed to start:', error);
    setError('You cannot screenshare from a phone');
   }
  };
 
  const answerScreenshare = async (accept) => {
   if (!accept) {
+   console.log('[SCREENSHARE] Rejecting screenshare');
    if (socketRef.current) {
     socketRef.current.emit('screenshare_answer', {
-     share_id: screenshareState.shareId,  // ADD THIS
+     share_id: screenshareState.shareId,
      sharer_id: screenshareState.contact.id,
      answer: false
     });
@@ -782,7 +741,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
   }
 
   try {
-   console.log('Accepting screenshare from:', screenshareState.contact?.username);
+   console.log('[SCREENSHARE] Accepting screenshare');
 
    const peer = new Peer({
     initiator: false,
@@ -795,7 +754,7 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    screensharePeerRef.current = peer;
 
    peer.on('stream', (remoteStream) => {
-    console.log('Received screenshare stream:', remoteStream.id);
+    console.log('[SCREENSHARE] Received stream');
 
     setScreenshareState(prev => ({
      ...prev,
@@ -807,125 +766,78 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
 
     setTimeout(() => {
      if (screenshareRemoteVideoRef.current && remoteStream) {
-      console.log('Setting remote video srcObject');
       screenshareRemoteVideoRef.current.srcObject = remoteStream;
       screenshareRemoteVideoRef.current.autoplay = true;
       screenshareRemoteVideoRef.current.playsInline = true;
       screenshareRemoteVideoRef.current.muted = false;
-      screenshareRemoteVideoRef.current.play().catch(e => {
-       console.error('Remote screenshare play error:', e);
-       setTimeout(() => {
-        if (screenshareRemoteVideoRef.current) {
-         screenshareRemoteVideoRef.current.play().catch(console.error);
-        }
-       }, 500);
-      });
+      screenshareRemoteVideoRef.current.play().catch(console.error);
      }
     }, 200);
    });
 
    if (screenshareState.incomingOffer) {
-    console.log('Signaling incoming offer to peer');
     peer.signal(screenshareState.incomingOffer);
    }
 
    peer.on('signal', (data) => {
-    console.log('Screenshare signal generated by viewer');
+    console.log('[SCREENSHARE] Answer signal generated');
     if (socketRef.current) {
      socketRef.current.emit('screenshare_signal', {
-      share_id: screenshareState.shareId,  // ADD THIS instead of target_id
+      share_id: screenshareState.shareId,
       target_id: screenshareState.contact.id,
       signal: data
      });
     }
    });
 
-   peer.on('connect', () => {
-    console.log('Screenshare peer connected (viewer)');
-   });
-
    peer.on('error', (error) => {
-    console.error('Screenshare peer error:', error);
+    console.error('[SCREENSHARE] Peer error:', error);
     setError('Screenshare connection failed');
     endScreenshare();
    });
 
    peer.on('close', () => {
-    console.log('Screenshare peer closed (viewer)');
+    console.log('[SCREENSHARE] Peer closed');
     endScreenshare();
    });
 
   } catch (error) {
-   console.error('Failed to accept screenshare:', error);
+   console.error('[SCREENSHARE] Failed to accept:', error);
    setError('Failed to accept screenshare');
   }
  };
 
- // End screenshare
  const endScreenshare = (skipEmit = false) => {
-  console.log('endScreenshare called', {
-   isSharing: screenshareState.isSharing,
-   isViewing: screenshareState.isViewing,
-   contact: screenshareState.contact?.username,
-   shareId: screenshareState.shareId,
-   skipEmit,
-   hasRefStream: !!screenshareLocalStreamRef.current
-  });
+  console.log('[SCREENSHARE] Ending screenshare');
 
-  // CRITICAL: Use REF not state - state might be stale during cleanup
   if (screenshareLocalStreamRef.current) {
-   const tracks = screenshareLocalStreamRef.current.getTracks();
-   console.log('Stopping', tracks.length, 'LOCAL screenshare tracks from REF');
-   tracks.forEach(track => {
-    console.log('Stopping track:', track.kind, track.label, 'readyState:', track.readyState);
-    track.stop();
-    console.log('After stop - readyState:', track.readyState);
-   });
+   screenshareLocalStreamRef.current.getTracks().forEach(track => track.stop());
    screenshareLocalStreamRef.current = null;
   }
 
-  // Also try from state as backup
   if (screenshareState.localStream) {
-   const tracks = screenshareState.localStream.getTracks();
-   console.log('BACKUP: Stopping', tracks.length, 'local screenshare tracks from STATE');
-   tracks.forEach(track => {
-    console.log('Stopping track:', track.kind, track.label);
-    track.stop();
-   });
+   screenshareState.localStream.getTracks().forEach(track => track.stop());
   }
 
   if (screenshareState.remoteStream) {
-   const tracks = screenshareState.remoteStream.getTracks();
-   console.log('Stopping', tracks.length, 'remote screenshare tracks');
-   tracks.forEach(track => {
-    track.stop();
-   });
+   screenshareState.remoteStream.getTracks().forEach(track => track.stop());
   }
 
-  // Clear video element sources BEFORE destroying peer
-  if (screenshareLocalVideoRef.current && screenshareLocalVideoRef.current.srcObject) {
-   console.log('Clearing local video srcObject');
+  if (screenshareLocalVideoRef.current) {
    screenshareLocalVideoRef.current.pause();
    screenshareLocalVideoRef.current.srcObject = null;
-   screenshareLocalVideoRef.current.load();
   }
-  if (screenshareRemoteVideoRef.current && screenshareRemoteVideoRef.current.srcObject) {
-   console.log('Clearing remote video srcObject');
+  if (screenshareRemoteVideoRef.current) {
    screenshareRemoteVideoRef.current.pause();
    screenshareRemoteVideoRef.current.srcObject = null;
-   screenshareRemoteVideoRef.current.load();
   }
 
-  // Destroy peer connection
   if (screensharePeerRef.current) {
-   console.log('Destroying screenshare peer');
    screensharePeerRef.current.destroy();
    screensharePeerRef.current = null;
   }
 
-  // Only emit if we're not being called from a socket event
   if (!skipEmit && screenshareState.contact && socketRef.current) {
-   console.log('Emitting screenshare_end to:', screenshareState.contact.username);
    socketRef.current.emit('screenshare_end', {
     share_id: screenshareState.shareId,
     target_id: screenshareState.contact.id
@@ -943,10 +855,8 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    incomingOffer: null,
    shareId: null
   });
-
-  console.log('endScreenshare completed');
  };
- 
+
  const toggleMic = () => {
   if (localStreamRef.current) {
    const audioTrack = localStreamRef.current.getAudioTracks()[0];
@@ -966,6 +876,14 @@ const useCalls = (socketRef, setError, callMinimized, screenshareMinimized) => {
    }
   }
  };
+
+ // Expose setup function globally so initializeSocket can call it
+ useEffect(() => {
+  window.__setupCallListeners = setupSocketListeners;
+  return () => {
+   delete window.__setupCallListeners;
+  };
+ }, [setupSocketListeners]);
 
  return {
   callState,

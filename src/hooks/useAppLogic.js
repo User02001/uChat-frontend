@@ -110,11 +110,14 @@ export const useAppLogic = () => {
     setUser(data.user);
 
     // Delay to let splash animation play fully - THEN do heavy stuff
+    // Initialize socket IMMEDIATELY (don't wait for animation)
+    initializeSocket(messagesContainerRef);
+
+    // THEN delay hiding splash screen
     setTimeout(() => {
      setLoading(false);
-     // Initialize socket and load contacts AFTER animation
+     // Load contacts after animation
      setTimeout(() => {
-      initializeSocket(messagesContainerRef);
       loadContacts();
      }, 100);
     }, 2000);
@@ -150,6 +153,7 @@ export const useAppLogic = () => {
   socketRef.current = socket;
 
   socket.on("connect", () => {
+   console.log('[SOCKET] Connected to server');
    setSocketConnected(true);
    setReconnectAttempts(0);
 
@@ -158,10 +162,15 @@ export const useAppLogic = () => {
     socket.emit("join_chat", { contact_id: currentActiveContact.id });
    }
 
-   // Immediately refresh data and mark this session as active
    socket.emit("request_contacts_update");
    socket.emit("request_online_users");
-   emitActivity(); // <-- ping activity on connect so status shows ONLINE right away
+   emitActivity();
+
+   // CRITICAL: Manually trigger call listeners setup
+   if (window.__setupCallListeners) {
+    console.log('[SOCKET] Triggering call listeners setup');
+    window.__setupCallListeners();
+   }
   });
 
   socket.on("online_users_update", (data) => {
