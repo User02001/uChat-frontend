@@ -4,13 +4,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { stylex } from 'vite-plugin-stylex-dev'
 import fs from 'fs'
 
-export default defineConfig(({ mode }) => {
- const base = mode === 'production'
-  ? 'https://cdn.ufonic.xyz/'
-  : '/';
-
- return {
-  base: base,
+export default defineConfig({
   plugins: [
    react(),
    stylex({
@@ -71,5 +65,4 @@ export default defineConfig(({ mode }) => {
    host: '0.0.0.0',
    port: 5173,
   },
- }
 })
