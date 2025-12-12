@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config';
 import styles from './MediaViewer.module.css';
 import VideoPlayer from './VideoPlayer';
 
-const MediaViewer = ({ media, onClose }) => {
+const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  const [scale, setScale] = useState(1);
  const [position, setPosition] = useState({ x: 0, y: 0 });
  const [isDragging, setIsDragging] = useState(false);
@@ -13,15 +13,35 @@ const MediaViewer = ({ media, onClose }) => {
  const containerRef = useRef(null);
  const audioRef = useRef(null);
  const headerTimeoutRef = useRef(null);
+ const videoPlayerRef = useRef(null);
 
  const mediaUrl = media.url.startsWith('http') ? media.url : `${API_BASE_URL}${media.url}`;
  const isVideo = media.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(media.url);
  const isAudio = media.type === 'audio' || /\.(mp3|wav|ogg|m4a|aac)$/i.test(media.url);
  const isImage = !isVideo && !isAudio;
 
+ const handleClose = () => {
+  const overlay = document.querySelector(`.${styles.mediaViewerOverlay}`);
+  if (overlay) {
+   overlay.style.transition = 'opacity 0.3s ease';
+   overlay.style.opacity = '0';
+  }
+
+  setTimeout(() => {
+   if (isVideo && videoPlayerRef.current) {
+    const currentTime = videoPlayerRef.current.getCurrentTime();
+    const isPlaying = videoPlayerRef.current.isPlaying();
+    if (media.onReturn) {
+     media.onReturn(currentTime, isPlaying);
+    }
+   }
+   onClose();
+  }, 300);
+ };
+
  useEffect(() => {
   const handleKeyDown = (e) => {
-   if (e.key === 'Escape') onClose();
+   if (e.key === 'Escape') handleClose();
   };
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
@@ -147,7 +167,7 @@ const MediaViewer = ({ media, onClose }) => {
  return (
   <div
    className={styles.mediaViewerOverlay}
-   onClick={onClose}
+   onClick={handleClose}
    onMouseMove={handleMouseMove}
   >
    <div className={styles.mediaViewerContainer} onClick={(e) => e.stopPropagation()}>
@@ -199,7 +219,7 @@ const MediaViewer = ({ media, onClose }) => {
       </button>
       <button
        className={styles.mediaViewerBtnClose}
-       onClick={onClose}
+       onClick={handleClose}
        title="Close"
       >
        <i className="fas fa-times"></i>
@@ -216,7 +236,13 @@ const MediaViewer = ({ media, onClose }) => {
     >
      {isVideo && (
       <div className={styles.mediaViewerVideoWrapper}>
-       <VideoPlayer src={mediaUrl} inChat={false} />
+       <VideoPlayer
+        ref={videoPlayerRef}
+        src={mediaUrl}
+        inChat={false}
+        initialTime={initialTime}
+        autoplay={autoplay}
+       />
       </div>
      )}
 

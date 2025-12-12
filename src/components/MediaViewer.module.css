@@ -12,7 +12,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeInViewer 0.2s ease;
+    animation: fadeInViewer 0.3s ease;
 }
 
 @keyframes fadeInViewer {

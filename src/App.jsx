@@ -6,7 +6,7 @@ import lottie from 'lottie-web';
 import WarningForModeration from "./components/WarningForModeration";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
-import { API_BASE_URL, SOCKET_URL } from "./config";
+import { API_BASE_URL, CDN_BASE_URL, SOCKET_URL } from "./config";
 import useCalls from "./hooks/useCalls";
 import MessagesSkeleton from "./components/MessagesSkeleton";
 import ContactsSkeleton from "./components/ContactsSkeleton";
@@ -216,6 +216,7 @@ const App = () => {
  useEffect(() => {
   if (typeof window !== "undefined") {
    window.socketRef = socketRef;
+   window.__messageRefs = messageRefsMap.current;
 
    window.quickReply = async (receiverId, message) => {
     if (!socketRef.current || !socketRef.current.connected) {
@@ -308,7 +309,9 @@ const App = () => {
    (entries) => {
     entries.forEach((entry) => {
      if (entry.isIntersecting) {
-      const messageId = entry.target.dataset.messageId;
+      const messageId = Object.keys(window.__messageRefs || {}).find(
+       id => window.__messageRefs[id] === entry.target
+      );
       if (messageId) {
        setVisibleMessages((prev) => new Set([...prev, parseInt(messageId)]));
       }
@@ -332,7 +335,7 @@ const App = () => {
  useEffect(() => {
   if (!observerRef.current) return;
 
-  const messageElements = messagesContainerRef.current?.querySelectorAll('[data-message-id]');
+  const messageElements = Object.values(window.__messageRefs || {});
   messageElements?.forEach((el) => {
    observerRef.current.observe(el);
   });
@@ -382,7 +385,7 @@ const App = () => {
  };
 
  const scrollToMessage = (messageId) => {
-  const messageElement = document.getElementById(`message-${messageId}`);
+  const messageElement = window.__messageRefs?.[messageId];
   if (messageElement) {
    const rect = messageElement.getBoundingClientRect();
    const isInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
@@ -582,6 +585,7 @@ const App = () => {
  };
 
  const messagesContainerRef = useRef(null);
+ const messageRefsMap = useRef({});
 
  const { handleScroll, userScrollLockRef } = useMessageScroll({
   messages,
@@ -693,7 +697,7 @@ const App = () => {
          <img
           src={
            user?.avatar_url
-            ? `${API_BASE_URL}${user.avatar_url}`
+            ? `${CDN_BASE_URL}${user.avatar_url}`
             : "/resources/default_avatar.png"
           }
           alt="Profile"
@@ -797,8 +801,8 @@ const App = () => {
             <img
              src={
               result.avatar_url
-               ? `${API_BASE_URL}${result.avatar_url}`
-               : `${API_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
+               ? `${CDN_BASE_URL}${result.avatar_url}`
+               : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
              }
              alt={result.username}
              className={styles.searchAvatar}
@@ -847,7 +851,7 @@ const App = () => {
           <img
            src={
             user?.avatar_url
-             ? `${API_BASE_URL}${user.avatar_url}`
+             ? `${CDN_BASE_URL}${user.avatar_url}`
              : "/resources/default_avatar.png"
            }
            alt="Profile"
@@ -957,8 +961,8 @@ const App = () => {
               draggable="false"
               src={
                result.avatar_url
-                ? `${API_BASE_URL}${result.avatar_url}`
-                : `${API_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
+                ? `${CDN_BASE_URL}${result.avatar_url}`
+                : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
               }
               alt={result.username}
               className={styles.searchAvatar}
@@ -1017,7 +1021,7 @@ const App = () => {
            <img
             src={
              contact.avatar_url
-              ? `${API_BASE_URL}${contact.avatar_url}`
+              ? `${CDN_BASE_URL}${contact.avatar_url}`
               : "/resources/default_avatar.png"
             }
             alt={contact.username}
@@ -1098,7 +1102,7 @@ const App = () => {
            draggable="false"
            src={
             activeContact.avatar_url
-             ? `${API_BASE_URL}${activeContact.avatar_url}`
+             ? `${CDN_BASE_URL}${activeContact.avatar_url}`
              : "/resources/default_avatar.png"
            }
            alt={activeContact.username}
@@ -1675,7 +1679,11 @@ const App = () => {
    {showMediaViewer && (
     <MediaViewer
      media={showMediaViewer}
-     onClose={() => setShowMediaViewer(null)}
+     onClose={() => {
+      setShowMediaViewer(null);
+     }}
+     initialTime={showMediaViewer.startTime}
+     autoplay={showMediaViewer.autoplay}
     />
    )}
    {showMessageOptionsPhone && isMobile && (

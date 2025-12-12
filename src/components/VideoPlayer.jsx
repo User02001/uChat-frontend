@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle } from 'react';
 import styles from './VideoPlayer.module.css';
 
-const VideoPlayer = ({ src, inChat = false, onExpand }) => {
+const VideoPlayer = React.forwardRef(({ src, inChat = false, onExpand, initialTime = 0, autoplay = false }, ref) => {
  const [isPlaying, setIsPlaying] = useState(false);
  const [hasStarted, setHasStarted] = useState(false);
- const [currentTime, setCurrentTime] = useState(0);
+ const [currentTime, setCurrentTime] = useState(initialTime);
  const [duration, setDuration] = useState(0);
  const [volume, setVolume] = useState(1);
  const [isMuted, setIsMuted] = useState(false);
@@ -12,10 +12,34 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
  const [isFullscreen, setIsFullscreen] = useState(false);
  const [isSeeking, setIsSeeking] = useState(false);
  const [showCursor, setShowCursor] = useState(true);
+ const [wasPlayingBeforeSeek, setWasPlayingBeforeSeek] = useState(false);
  const videoRef = useRef(null);
  const containerRef = useRef(null);
  const controlsTimeoutRef = useRef(null);
  const progressAnimationRef = useRef(null);
+
+ useImperativeHandle(ref, () => ({
+  seek: (time) => {
+   if (videoRef.current) {
+    videoRef.current.currentTime = time;
+    setCurrentTime(time);
+   }
+  },
+  play: () => {
+   if (videoRef.current) {
+    videoRef.current.play();
+   }
+  },
+  pause: () => {
+   if (videoRef.current) {
+    videoRef.current.pause();
+   }
+  },
+  getCurrentTime: () => videoRef.current?.currentTime || 0,
+  isPlaying: () => !videoRef.current?.paused,
+  getContainer: () => containerRef.current,
+  getVideoElement: () => videoRef.current
+ }));
 
  useEffect(() => {
   const video = videoRef.current;
@@ -28,7 +52,15 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
    }
   };
 
-  const handleLoadedMetadata = () => setDuration(video.duration);
+  const handleLoadedMetadata = () => {
+   setDuration(video.duration);
+   if (initialTime > 0) {
+    video.currentTime = initialTime;
+   }
+   if (autoplay) {
+    video.play();
+   }
+  };
   const handleEnded = () => {
    setIsPlaying(false);
    cancelAnimationFrame(progressAnimationRef.current);
@@ -59,7 +91,7 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
     cancelAnimationFrame(progressAnimationRef.current);
    }
   };
- }, []);
+ }, [initialTime, autoplay]);
 
  useEffect(() => {
   const handleFullscreenChange = () => {
@@ -92,7 +124,7 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
    videoRef.current.currentTime = newTime;
    setCurrentTime(newTime);
    setIsSeeking(false);
-   if (isPlaying) {
+   if (wasPlayingBeforeSeek) {
     videoRef.current.play();
    }
   };
@@ -108,7 +140,7 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
    window.removeEventListener('touchmove', handleMove);
    window.removeEventListener('touchend', handleEnd);
   };
- }, [isSeeking, duration]);
+ }, [isSeeking, duration, isPlaying]);
 
  const togglePlay = () => {
   if (videoRef.current.paused) {
@@ -137,11 +169,14 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
 
  const handleSeekStart = (e) => {
   e.preventDefault();
+  const wasPlaying = !videoRef.current.paused;
+  setWasPlayingBeforeSeek(wasPlaying);
   setIsSeeking(true);
-  if (!videoRef.current.paused) {
+  if (wasPlaying) {
    videoRef.current.pause();
   }
   const newTime = getSeekPosition(e, e.currentTarget);
+  videoRef.current.currentTime = newTime;
   setCurrentTime(newTime);
  };
 
@@ -285,7 +320,10 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
       {inChat && onExpand && (
        <button
         className={styles.videoPlayerBtn}
-        onClick={onExpand}
+        onClick={() => {
+         videoRef.current.pause();
+         onExpand(currentTime, isPlaying);
+        }}
         title="Expand"
        >
         <i className="fas fa-expand"></i>
@@ -305,6 +343,6 @@ const VideoPlayer = ({ src, inChat = false, onExpand }) => {
    </div>
   </div>
  );
-};
+});
 
 export default VideoPlayer;

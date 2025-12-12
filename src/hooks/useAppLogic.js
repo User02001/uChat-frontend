@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
-import { API_BASE_URL, SOCKET_URL } from "../config";
+import { API_BASE_URL, CDN_BASE_URL, SOCKET_URL } from "../config";
 
 export const useAppLogic = () => {
  const navigate = useNavigate();
@@ -986,7 +986,7 @@ export const useAppLogic = () => {
           : message.content || "New message";
 
       const avatarSrc = senderAvatarUrl
-       ? `${API_BASE_URL}${senderAvatarUrl}`
+       ? `${CDN_BASE_URL}${senderAvatarUrl}`
        : "/resources/default_avatar.png";
 
       const img = new Image();

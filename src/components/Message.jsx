@@ -78,8 +78,11 @@ const Message = ({
     styles.messageRow,
     isGrouped ? styles.messageRowGrouped : styles.messageRowNotGrouped
    )}
-   id={`message-${message.id}`}
-   data-message-id={message.id}
+   ref={el => {
+    if (el && window.__messageRefs) {
+     window.__messageRefs[message.id] = el;
+    }
+   }}
    onTouchStart={handleTouchStart}
    onTouchEnd={handleTouchEnd}
    onTouchMove={handleTouchMove}
@@ -146,7 +149,7 @@ const Message = ({
         activeContact={activeContact}
         isInsideMessage={true}
         onScrollToMessage={(replyId) => {
-         const el = document.getElementById(`message-${replyId}`);
+         const el = window.__messageRefs?.[replyId];
          if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => {
