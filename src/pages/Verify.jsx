@@ -46,28 +46,13 @@ const Verify = () => {
  }, [location.state, navigate]);
 
  useEffect(() => {
-  // Load Font Awesome
-  const fontAwesomeLink = document.createElement('link');
-  fontAwesomeLink.rel = 'stylesheet';
-  fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-  document.head.appendChild(fontAwesomeLink);
-
-  return () => {
-   if (document.head.contains(fontAwesomeLink)) {
-    document.head.removeChild(fontAwesomeLink);
-   }
-  };
- }, []);
-
- useEffect(() => {
-  // Set page title and favicon
   document.title = 'uChat - Verify Email';
 
   // Update favicon
   const favicon = document.querySelector("link[rel*='icon']") || document.createElement('link');
   favicon.type = 'image/png';
   favicon.rel = 'icon';
-  favicon.href = '/resources/favicon_email_verify.png';
+  favicon.href = '/resources/favicons/email_verification.png';
   document.getElementsByTagName('head')[0].appendChild(favicon);
 
   // Detect system theme preference

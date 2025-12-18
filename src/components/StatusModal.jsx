@@ -1,29 +1,36 @@
 import React from 'react';
 import styles from './StatusModal.module.css';
+import Icon from './Icon';
 
 const StatusModal = ({ onClose, onSelectStatus, currentStatus }) => {
  const statuses = [
   {
    value: 'online',
    label: 'Available',
-   icon: 'circle',
-   iconType: 'fa',
+   icon: {
+    type: 'fa',
+    name: 'circle'
+   },
    color: '#4caf50',
    description: 'Ready to chat'
   },
   {
    value: 'away',
    label: 'Inactive',
-   icon: '/resources/icons/away-icon.svg',
-   iconType: 'svg',
+   icon: {
+    type: 'icon',
+    name: 'away-icon' // maps to your Icon system
+   },
    color: '#ff9800',
    description: 'Not doing anything (AFK)'
   },
   {
    value: 'offline',
    label: 'Appear Offline',
-   icon: 'circle',
-   iconType: 'fa-outline',
+   icon: {
+    type: 'fa-outline',
+    name: 'circle'
+   },
    color: '#9e9e9e',
    description: 'Invisible to other people'
   }
@@ -49,13 +56,30 @@ const StatusModal = ({ onClose, onSelectStatus, currentStatus }) => {
        }}
       >
        <div className={styles.statusIcon}>
-        {status.iconType === 'svg' ? (
-         <img src={status.icon} alt={status.label} style={{ width: '24px', height: '24px' }} />
-        ) : status.iconType === 'fa-outline' ? (
-         <i className="fas fa-circle" style={{ color: status.color, fontSize: '20px', opacity: 0.5 }}></i>
-        ) : (
-         <i className={`fas fa-${status.icon}`} style={{ color: status.color, fontSize: '20px' }}></i>
-        )}
+        <div className={styles.statusIcon}>
+         {status.icon.type === 'icon' && (
+          <Icon
+           name={status.icon.name}
+           alt={status.label}
+           draggable={false}
+           style={{ width: 24, height: 24 }}
+          />
+         )}
+
+         {status.icon.type === 'fa' && (
+          <i
+           className={`fas fa-${status.icon.name}`}
+           style={{ color: status.color, fontSize: 20 }}
+          />
+         )}
+
+         {status.icon.type === 'fa-outline' && (
+          <i
+           className={`fas fa-${status.icon.name}`}
+           style={{ color: status.color, fontSize: 20, opacity: 0.5 }}
+          />
+         )}
+        </div>
        </div>
        <div className={styles.statusInfo}>
         <div className={styles.statusLabel}>{status.label}</div>

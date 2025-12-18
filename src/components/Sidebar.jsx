@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { styles } from '../styles/sidebar';
 import { useSidebarLogic } from '../hooks/useSidebarLogic';
-import SVG from 'react-inlinesvg';
+import Icon from './Icon';
 
 const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL }) => {
  const [activeTab, setActiveTab] = useState('chats');
@@ -68,8 +68,8 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
   )}>
    <div {...stylex.props(styles.navButtons)}>
     <div {...stylex.props(styles.navLogo)}>
-     <SVG
-      src="/resources/icons/sidebar_logo.svg"
+     <Icon
+      name="sidebar_logo"
       alt="uChat"
       {...stylex.props(styles.navLogoIcon)}
       draggable="false"
@@ -233,8 +233,8 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <img
-      src="resources/icons/chats_mobile.svg"
+     <Icon
+      name="chats_mobile"
       alt=""
       {...stylex.props(
        styles.mobileNavBtnIcon,
@@ -267,8 +267,8 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <img
-      src="resources/icons/calls.svg"
+     <Icon
+      name="calls"
       alt=""
       {...stylex.props(
        styles.mobileNavBtnIcon,
@@ -300,9 +300,9 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
       touchAction: 'manipulation'
      }}
     >
-     <img
-      src="resources/icons/more.svg"
-      alt=""
+     <Icon
+      name="more"
+      alt="More"
       {...stylex.props(
        styles.mobileNavBtnIcon,
       )}

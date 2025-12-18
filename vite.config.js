@@ -19,6 +19,7 @@ export default defineConfig({
     protocolImports: true,
    })
   ],
+  assetsInclude: ['**/*.svg'],
   css: {
    modules: {
     generateScopedName:

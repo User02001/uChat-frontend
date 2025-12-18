@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { useAppLogic } from "./hooks/useAppLogic";
-import { styles as sx } from "./styles";
 import lottie from 'lottie-web';
 import WarningForModeration from "./components/WarningForModeration";
 import Sidebar from "./components/Sidebar";
@@ -36,7 +35,7 @@ import StartOfChat from "./components/StartOfChat";
 import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 import { useMessageScroll } from "./hooks/useMessageScroll";
-import SVG from 'react-inlinesvg';
+import Icon from './components/Icon';
 import 'virtual:stylex.css'
 import { styles as chatStyles } from './styles/chat';
 import { styles as inputStyles } from './styles/inputs';
@@ -464,7 +463,7 @@ const App = () => {
    document.createElement("link");
   favicon.rel = "icon";
   favicon.type = "image/png";
-  favicon.href = "resources/favicon.png";
+  favicon.href = "resources/favicons/main.png";
   document.head.appendChild(favicon);
  }, [activeContact]);
 
@@ -657,11 +656,11 @@ const App = () => {
      <div ref={splashRef} className={styles.loadingSpinner}></div>
      <div className={styles.splashBranding}>
       <div className={styles.splashBrandingLogo}>
-       <SVG
-        src="/resources/icons/ufonic.svg"
+       <Icon
+        name="ufonic"
         alt="UFOnic"
         className={styles.splashBrandingIcon}
-        draggable="false"
+        draggable={false}
        />
        <span className={styles.splashBrandingName}>UFOnic</span>
       </div>
@@ -742,8 +741,8 @@ const App = () => {
           }}>
            {userStatuses[user?.id] === 'away' ? (
             <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-             <SVG
-              src="/resources/icons/away-icon.svg"
+             <Icon
+              name="away-icon"
               alt="Status"
               style={{ width: '18px', height: '18px' }}
              />
@@ -774,11 +773,11 @@ const App = () => {
            setShowSearch(true);
           }}
           onFocus={() => setShowSearch(true)}
-          {...stylex.props(sx.searchInput)}
+          {...stylex.props(chatStyles.searchInput)}
          />
          {showSearch && (
           <button
-           {...stylex.props(sx.searchClose)}
+           {...stylex.props(chatStyles.searchClose)}
            onClick={() => {
             setSearchExiting(true);
             setTimeout(() => {
@@ -816,7 +815,7 @@ const App = () => {
              </span>
             </div>
             <button
-             {...stylex.props(sx.addContactBtn)}
+             {...stylex.props(chatStyles.addContactBtn)}
              onClick={() => addContact(result.id)}
             >
              Add
@@ -830,9 +829,9 @@ const App = () => {
 
       <div className={styles.mobileHeader}>
        <div className={styles.mobileLogo}>
-        <img
+        <Icon
+         name="main-logo"
          draggable="false"
-         src="/resources/favicon.png"
          alt="uChat Logo"
          className={styles.mobileLogoIcon}
         />
@@ -881,8 +880,8 @@ const App = () => {
          }}>
           {userStatuses[user?.id] === 'away' ? (
            <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-            <SVG
-             src="/resources/icons/away-icon.svg"
+            <Icon
+             name="away-icon"
              alt="Status"
              style={{ width: '18px', height: '18px' }}
             />
@@ -1045,8 +1044,8 @@ const App = () => {
             <span className={styles.contactName}>
              {contact.username}
              {!contact.is_verified && (
-              <SVG
-               src="/resources/icons/unverified.svg"
+              <Icon
+               name="unverified"
                alt="Unverified"
                className={styles.unverifiedIcon}
                onClick={(e) => {
@@ -1123,8 +1122,8 @@ const App = () => {
             {activeContact.username}
            </span>
            {!activeContact.is_verified && (
-            <SVG
-             src="/resources/icons/unverified.svg"
+            <Icon
+             name="unverified"
              alt="Unverified"
              {...stylex.props(chatStyles.chatUnverifiedIcon)}
              onClick={() =>
@@ -1374,7 +1373,7 @@ const App = () => {
            title={isOffline ? "Offline - can't send files" : "Attach file"}
            disabled={isOffline}
           >
-           <SVG src="/resources/icons/attachment.svg" alt="Attach" draggable="false" style={{ width: '24px', height: '24px' }} />
+           <Icon name="attachment" alt="Attach" draggable={false} style={{ width: '24px', height: '24px' }} />
           </button>
           <button
            type="button"
@@ -1383,7 +1382,7 @@ const App = () => {
            title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
           >
-           <SVG src="/resources/icons/gif.svg" alt="GIF" draggable="false" style={{ width: '24px', height: '24px' }} />
+           <Icon name="gif" alt="GIF" draggable={false} style={{ width: '24px', height: '24px' }} />
           </button>
           <input
            type="text"
@@ -1411,7 +1410,7 @@ const App = () => {
            {...stylex.props(inputStyles.sendButton)}
            disabled={!messageText.trim() || isOffline}
           >
-           <SVG src="/resources/icons/send.svg" alt="Send" draggable="false" style={{ width: '24px', height: '24px' }} />
+           <Icon name="send" alt="Send" draggable={false} style={{ width: '24px', height: '24px' }} />
           </button>
          </form>
         </div>
