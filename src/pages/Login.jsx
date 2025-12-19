@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './Login.module.css';
+import * as stylex from '@stylexjs/stylex';
+import { loginStyles } from '../styles/login';
 import { API_BASE_URL } from '../config';
 import useStars from "../hooks/useStars";
+import Icon from '../components/Icon';
 
 const Login = () => {
  const navigate = useNavigate();
+ const [currentStep, setCurrentStep] = useState(0);
  const [formData, setFormData] = useState({
   email: '',
   password: ''
@@ -13,25 +16,23 @@ const Login = () => {
  const [error, setError] = useState('');
  const [loading, setLoading] = useState(false);
  const [showPassword, setShowPassword] = useState(false);
- const [agreedToTerms, setAgreedToTerms] = useState(false);
+ const [direction, setDirection] = useState('forward');
+ const [isTransitioning, setIsTransitioning] = useState(false);
+ const [prevStep, setPrevStep] = useState(0);
+ const [validationError, setValidationError] = useState('');
  const canvasRef = useStars();
 
  useEffect(() => {
-  // Set page title and favicon
   document.title = 'uChat - Login';
-
-  // Update favicon
   const favicon = document.querySelector("link[rel*='icon']") || document.createElement('link');
   favicon.type = 'image/png';
   favicon.rel = 'icon';
   favicon.href = '/resources/favicons/login.png';
   document.getElementsByTagName('head')[0].appendChild(favicon);
 
-  // Detect system theme preference
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
 
-  // Listen for system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleThemeChange = (e) => {
    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
@@ -41,23 +42,126 @@ const Login = () => {
   return () => mediaQuery.removeEventListener('change', handleThemeChange);
  }, []);
 
+ useEffect(() => {
+  const timeoutId = setTimeout(() => {
+   if (isTransitioning) return;
+   setValidationError('');
+  }, 300);
+
+  return () => clearTimeout(timeoutId);
+ }, [currentStep, formData, isTransitioning]);
+
  const handleInputChange = (e) => {
   const { name, value } = e.target;
   setFormData(prev => ({
    ...prev,
    [name]: value
   }));
-  if (error) setError(''); // Clear error when user starts typing
+  if (error) setError('');
  };
 
  const handleGoogleLogin = () => {
   window.location.href = `${API_BASE_URL}/api/auth/google`;
  };
 
- const handleEmailLogin = async (e) => {
-  e.preventDefault();
+ const validateCurrentStepClientSide = () => {
+  if (currentStep === 0) {
+   if (!formData.email.trim()) {
+    setValidationError('Enter your email!');
+    return false;
+   }
+  }
+  if (currentStep === 1) {
+   if (!formData.password) {
+    setValidationError('Enter your password!');
+    return false;
+   }
+  }
+  return true;
+ };
+
+ const checkEmailWithBackend = async () => {
+  setLoading(true);
+
+  // Auto-append @gmail.com if no @ symbol
+  let emailToCheck = formData.email.trim();
+  if (!emailToCheck.includes('@')) {
+   emailToCheck = emailToCheck + '@gmail.com';
+   setFormData(prev => ({ ...prev, email: emailToCheck }));
+  }
+
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/check-email-exists`, {
+    method: 'POST',
+    headers: {
+     'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email: emailToCheck })
+   });
+
+   const data = await response.json();
+
+   if (!response.ok) {
+    setError('Could not verify email.');
+    setLoading(false);
+    return false;
+   }
+
+   if (!data.exists) {
+    setError('We could not find an account with this email, try again!');
+    setLoading(false);
+    return false;
+   }
+
+   setLoading(false);
+   return true;
+  } catch (err) {
+   console.error('Email check error:', err);
+   setError('Connection error');
+   setLoading(false);
+   return false;
+  }
+ };
+
+ const handleContinue = async () => {
+  if (!validateCurrentStepClientSide()) return;
+
+  setError('');
+  setValidationError('');
+
+  if (currentStep === 0) {
+   const backendValid = await checkEmailWithBackend();
+   if (!backendValid) return;
+
+   setIsTransitioning(true);
+   setDirection('forward');
+   setPrevStep(currentStep);
+   setTimeout(() => {
+    setCurrentStep(1);
+    setTimeout(() => setIsTransitioning(false), 50);
+   }, 300);
+  } else {
+   handleLogin();
+  }
+ };
+
+ const handleBack = () => {
+  setError('');
+  setValidationError('');
+  setIsTransitioning(true);
+  setDirection('backward');
+  setPrevStep(currentStep);
+  setTimeout(() => {
+   setCurrentStep(0);
+   setTimeout(() => setIsTransitioning(false), 50);
+  }, 300);
+ };
+
+ const handleLogin = async () => {
   setLoading(true);
   setError('');
+  setValidationError('');
 
   try {
    const response = await fetch(`${API_BASE_URL}/api/login`, {
@@ -72,197 +176,290 @@ const Login = () => {
    const data = await response.json();
 
    if (response.ok) {
-    // Login successful
     localStorage.setItem('user', JSON.stringify(data.user));
     navigate('/chat');
    } else {
-    setError(data.error || 'Login failed');
+    setError('Wrong password. Please try again!');
    }
   } catch (error) {
    console.error('Login error:', error);
-   setError('Network error. Sorry :( Check our status too.');
+   setError('Connection error');
   } finally {
    setLoading(false);
   }
  };
 
+ const getStepStyleList = (stepIndex) => {
+  if (stepIndex === currentStep && !isTransitioning) {
+   return [loginStyles.stepContainer, loginStyles.stepContainerActive];
+  }
+
+  if (stepIndex === prevStep && isTransitioning) {
+   return [
+    loginStyles.stepContainer,
+    loginStyles.stepContainerActive,
+    direction === 'forward' ? loginStyles.slidingOutLeft : loginStyles.slidingOutRight
+   ];
+  }
+
+  if (stepIndex === currentStep && isTransitioning) {
+   return [
+    loginStyles.stepContainer,
+    direction === 'forward' ? loginStyles.comingFromRight : loginStyles.comingFromLeft
+   ];
+  }
+
+  return [loginStyles.stepContainer];
+ };
+
+ const stepHeaderSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return loginStyles.step0_stepHeader;
+   case 1: return loginStyles.step1_stepHeader;
+   default: return null;
+  }
+ };
+
+ const inputGroupSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return loginStyles.step0_inputGroup;
+   case 1: return loginStyles.step1_inputGroup;
+   default: return null;
+  }
+ };
+
+ const progressSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return loginStyles.progressIndicatorStep0;
+   case 1: return loginStyles.progressIndicatorStep1;
+   default: return null;
+  }
+ };
+
+ const steps = [
+  {
+   title: "What's your email?",
+   subtitle: "Enter the email you used to sign up",
+   field: 'email',
+   type: 'email',
+   placeholder: 'Enter your email',
+   icon: 'fas fa-envelope'
+  },
+  {
+   title: "Enter your password",
+   subtitle: "Welcome back! Let's get you signed in",
+   field: 'password',
+   type: showPassword ? 'text' : 'password',
+   placeholder: 'Enter your password',
+   icon: 'fas fa-lock'
+  }
+ ];
+
  return (
-  <div className={styles.loginContainer}>
-   <canvas ref={canvasRef} className={styles.starCanvas} />
-   <div className={styles.loginCard}>
-    <div className={styles.loginHeader}>
-     <div className={styles.logoContainer} style={{
-      display: 'flex',
-      justifyContent: 'center',
-      marginBottom: '24px'
-     }}>
-      <img
-       src="/resources/main-logo.svg"
+  <div {...stylex.props(loginStyles.loginContainer)}>
+   <canvas ref={canvasRef} {...stylex.props(loginStyles.starCanvas)} />
+   <div {...stylex.props(loginStyles.loginCard)}>
+    <div {...stylex.props(loginStyles.loginHeader)}>
+     <div {...stylex.props(loginStyles.logoContainer)}>
+      <Icon
+       name="main-logo"
        alt="uChat Logo"
-       className={styles.mainLogo}
-       style={{
-        width: '80px',
-        height: '80px',
-        objectFit: 'contain'
-       }}
+       {...stylex.props(loginStyles.mainLogo)}
+       style={{ width: '60px', height: '60px' }}
        draggable="false"
       />
      </div>
-     <h1>
-      <i className="fas fa-comments" style={{ marginRight: '12px', color: 'orange' }}></i>
-      Welcome to uChat
-     </h1>
-     <p>
-      <i className="fas fa-sign-in-alt" style={{ marginRight: '8px', opacity: 0.7 }}></i>
-      Hello there, now log in to continue :3
-     </p>
-    </div>
 
-    <div className={styles.loginForm}>
-     {error && (
-      <div style={{
-       backgroundColor: 'var(--error-bg, #fee)',
-       color: 'var(--error-text, #c53030)',
-       padding: '12px',
-       borderRadius: '6px',
-       marginBottom: '16px',
-       fontSize: '14px',
-       border: '1px solid var(--error-border, #feb2b2)',
-       display: 'flex',
-       alignItems: 'center',
-       gap: '8px'
-      }}>
-       <i className="fas fa-exclamation-circle"></i>
-       {error}
+     <h1 {...stylex.props(loginStyles.headerTitle)}>
+      <i className="fas fa-sign-in-alt" style={{ marginRight: '12px', color: 'orange' }}></i>
+      Welcome back!
+     </h1>
+
+     {currentStep === 0 && (
+      <div {...stylex.props(loginStyles.stepExplanation)}>
+       <p {...stylex.props(loginStyles.stepExplanationP)}>
+        Good to see you again! Enter your email to sign in, or use Google for quick access. Remember to enter your email correctly and also keep in mind that it doesn't matter if you enter your email with a capital letter. (Means it is not case-sensitive)
+       </p>
       </div>
      )}
 
-     <form onSubmit={handleEmailLogin}>
-      <div className={styles.inputGroup}>
-       <label htmlFor="email">
-        <i className="fas fa-envelope" style={{ marginRight: '8px' }}></i>
-        Email
-       </label>
-       <div style={{ position: 'relative' }}>
-        <input
-         type="email"
-         id="email"
-         name="email"
-         value={formData.email}
-         onChange={handleInputChange}
-         placeholder="Enter your email"
-         required
-         style={{ paddingLeft: '40px' }}
-        />
-        <i className="fas fa-at" style={{
-         position: 'absolute',
-         left: '12px',
-         top: '50%',
-         transform: 'translateY(-50%)',
-         color: 'var(--text-secondary, #666)',
-         fontSize: '14px'
-        }}></i>
-       </div>
+     {currentStep === 1 && (
+      <div {...stylex.props(loginStyles.stepExplanation)}>
+       <p {...stylex.props(loginStyles.stepExplanationP)}>
+        Almost there! Just enter your password and you'll be back in your chats in no time. But also... REMEMBER that by clicking that 'Login' button, you agree to our T&C as well as our Privacy Policy! Beware of that!
+       </p>
       </div>
-      <div className={styles.inputGroup}>
-       <label htmlFor="password">
-        <i className="fas fa-lock" style={{ marginRight: '8px' }}></i>
-        Password
-       </label>
-       <div style={{ position: 'relative' }}>
-        <input
-         type={showPassword ? 'text' : 'password'}
-         id="password"
-         name="password"
-         value={formData.password}
-         onChange={handleInputChange}
-         placeholder="Enter your password"
-         required
-         style={{ paddingLeft: '40px', paddingRight: '40px' }}
+     )}
+    </div>
+
+    <div {...stylex.props(loginStyles.loginForm)}>
+     <div>
+      <div {...stylex.props(loginStyles.progressIndicator, progressSpacingStyle(currentStep))}>
+       {[0, 1].map((step) => (
+        <div
+         key={step}
+         {...stylex.props(
+          loginStyles.progressDot,
+          step === currentStep && loginStyles.progressDotActive,
+          step < currentStep && loginStyles.progressDotCompleted
+         )}
         />
-        <i className="fas fa-key" style={{
-         position: 'absolute',
-         left: '12px',
-         top: '50%',
-         transform: 'translateY(-50%)',
-         color: 'var(--text-secondary, #666)',
-         fontSize: '14px'
-        }}></i>
+       ))}
+      </div>
+     </div>
+
+     <div {...stylex.props(loginStyles.stepsWrapper)}>
+      <div {...stylex.props(...getStepStyleList(0))}>
+       <div {...stylex.props(loginStyles.stepHeader, stepHeaderSpacingStyle(0))}>
+        <h2 {...stylex.props(loginStyles.stepHeaderH2)}>{steps[0].title}</h2>
+        <p {...stylex.props(loginStyles.stepHeaderP)}>{steps[0].subtitle}</p>
+       </div>
+
+       <div className="inputGroup" {...stylex.props(loginStyles.inputGroup, inputGroupSpacingStyle(0))}>
+        <input
+         {...stylex.props(loginStyles.inputGroupInput)}
+         type={steps[0].type}
+         name={steps[0].field}
+         value={formData[steps[0].field]}
+         onChange={handleInputChange}
+         placeholder={steps[0].placeholder}
+         autoFocus
+         autoComplete="email"
+        />
+        {(error || validationError) && (
+         <div style={{
+          fontSize: '12px',
+          color: 'var(--error-text, #c53030)',
+          marginTop: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+         }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+          {error || validationError}
+         </div>
+        )}
+       </div>
+
+       {/* Divider: replaces .divider::before with a real element */}
+       <div {...stylex.props(loginStyles.divider)}>
+        <div {...stylex.props(loginStyles.dividerLine)} />
+        <span {...stylex.props(loginStyles.dividerSpan)}>or</span>
+       </div>
+
+       <div {...stylex.props(loginStyles.oauthButtons)}>
+        <button
+         onClick={handleGoogleLogin}
+         className="oauthBtn"
+         {...stylex.props(loginStyles.oauthBtn, loginStyles.google)}
+         disabled={loading}
+        >
+         <img
+          src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
+          alt="Google"
+          width="18"
+          height="18"
+         />
+         Continue with Google
+        </button>
+       </div>
+
+       <div {...stylex.props(loginStyles.buttonContainer)}>
         <button
          type="button"
-         onClick={() => setShowPassword(!showPassword)}
-         style={{
-          position: 'absolute',
-          right: '12px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'var(--text-secondary, #666)',
-          fontSize: '14px'
-         }}
+         onClick={handleContinue}
+         {...stylex.props(loginStyles.loginBtn, loginStyles.primary)}
+         disabled={loading || !!validationError}
         >
-         <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
+         {loading ? 'Checking...' : 'Continue'}
         </button>
        </div>
       </div>
-      <div className={styles.termsCheckbox}>
-       <label className={styles.checkboxLabel}>
-        <input
-         type="checkbox"
-         checked={agreedToTerms}
-         onChange={(e) => setAgreedToTerms(e.target.checked)}
-         className={styles.checkboxInput}
-        />
-        <span className={styles.checkboxCustom}></span>
-        <span className={styles.checkboxText}>
-         By using uChat, I agree to follow the{' '}
-         <a href="/terms" target="_blank" className={styles.termsLink}>
-          Terms & Conditions
-         </a>
-         {' '}as well as the{' '}
-         <a href="/privacy" target="_blank" className={styles.termsLink}>
-          Privacy Policy
-         </a>.
-        </span>
-       </label>
+
+      <div {...stylex.props(...getStepStyleList(1))}>
+       <div {...stylex.props(loginStyles.stepHeader, stepHeaderSpacingStyle(1))}>
+        <h2 {...stylex.props(loginStyles.stepHeaderH2)}>{steps[1].title}</h2>
+        <p {...stylex.props(loginStyles.stepHeaderP)}>{steps[1].subtitle}</p>
+       </div>
+
+       <div className="inputGroup" {...stylex.props(loginStyles.inputGroup, inputGroupSpacingStyle(1))}>
+        <div style={{ position: 'relative' }}>
+         <input
+          {...stylex.props(loginStyles.inputGroupInput)}
+          type={steps[1].type}
+          name={steps[1].field}
+          value={formData[steps[1].field]}
+          onChange={handleInputChange}
+          placeholder={steps[1].placeholder}
+          autoFocus={currentStep === 1}
+         />
+         <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          style={{
+           position: 'absolute',
+           right: '12px',
+           top: '50%',
+           transform: 'translateY(-50%)',
+           background: 'none',
+           border: 'none',
+           cursor: 'pointer',
+           color: 'var(--text-secondary, #666)',
+           fontSize: '14px'
+          }}
+         >
+          <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+         </button>
+        </div>
+
+        {(error || validationError) && (
+         <div style={{
+          fontSize: '12px',
+          color: 'var(--error-text, #c53030)',
+          marginTop: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+         }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+          {error || validationError}
+         </div>
+        )}
+       </div>
+
+       <div {...stylex.props(loginStyles.buttonContainer)}>
+        <button
+         type="button"
+         onClick={handleBack}
+         {...stylex.props(loginStyles.backBtn)}
+         disabled={loading}
+        >
+         <Icon
+          name="return"
+          alt="Back"
+          {...stylex.props(loginStyles.backBtnImg)}
+         />
+         Back
+        </button>
+        <button
+         type="button"
+         onClick={handleContinue}
+         {...stylex.props(loginStyles.loginBtn, loginStyles.primary)}
+         disabled={loading || !!validationError}
+        >
+         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
+         {loading ? 'Logging in...' : 'Login'}
+        </button>
+       </div>
       </div>
-      <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading || !agreedToTerms}>
-       {loading ? (
-        <>
-         <i className="fas fa-spinner fa-spin" style={{ marginRight: '8px' }}></i> Logging in...
-        </>
-       ) : (
-        <>
-         <i className="fas fa-right-to-bracket" style={{ marginRight: '8px' }}></i> Login
-        </>
-       )}
-      </button>
-     </form>
-
-     <div className={styles.divider}>
-      <span>or continue with</span>
-     </div>
-
-     <div className={styles.oauthButtons}>
-      <button onClick={handleGoogleLogin} className={`${styles.oauthBtn} ${styles.google}`} disabled={loading}>
-       <img
-        src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
-        alt="Google"
-        width="18"
-        height="18"
-        style={{ marginRight: '0px' }}
-       />
-       Google
-      </button>
      </div>
     </div>
 
-    <div className={styles.loginFooter}>
-     <p>
+    <div {...stylex.props(loginStyles.loginFooter)}>
+     <p {...stylex.props(loginStyles.footerP)}>
       Don't have an account?
-      <a href="/signup">
+      <a href="/signup" {...stylex.props(loginStyles.footerA)}>
        <i className="fas fa-user-plus" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
        Sign up!
       </a>

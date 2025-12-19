@@ -36,7 +36,6 @@ import StatusModal from "./components/StatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 import { useMessageScroll } from "./hooks/useMessageScroll";
 import Icon from './components/Icon';
-import 'virtual:stylex.css'
 import { styles as chatStyles } from './styles/chat';
 import { styles as inputStyles } from './styles/inputs';
 import IncomingCallNotification from "./components/calls/IncomingCallNotification";

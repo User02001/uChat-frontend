@@ -5,6 +5,7 @@ import './global.css'
 import styles from './index.module.css'
 import Moderation from './pages/Moderation';
 import { disableReactDevTools } from "@fvilers/disable-react-devtools";
+import 'virtual:stylex.css'
 
 if (process.env.NODE_ENV === "production") {
  disableReactDevTools();

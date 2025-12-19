@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './Signup.module.css';
+import * as stylex from '@stylexjs/stylex';
+import { signupStyles } from '../styles/signup';
 import { API_BASE_URL } from '../config';
 import useStars from "../hooks/useStars";
+import Icon from '../components/Icon';
 
 const Signup = () => {
  const navigate = useNavigate();
@@ -25,6 +27,9 @@ const Signup = () => {
  const [validationError, setValidationError] = useState('');
  const canvasRef = useStars();
 
+ // Used to replicate `.checkboxLabel:hover .checkboxCustom`
+ const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
+
  useEffect(() => {
   document.title = 'uChat - Sign Up';
   const favicon = document.querySelector("link[rel*='icon']") || document.createElement('link');
@@ -45,66 +50,11 @@ const Signup = () => {
   return () => mediaQuery.removeEventListener('change', handleThemeChange);
  }, []);
 
- // Real-time client-side validation as user types
  useEffect(() => {
   const timeoutId = setTimeout(() => {
    if (isTransitioning) return;
-
    setValidationError('');
-
-   switch (currentStep) {
-    case 0: // Email validation
-     if (formData.email.trim()) {
-      if (!/\S+@\S+\.\S+/.test(formData.email)) {
-       setValidationError('Please enter a valid email address');
-      }
-     }
-     break;
-
-    case 1: // Username validation
-     if (formData.username.trim()) {
-      if (formData.username.length < 3) {
-       setValidationError('Username must be at least 3 characters');
-      } else if (formData.username.length > 30) {
-       setValidationError('Username cannot exceed 30 characters');
-      }
-     }
-     break;
-
-    case 2: // Handle validation
-     if (formData.handle.trim()) {
-      const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
-      if (handle.length < 3) {
-       setValidationError('Handle must be at least 3 characters');
-      } else if (handle.length > 15) {
-       setValidationError('Handle cannot exceed 15 characters');
-      } else if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
-       setValidationError('Handle can only contain letters, numbers, and underscores');
-      }
-     }
-     break;
-
-    case 3: // Password validation
-     if (formData.password) {
-      if (formData.password.length < 8) {
-       setValidationError('Password must be at least 8 characters');
-      } else if (!/[A-Z]/.test(formData.password)) {
-       setValidationError('Password must contain at least one uppercase letter');
-      } else if (!/[0-9]/.test(formData.password)) {
-       setValidationError('Password must contain at least one number');
-      }
-     }
-     break;
-
-    case 4: // Confirm password validation
-     if (formData.confirmPassword) {
-      if (formData.password !== formData.confirmPassword) {
-       setValidationError('Passwords do not match');
-      }
-     }
-     break;
-   }
-  }, 300); // 300ms debounce
+  }, 300);
 
   return () => clearTimeout(timeoutId);
  }, [currentStep, formData, isTransitioning]);
@@ -112,13 +62,11 @@ const Signup = () => {
  const handleInputChange = (e) => {
   const { name, value } = e.target;
 
-  // Block @ symbol in handle and show friendly message
   if (name === 'handle' && value.includes('@')) {
    setValidationError('Don\'t include "@" because it will be added automatically.');
    return;
   }
 
-  // Apply character limits during input
   let finalValue = value;
   if (name === 'username' && value.length > 30) {
    finalValue = value.slice(0, 30);
@@ -132,7 +80,6 @@ const Signup = () => {
    [name]: finalValue
   }));
 
-  // Clear server error when user starts typing
   if (error) setError('');
  };
 
@@ -144,17 +91,13 @@ const Signup = () => {
   switch (currentStep) {
    case 0:
     if (!formData.email.trim()) {
-     setValidationError('Please enter your email');
-     return false;
-    }
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-     setValidationError('Please enter a valid email');
+     setValidationError('Email is required');
      return false;
     }
     break;
    case 1:
     if (!formData.username.trim()) {
-     setValidationError('Please enter your username');
+     setValidationError('Username is required');
      return false;
     }
     if (formData.username.length < 3) {
@@ -168,44 +111,46 @@ const Signup = () => {
     break;
    case 2:
     if (!formData.handle.trim()) {
-     setValidationError('Please enter a handle');
+     setValidationError('Handle is required');
      return false;
     }
-    const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
-    if (handle.length < 3) {
-     setValidationError('Handle must be at least 3 characters');
-     return false;
-    }
-    if (handle.length > 15) {
-     setValidationError('Handle cannot exceed 15 characters');
-     return false;
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
-     setValidationError('Handle can only contain letters, numbers, and underscores');
-     return false;
+    {
+     const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
+     if (handle.length < 3) {
+      setValidationError('Handle must be at least 3 characters');
+      return false;
+     }
+     if (handle.length > 15) {
+      setValidationError('Handle cannot exceed 15 characters');
+      return false;
+     }
+     if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
+      setValidationError('Handle can only contain letters, numbers, and underscores');
+      return false;
+     }
     }
     break;
    case 3:
     if (!formData.password) {
-     setValidationError('Please enter a password');
+     setValidationError('Password is required');
      return false;
     }
     if (formData.password.length < 8) {
-     setValidationError('Password must be at least 8 characters');
+     setValidationError('Password must be at least 8 characters!');
      return false;
     }
     if (!/[A-Z]/.test(formData.password)) {
-     setValidationError('Password must contain at least one uppercase letter');
+     setValidationError('Password must contain at least one uppercase letter!');
      return false;
     }
     if (!/[0-9]/.test(formData.password)) {
-     setValidationError('Password must contain at least one number');
+     setValidationError('Password must contain at least one number!');
      return false;
     }
     break;
    case 4:
     if (formData.password !== formData.confirmPassword) {
-     setValidationError('Passwords do not match');
+     setValidationError('Passwords do not match!');
      return false;
     }
     if (!agreedToTerms) {
@@ -213,16 +158,22 @@ const Signup = () => {
      return false;
     }
     break;
+   default:
+    break;
   }
   return true;
  };
 
- // Replace the checkStepWithBackend function in Signup.jsx with this:
-
  const checkStepWithBackend = async () => {
   if (currentStep === 0) {
-   // Check email availability
    setLoading(true);
+
+   let emailToCheck = formData.email.trim();
+   if (!emailToCheck.includes('@')) {
+    emailToCheck = emailToCheck + '@gmail.com';
+    setFormData(prev => ({ ...prev, email: emailToCheck }));
+   }
+
    try {
     const response = await fetch(`${API_BASE_URL}/api/check-email-availability`, {
      method: 'POST',
@@ -231,35 +182,33 @@ const Signup = () => {
      },
      credentials: 'include',
      body: JSON.stringify({
-      email: formData.email
+      email: emailToCheck
      })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-     setError(data.error || 'Failed to check email availability');
+     setError('Unable to verify email');
      setLoading(false);
      return false;
     }
 
     if (!data.available) {
-     setError(data.error || 'Email already in use');
+     setError('This email is already taken. Try again!');
      setLoading(false);
      return false;
     }
 
-    // Email is available
     setLoading(false);
     return true;
    } catch (err) {
     console.error('Email check error:', err);
-    setError('Network error. Please try again.');
+    setError('Connection error');
     setLoading(false);
     return false;
    }
   } else if (currentStep === 2) {
-   // Check handle availability
    setLoading(true);
    try {
     const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
@@ -277,23 +226,22 @@ const Signup = () => {
     const data = await response.json();
 
     if (!response.ok) {
-     setError(data.error || 'Failed to check handle availability');
+     setError('Could not verify handle!');
      setLoading(false);
      return false;
     }
 
     if (!data.available) {
-     setError(data.error || 'Handle already taken');
+     setError('This handle is already taken. Try again!');
      setLoading(false);
      return false;
     }
 
-    // Handle is available
     setLoading(false);
     return true;
    } catch (err) {
     console.error('Handle check error:', err);
-    setError('Network error. Please try again.');
+    setError('Connection error');
     setLoading(false);
     return false;
    }
@@ -308,7 +256,6 @@ const Signup = () => {
   setError('');
   setValidationError('');
 
-  // Check with backend for email and handle steps
   if (currentStep === 0 || currentStep === 2) {
    const backendValid = await checkStepWithBackend();
    if (!backendValid) return;
@@ -359,30 +306,71 @@ const Signup = () => {
    if (response.ok) {
     navigate('/verify', { state: { email: formData.email } });
    } else {
-    setError(data.error || 'Signup failed');
+    setError('Signup failed');
    }
   } catch (error) {
    console.error('Signup error:', error);
-   setError('Network error. Please try again.');
+   setError('Connection error');
   } finally {
    setLoading(false);
   }
  };
 
- const getStepClassName = (stepIndex) => {
+ // Converted from string className builder to StyleX style list
+ const getStepStyleList = (stepIndex) => {
   if (stepIndex === currentStep && !isTransitioning) {
-   return `${styles.stepContainer} ${styles.active}`;
+   return [signupStyles.stepContainer, signupStyles.stepContainerActive];
   }
 
   if (stepIndex === prevStep && isTransitioning) {
-   return `${styles.stepContainer} ${styles.active} ${direction === 'forward' ? styles.slidingOutLeft : styles.slidingOutRight}`;
+   return [
+    signupStyles.stepContainer,
+    signupStyles.stepContainerActive,
+    direction === 'forward' ? signupStyles.slidingOutLeft : signupStyles.slidingOutRight
+   ];
   }
 
   if (stepIndex === currentStep && isTransitioning) {
-   return `${styles.stepContainer} ${direction === 'forward' ? styles.comingFromRight : styles.comingFromLeft}`;
+   return [
+    signupStyles.stepContainer,
+    direction === 'forward' ? signupStyles.comingFromRight : signupStyles.comingFromLeft
+   ];
   }
 
-  return styles.stepContainer;
+  return [signupStyles.stepContainer];
+ };
+
+ const stepHeaderSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return signupStyles.step0_stepHeader;
+   case 1: return signupStyles.step1_stepHeader;
+   case 2: return signupStyles.step2_stepHeader;
+   case 3: return signupStyles.step3_stepHeader;
+   case 4: return signupStyles.step4_stepHeader;
+   default: return null;
+  }
+ };
+
+ const inputGroupSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return signupStyles.step0_inputGroup;
+   case 1: return signupStyles.step1_inputGroup;
+   case 2: return signupStyles.step2_inputGroup;
+   case 3: return signupStyles.step3_inputGroup;
+   case 4: return signupStyles.step4_inputGroup;
+   default: return null;
+  }
+ };
+
+ const progressSpacingStyle = (stepIndex) => {
+  switch (stepIndex) {
+   case 0: return signupStyles.step0_progress;
+   case 1: return signupStyles.step1_progress;
+   case 2: return signupStyles.step2_progress;
+   case 3: return signupStyles.step3_progress;
+   case 4: return signupStyles.step4_progress;
+   default: return null;
+  }
  };
 
  const steps = [
@@ -428,107 +416,93 @@ const Signup = () => {
   }
  ];
 
- // Error message component
- const ErrorMessage = ({ message, isServerError }) => {
-  if (!message) return null;
-
-  const isError = isServerError || message.toLowerCase().includes('already') || message.toLowerCase().includes('taken');
-
-  return (
-   <div style={{
-    backgroundColor: isError ? 'var(--error-bg, #fee)' : '#e3f2fd',
-    color: isError ? 'var(--error-text, #c53030)' : '#1565c0',
-    padding: '12px',
-    borderRadius: '6px',
-    marginBottom: '16px',
-    fontSize: '14px',
-    border: isError ? '1px solid var(--error-border, #feb2b2)' : '1px solid #90caf9',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-   }}>
-    <i className={isError ? 'fas fa-exclamation-circle' : 'fas fa-info-circle'}></i>
-    {message}
-   </div>
-  );
- };
-
  return (
-  <div className={styles.loginContainer}>
-   <canvas ref={canvasRef} className={styles.starCanvas} />
-   <div className={styles.loginCard}>
-    <div className={styles.loginHeader}>
-     <div className={styles.logoContainer}>
-      <img
-       src="/resources/main-logo.svg"
+  <div {...stylex.props(signupStyles.loginContainer)}>
+   <canvas ref={canvasRef} {...stylex.props(signupStyles.starCanvas)} />
+
+   <div {...stylex.props(signupStyles.loginCard)}>
+    <div {...stylex.props(signupStyles.loginHeader)}>
+     <div {...stylex.props(signupStyles.logoContainer)}>
+      <Icon
+       name="main-logo"
        alt="uChat Logo"
-       className={styles.mainLogo}
+       {...stylex.props(signupStyles.mainLogo)}
        style={{ width: '60px', height: '60px' }}
        draggable="false"
       />
      </div>
-     <h1>
-      <i className="fas fa-user-plus" style={{ marginRight: '12px', color: 'orange' }}></i>
+     <h1 {...stylex.props(signupStyles.headerTitle)}>
+      <i className="fas fa-user-plus" style={{ marginRight: '12px', color: 'var(--border-focus)' }}></i>
       Create your account
      </h1>
 
      {currentStep === 0 && (
-      <div className={styles.stepExplanation}>
-       <p>Ah, welcome! This text is here to help you signup. First, let's enter your email address that you own OR you can sign up with Google for instant access. Whichever you prefer.</p>
+      <div {...stylex.props(signupStyles.stepExplanation)}>
+       <p {...stylex.props(signupStyles.stepExplanationP)}>
+        Ah, welcome! This text is here to help you signup. First, let's enter your email address that you own OR you can sign up with Google for instant access. Whichever you prefer.
+       </p>
       </div>
      )}
 
      {currentStep === 1 && (
-      <div className={styles.stepExplanation}>
-       <p>Choose how you want to be known on uChat. This is your username that others will see in chats and your profile. Think of it like a nickname.</p>
+      <div {...stylex.props(signupStyles.stepExplanation)}>
+       <p {...stylex.props(signupStyles.stepExplanationP)}>
+        Choose how you want to be known on uChat. This is your username that others will see in chats and your profile. Think of it like a nickname.
+       </p>
       </div>
      )}
 
      {currentStep === 2 && (
-      <div className={styles.stepExplanation}>
-       <p>Your handle is a unique identifier which makes sure your account is unique and doesn't get duplicated and impersonated. Your handle will be displayed as "@handle". For example, a person named Steven exists, but another person also uses the same username exists. To be clear from confusion, handles will help you identify which one is who.</p>
+      <div {...stylex.props(signupStyles.stepExplanation)}>
+       <p {...stylex.props(signupStyles.stepExplanationP)}>
+        Your handle is a unique identifier that ensures your account isn’t duplicated or impersonated. It will appear as "@handle" to other users. For example, if multiple people share the same name, handles help distinguish who is who.
+       </p>
       </div>
      )}
 
      {currentStep === 3 && (
-      <div className={styles.stepExplanation}>
-       <p>Create a strong password with at least 8 characters. We recommend using a mix of letters, numbers, and symbols for better security.</p>
+      <div {...stylex.props(signupStyles.stepExplanation)}>
+       <p {...stylex.props(signupStyles.stepExplanationP)}>
+        Create a strong password with at least 8 characters. We recommend using a mix of letters, numbers, and symbols for better security.
+       </p>
       </div>
      )}
 
      {currentStep === 4 && (
-      <div className={styles.stepExplanation}>
-       <p>Almost there. Confirm your password and agree to our terms. You should read them too... Honestly no one reads them tho.. Anyways, once you're done, you'll be ready. However, you will need to verify your email. You can skip it but really you shouldn't, you will see why if you don't..</p>
+      <div {...stylex.props(signupStyles.stepExplanation)}>
+       <p {...stylex.props(signupStyles.stepExplanationP)}>
+        Almost there. Confirm your password and agree to our terms (you should read them—though no one really does). Once you’re done, you’ll be ready. You’ll still need to verify your email! You can skip it, but you probably shouldn’t—you’ll see why later.
+       </p>
       </div>
      )}
     </div>
 
-    <div className={styles.loginForm}>
-     <div className={`${styles[`step${currentStep}`]}`}>
-      {/* Progress Indicator */}
-      <div className={styles.progressIndicator}>
+    <div {...stylex.props(signupStyles.loginForm)}>
+     <div>
+      <div {...stylex.props(signupStyles.progressIndicator, progressSpacingStyle(currentStep))}>
        {[0, 1, 2, 3, 4].map((step) => (
         <div
          key={step}
-         className={`${styles.progressDot} ${step === currentStep ? styles.active : ''
-          } ${step < currentStep ? styles.completed : ''}`}
+         {...stylex.props(
+          signupStyles.progressDot,
+          step === currentStep && signupStyles.progressDotActive,
+          step < currentStep && signupStyles.progressDotCompleted
+         )}
         />
        ))}
       </div>
      </div>
 
-     <div className={`${styles.stepsWrapper} ${styles[`step${currentStep}`]}`}>
-      {/* Step 0: Email or OAuth */}
-      <div className={getStepClassName(0)}>
-       <ErrorMessage message={error || validationError} isServerError={!!error} />
-
-       <div className={styles.stepHeader}>
-        <h2>{steps[0].title}</h2>
-        <p>{steps[0].subtitle}</p>
+     <div {...stylex.props(signupStyles.stepsWrapper)}>
+      <div {...stylex.props(...getStepStyleList(0))}>
+       <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(0))}>
+        <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[0].title}</h2>
+        <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[0].subtitle}</p>
        </div>
 
-       <div className={styles.inputGroup}>
+       <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(0))}>
         <input
+         {...stylex.props(signupStyles.inputGroupInput)}
          type={steps[0].type}
          name={steps[0].field}
          value={formData[steps[0].field]}
@@ -537,14 +511,33 @@ const Signup = () => {
          autoFocus
          autoComplete="email"
         />
+        {(error || validationError) && (
+         <div style={{
+          fontSize: '12px',
+          color: 'var(--error-text, #c53030)',
+          marginTop: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+         }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+          {error || validationError}
+         </div>
+        )}
        </div>
 
-       <div className={styles.divider}>
-        <span>or</span>
+       {/* Divider: replaces .divider::before with a real element */}
+       <div {...stylex.props(signupStyles.divider)}>
+        <div {...stylex.props(signupStyles.dividerLine)} />
+        <span {...stylex.props(signupStyles.dividerSpan)}>or</span>
        </div>
 
-       <div className={styles.oauthButtons}>
-        <button onClick={handleGoogleSignup} className={`${styles.oauthBtn} ${styles.google}`} disabled={loading}>
+       <div {...stylex.props(signupStyles.oauthButtons)}>
+        <button
+         onClick={handleGoogleSignup}
+         {...stylex.props(signupStyles.oauthBtn)}
+         disabled={loading}
+        >
          <img
           src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
           alt="Google"
@@ -555,11 +548,11 @@ const Signup = () => {
         </button>
        </div>
 
-       <div className={styles.buttonContainer}>
+       <div {...stylex.props(signupStyles.buttonContainer)}>
         <button
          type="button"
          onClick={handleContinue}
-         className={`${styles.loginBtn} ${styles.primary}`}
+         {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
          disabled={loading || !!validationError}
         >
          <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
@@ -568,19 +561,17 @@ const Signup = () => {
        </div>
       </div>
 
-      {/* Steps 1-3: Name, Handle, Password */}
       {[1, 2, 3].map(stepNum => (
-       <div key={stepNum} className={getStepClassName(stepNum)}>
-        <ErrorMessage message={error || validationError} isServerError={!!error} />
-
-        <div className={styles.stepHeader}>
-         <h2>{steps[stepNum].title}</h2>
-         <p>{steps[stepNum].subtitle}</p>
+       <div key={stepNum} {...stylex.props(...getStepStyleList(stepNum))}>
+        <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(stepNum))}>
+         <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[stepNum].title}</h2>
+         <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[stepNum].subtitle}</p>
         </div>
 
-        <div className={styles.inputGroup}>
+        <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(stepNum))}>
          <div style={{ position: 'relative' }}>
           <input
+           {...stylex.props(signupStyles.inputGroupInput)}
            type={steps[stepNum].type}
            name={steps[stepNum].field}
            value={formData[steps[stepNum].field]}
@@ -610,7 +601,7 @@ const Signup = () => {
           {stepNum === 1 && (
            <div style={{
             fontSize: '12px',
-            color: formData.username.length > 30 ? '#c53030' : 'var(--text-secondary, #666)',
+            color: formData.username.length > 30 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
             marginTop: '4px',
             textAlign: 'right'
            }}>
@@ -620,7 +611,7 @@ const Signup = () => {
           {stepNum === 2 && (
            <div style={{
             fontSize: '12px',
-            color: formData.handle.length > 15 ? '#c53030' : 'var(--text-secondary, #666)',
+            color: formData.handle.length > 15 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
             marginTop: '4px',
             textAlign: 'right'
            }}>
@@ -628,22 +619,49 @@ const Signup = () => {
            </div>
           )}
          </div>
+
+         {(stepNum === 1 || stepNum === 2) && (error || validationError) && (
+          <div style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '-12.5px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}>
+           <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+           {error || validationError}
+          </div>
+         )}
+         {stepNum === 3 && (error || validationError) && (
+          <div style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '4px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}>
+           <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+           {error || validationError}
+          </div>
+         )}
         </div>
 
-        <div className={styles.buttonContainer}>
+        <div {...stylex.props(signupStyles.buttonContainer)}>
          <button
           type="button"
           onClick={handleBack}
-          className={styles.backBtn}
+          {...stylex.props(signupStyles.backBtn)}
           disabled={loading}
          >
-          <img src="/resources/icons/return.svg" alt="Back" />
+          <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
           Back
          </button>
          <button
           type="button"
           onClick={handleContinue}
-          className={`${styles.loginBtn} ${styles.primary}`}
+          {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
           disabled={loading || !!validationError}
          >
           <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
@@ -653,18 +671,16 @@ const Signup = () => {
        </div>
       ))}
 
-      {/* Step 4: Confirm Password & Terms */}
-      <div className={getStepClassName(4)}>
-       <ErrorMessage message={error || validationError} isServerError={!!error} />
-
-       <div className={styles.stepHeader}>
-        <h2>{steps[4].title}</h2>
-        <p>{steps[4].subtitle}</p>
+      <div {...stylex.props(...getStepStyleList(4))}>
+       <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(4))}>
+        <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[4].title}</h2>
+        <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[4].subtitle}</p>
        </div>
 
-       <div className={styles.inputGroup}>
+       <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(4))}>
         <div style={{ position: 'relative' }}>
          <input
+          {...stylex.props(signupStyles.inputGroupInput)}
           type={steps[4].type}
           name={steps[4].field}
           value={formData[steps[4].field]}
@@ -690,10 +706,27 @@ const Signup = () => {
           <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
          </button>
         </div>
+        {(error || validationError) && (
+         <div style={{
+          fontSize: '12px',
+          color: 'var(--error-text, #c53030)',
+          marginTop: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px'
+         }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+          {error || validationError}
+         </div>
+        )}
        </div>
 
-       <div className={styles.termsCheckbox}>
-        <label className={styles.checkboxLabel}>
+       <div {...stylex.props(signupStyles.termsCheckbox)}>
+        <label
+         {...stylex.props(signupStyles.checkboxLabel)}
+         onMouseEnter={() => setIsCheckboxHovered(true)}
+         onMouseLeave={() => setIsCheckboxHovered(false)}
+        >
          <input
           type="checkbox"
           checked={agreedToTerms}
@@ -703,36 +736,48 @@ const Signup = () => {
             setValidationError('');
            }
           }}
-          className={styles.checkboxInput}
+          {...stylex.props(signupStyles.checkboxInput)}
          />
-         <span className={styles.checkboxCustom}></span>
-         <span className={styles.checkboxText}>
+
+         {/* checkboxCustom: checked + hover handled here (replaces sibling selector & hover descendant selector) */}
+         <span
+          {...stylex.props(
+           signupStyles.checkboxCustom,
+           isCheckboxHovered && signupStyles.checkboxCustomHovered,
+           agreedToTerms && signupStyles.checkboxCustomChecked
+          )}
+         >
+          {/* Checkmark: replaces .checkboxCustom::after */}
+          {agreedToTerms && <span {...stylex.props(signupStyles.checkboxCheckmark)} />}
+         </span>
+
+         <span {...stylex.props(signupStyles.checkboxText)}>
           I agree to the{' '}
-          <a href="/terms" target="_blank" className={styles.termsLink}>
+          <a href="/terms" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
            Terms & Conditions
           </a>
           {' '}and{' '}
-          <a href="/privacy" target="_blank" className={styles.termsLink}>
+          <a href="/privacy" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
            Privacy Policy
           </a>
          </span>
         </label>
        </div>
 
-       <div className={styles.buttonContainer}>
+       <div {...stylex.props(signupStyles.buttonContainer)}>
         <button
          type="button"
          onClick={handleBack}
-         className={styles.backBtn}
+         {...stylex.props(signupStyles.backBtn)}
          disabled={loading}
         >
-         <img src="/resources/icons/return.svg" alt="Back" />
+         <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
          Back
         </button>
         <button
          type="button"
          onClick={handleContinue}
-         className={`${styles.loginBtn} ${styles.primary}`}
+         {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
          disabled={loading || !!validationError || !agreedToTerms}
         >
          <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
@@ -743,10 +788,11 @@ const Signup = () => {
      </div>
     </div>
 
-    <div className={styles.loginFooter}>
-     <p>
+    {/* Footer stays EXACTLY here (outside loginForm) */}
+    <div {...stylex.props(signupStyles.loginFooter)}>
+     <p {...stylex.props(signupStyles.footerP)}>
       Already have an account?
-      <a href="/login">
+      <a href="/login" {...stylex.props(signupStyles.footerA)}>
        <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
        Sign in!
       </a>

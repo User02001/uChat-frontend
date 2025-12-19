@@ -5,19 +5,16 @@
 
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
-@font-face {
-    font-family: 'Product Sans';
-    src: url('/resources/fonts/ProductSans-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
 html, body,
 p, span, div,
 h1, h2, h3, h4, h5, h6,
 button, input, textarea, select, label {
-    font-family: 'Product Sans', system-ui, sans-serif !important;
+    font-family: "Google Sans Flex", system-ui, sans-serif !important;
+    font-optical-sizing: auto;
+    font-weight: 600 !important; /* bolder */
+    font-style: normal;
+    font-variation-settings: "slnt" 0, "wdth" 100, "GRAD" 25, /* adds stroke thickness without layout shift */
+    "opsz" 14;
 }
 
 * {

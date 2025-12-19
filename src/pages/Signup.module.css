@@ -33,7 +33,7 @@ body, html {
 [data-theme="dark"] {
     --bg-primary: linear-gradient(135deg, #000000 0%, #000000 100%);
     --bg-secondary: #000000;
-    --signup-card: #30303059;
+    --signup-card: #1212128c;
     --text-primary: #ffffff;
     --text-secondary: #cccccc;
     --border: #404040;
@@ -61,8 +61,8 @@ body, html {
 /* WIDE CARD - LEFT/RIGHT SPLIT */
 .loginCard {
     background-color: var(--signup-card);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px var(--shadow);
+    border-radius: 50px;
+    border: 3px solid var(--border);
     width: 100%;
     max-width: 900px;
     padding: 35px 50px;
@@ -104,7 +104,6 @@ body, html {
     font-size: 28px;
     font-weight: 400;
     margin: 0;
-    font-family: 'Product Sans', sans-serif;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -114,7 +113,6 @@ body, html {
     color: var(--text-secondary);
     font-size: 14px;
     margin: 0;
-    font-family: 'Product Sans', sans-serif;
 }
 
 .stepExplanation {
@@ -256,13 +254,11 @@ body, html {
         font-weight: 400;
         color: var(--text-primary);
         margin-bottom: 2px;
-        font-family: 'Product Sans', sans-serif;
     }
 
     .stepHeader p {
         font-size: 12px;
         color: var(--text-secondary);
-        font-family: 'Product Sans', sans-serif;
     }
 
 /* Inputs - COMPACT */
@@ -276,7 +272,6 @@ body, html {
         font-size: 12px;
         font-weight: 400;
         margin-bottom: 2px;
-        font-family: 'Product Sans', sans-serif;
     }
 
     .inputGroup input {
@@ -287,7 +282,6 @@ body, html {
         font-size: 14px;
         background-color: var(--bg-secondary);
         color: var(--text-primary);
-        font-family: 'Product Sans', sans-serif;
     }
 
         .inputGroup input:focus {
@@ -362,7 +356,6 @@ body, html {
     font-size: 11px;
     color: var(--text-secondary);
     line-height: 1.4;
-    font-family: 'Product Sans', sans-serif;
     margin-top: 2.45px;
 }
 
@@ -400,7 +393,6 @@ body, html {
         font-size: 11px;
         padding: 0 10px;
         position: relative;
-        font-family: 'Product Sans', sans-serif;
     }
 
 /* OAuth buttons - COMPACT */
@@ -425,7 +417,6 @@ body, html {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-family: 'Product Sans', sans-serif;
     transition: all 0.2s ease;
 }
 
@@ -464,7 +455,6 @@ body, html {
     border: 1px solid var(--border);
     border-radius: 6px;
     cursor: pointer;
-    font-family: 'Product Sans', sans-serif;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
@@ -495,7 +485,6 @@ body, html {
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    font-family: 'Product Sans', sans-serif;
     transition: all 0.2s ease;
 }
 
@@ -527,15 +516,12 @@ body, html {
         color: var(--text-secondary);
         font-size: 32px;
         margin: 0;
-        font-family: 'Product Sans', sans-serif;
         margin-top: 22px;
     }
 
     .loginFooter a {
         color: var(--border-focus);
         text-decoration: none;
-        font-weight: 500;
-        font-family: 'Product Sans', sans-serif;
     }
 
         .loginFooter a:hover {
@@ -652,7 +638,7 @@ body, html {
 }
 
 .step2 .progressIndicator {
-    margin-bottom: 44px;
+    margin-bottom: 52px;
 }
 
 .step3 .progressIndicator {
@@ -660,7 +646,7 @@ body, html {
 }
 
 .step4 .progressIndicator {
-    margin-bottom: 38px;
+    margin-bottom: 50px;
 }
 
 /* Autofill styling - prevents ugly white background in dark mode */

@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import styles from './Login.module.css';
+import * as stylex from '@stylexjs/stylex';
+import { verifyStyles } from '../styles/verify_email';
 import { API_BASE_URL } from '../config';
 import useStars from "../hooks/useStars";
+import Icon from '../components/Icon';
 
 const Verify = () => {
  const navigate = useNavigate();
@@ -15,7 +17,6 @@ const Verify = () => {
  const canvasRef = useStars();
 
  useEffect(() => {
-  // Check if user is already logged in first
   const checkAuthAndSetup = async () => {
    try {
     const response = await fetch(`${API_BASE_URL}/api/me`, {
@@ -23,20 +24,17 @@ const Verify = () => {
     });
 
     if (response.ok) {
-     // User is logged in
      const data = await response.json();
      setEmail(data.user.email);
-     return; // Don't redirect, user is authenticated
+     return;
     }
    } catch (error) {
     console.log('Not logged in, checking navigation state');
    }
 
-   // If not logged in, check navigation state like before
    if (location.state && location.state.email) {
     setEmail(location.state.email);
    } else {
-    // Only redirect to signup if not logged in AND no email in state
     navigate('/signup');
     return;
    }
@@ -48,18 +46,15 @@ const Verify = () => {
  useEffect(() => {
   document.title = 'uChat - Verify Email';
 
-  // Update favicon
   const favicon = document.querySelector("link[rel*='icon']") || document.createElement('link');
   favicon.type = 'image/png';
   favicon.rel = 'icon';
   favicon.href = '/resources/favicons/email_verification.png';
   document.getElementsByTagName('head')[0].appendChild(favicon);
 
-  // Detect system theme preference
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
 
-  // Listen for system theme changes
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleThemeChange = (e) => {
    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
@@ -71,7 +66,6 @@ const Verify = () => {
 
  const handleInputChange = (e) => {
   const value = e.target.value;
-  // Only allow numbers and limit to 7 digits
   if (/^\d{0,7}$/.test(value)) {
    setVerificationCode(value);
    if (error) setError('');
@@ -92,7 +86,6 @@ const Verify = () => {
   }
 
   try {
-   // Try logged-in verification first, fallback to regular verification
    let response = await fetch(`${API_BASE_URL}/api/verify-logged-in`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -100,7 +93,6 @@ const Verify = () => {
     body: JSON.stringify({ code: verificationCode })
    });
 
-   // If that fails with 401, try regular verification
    if (response.status === 401) {
     response = await fetch(`${API_BASE_URL}/api/verify`, {
      method: 'POST',
@@ -115,7 +107,7 @@ const Verify = () => {
    if (response.ok) {
     setSuccess('Email verified successfully! Redirecting...');
     setTimeout(() => {
-     navigate('/chat'); // Always redirect to chat after verification
+     navigate('/chat');
     }, 2000);
    } else {
     setError(data.error || 'Verification failed');
@@ -134,14 +126,12 @@ const Verify = () => {
   setSuccess('');
 
   try {
-   // Try logged-in resend first, fallback to regular resend
    let response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include'
    });
 
-   // If that fails with 401, try regular resend
    if (response.status === 401) {
     response = await fetch(`${API_BASE_URL}/api/resend-verification`, {
      method: 'POST',
@@ -167,56 +157,58 @@ const Verify = () => {
  };
 
  return (
-  <div className={styles.loginContainer}>
-   <canvas ref={canvasRef} className={styles.starCanvas} />
-   <div className={styles.loginCard}>
-    <div className={styles.loginHeader}>
-     <div className={styles.logoContainer} style={{
-      display: 'flex',
-      justifyContent: 'center',
-      marginBottom: '24px'
-     }}>
-      <img
-       src="/resources/main-logo.svg"
+  <div {...stylex.props(verifyStyles.container)}>
+   <canvas ref={canvasRef} {...stylex.props(verifyStyles.starCanvas)} />
+   <div {...stylex.props(verifyStyles.card)}>
+    <div {...stylex.props(verifyStyles.header)}>
+     <div {...stylex.props(verifyStyles.logoContainer)}>
+      <Icon
+       name="main-logo"
        alt="uChat Logo"
-       className={styles.mainLogo}
-       style={{
-        width: '80px',
-        height: '80px',
-        objectFit: 'contain'
-       }}
+       {...stylex.props(verifyStyles.mainLogo)}
        draggable="false"
       />
      </div>
-     <h1>Verify Your Email</h1>
-     <p>We've sent a 7-digit code to <strong>{email}</strong> in order to verify that you actually own this email.</p>
-     <p className={styles.helperText}>
-      Check your spam folder if you don't see the email in your inbox.
-     </p>
-     <p className={styles.helperText}>
-      Email may take 5 or more minutes to arrive.
-     </p>
+     <h1 {...stylex.props(verifyStyles.title)}>
+      <i className="fas fa-envelope-open" style={{ marginRight: '12px', color: 'orange' }}></i>
+      Verify Your Email
+     </h1>
+
+     <div {...stylex.props(verifyStyles.explanation)}>
+      <p {...stylex.props(verifyStyles.explanationText)}>
+       We've sent a 7-digit code to <strong>{email}</strong> to verify that you actually own this email.
+      </p>
+      <p {...stylex.props(verifyStyles.explanationText)} style={{ marginTop: '12px' }}>
+       Check your spam folder if you don't see the email in your inbox.
+      </p>
+      <p {...stylex.props(verifyStyles.explanationText)} style={{ marginTop: '8px', fontSize: '13px', opacity: '0.8' }}>
+       Email may take 5 or more minutes to arrive. We're sorry for the massive wait :(
+      </p>
+     </div>
     </div>
 
-    <div className={styles.loginForm}>
+    <div {...stylex.props(verifyStyles.form)}>
      {error && (
-      <div className={`${styles.alert} ${styles.alertError}`}>
+      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertError)}>
+       <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }}></i>
        {error}
       </div>
      )}
 
      {success && (
-      <div className={`${styles.alert} ${styles.alertSuccess}`}>
+      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertSuccess)}>
+       <i className="fas fa-check-circle" style={{ marginRight: '8px' }}></i>
        {success}
       </div>
      )}
 
      <form onSubmit={handleVerification}>
-      <div className={styles.inputGroup}>
-       <label htmlFor="verificationCode">
-        <i className="fas fa-shield-alt" style={{ marginRight: '8px' }}></i>
-        Verification Code
-       </label>
+      <div {...stylex.props(verifyStyles.stepHeader)}>
+       <h2 {...stylex.props(verifyStyles.stepHeaderTitle)}>Enter verification code</h2>
+       <p {...stylex.props(verifyStyles.stepHeaderSubtitle)}>The 7-digit code sent to your email</p>
+      </div>
+
+      <div {...stylex.props(verifyStyles.inputGroup)}>
        <div style={{ position: 'relative' }}>
         <input
          type="text"
@@ -226,55 +218,67 @@ const Verify = () => {
          onChange={handleInputChange}
          placeholder="Enter 7-digit code"
          maxLength="7"
-         className={styles.verificationInput}
          autoComplete="one-time-code"
          required
-         style={{ paddingLeft: '40px' }}
+         autoFocus
+         {...stylex.props(verifyStyles.input)}
         />
-        <i className="fas fa-key" style={{
-         position: 'absolute',
-         left: '12px',
-         top: '50%',
-         transform: 'translateY(-50%)',
-         color: 'var(--text-secondary, #666)',
-         fontSize: '14px'
-        }}></i>
+       </div>
+       <div style={{
+        fontSize: '12px',
+        color: verificationCode.length === 7 ? '#4caf50' : 'var(--text-secondary)',
+        marginTop: '4px',
+        textAlign: 'right'
+       }}>
+        {verificationCode.length}/7 digits
        </div>
       </div>
 
-      <button type="submit" className={`${styles.loginBtn} ${styles.primary}`} disabled={loading}>
-       <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-envelope-open'} style={{ marginRight: '8px' }}></i>
-       {loading ? 'Verifying...' : 'Verify Email'}
-      </button>
+      <div {...stylex.props(verifyStyles.buttonContainer)}>
+       <button
+        type="submit"
+        {...stylex.props(verifyStyles.primaryBtn)}
+        disabled={loading || verificationCode.length !== 7}
+       >
+        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
+        {loading ? 'Verifying...' : 'Verify Email'}
+       </button>
+      </div>
 
       <button
        type="button"
        onClick={() => navigate('/chat')}
-       className={styles.oauthBtn}
-       style={{ marginTop: '12px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
+       {...stylex.props(verifyStyles.skipBtn)}
       >
        <i className="fas fa-arrow-right" style={{ marginRight: '8px' }}></i>
        Skip verification for now
       </button>
      </form>
 
-     <div className={styles.divider}>
-      <span>didn't receive the code?</span>
+     <div {...stylex.props(verifyStyles.divider)}>
+      <div {...stylex.props(verifyStyles.dividerLine)}></div>
+      <span {...stylex.props(verifyStyles.dividerText)}>didn't receive the code?</span>
      </div>
 
      <button
+      type="button"
       onClick={handleResendCode}
-      className={styles.oauthBtn}
+      {...stylex.props(verifyStyles.resendBtn)}
       disabled={loading}
-      style={{ marginBottom: '0' }}
      >
       <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'} style={{ marginRight: '8px' }}></i>
       {loading ? 'Sending...' : 'Resend Code'}
      </button>
     </div>
 
-    <div className={styles.loginFooter}>
-     <p>Remember your password? <a href="/login">Back to Login</a></p>
+    <div {...stylex.props(verifyStyles.footer)}>
+     <p {...stylex.props(verifyStyles.footerText)}>
+      Remember your password?
+      <a href="/login" {...stylex.props(verifyStyles.footerLink)}>
+       <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+       Back to Login
+      </a>
+     </p>
     </div>
    </div>
   </div>
