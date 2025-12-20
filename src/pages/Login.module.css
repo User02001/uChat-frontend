@@ -1,0 +1,556 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Theme variables */
+:root {
+    --bg-primary: #f5f5f5;
+    --bg-secondary: #ffffff;
+    --signin-card: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --border: #e0e0e0;
+    --border-focus: #ff9800;
+    --button-primary: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+    --button-primary-hover: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    --button-primary-text: #1a1a1a;
+    --shadow: rgba(0, 0, 0, 0.1);
+    --error-bg: #fee;
+    --error-text: #c53030;
+    --error-border: #feb2b2;
+}
+
+[data-theme="dark"] {
+    --bg-primary: linear-gradient(135deg, #000000 0%, #000000 100%);
+    --bg-secondary: #000000;
+    --signin-card: #1212128c;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --border: #404040;
+    --border-focus: #ff9800;
+    --button-primary: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+    --button-primary-hover: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    --button-primary-text: #1a1a1a;
+    --shadow: rgba(0, 0, 0, 0.3);
+    --error-bg: #2d1b1b;
+    --error-text: #fc8181;
+    --error-border: #9b2c2c;
+}
+
+.loginContainer {
+    min-height: 100vh;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    width: 100%;
+}
+
+/* WIDE CARD - LEFT/RIGHT SPLIT */
+.loginCard {
+    background-color: var(--signin-card);
+    border-radius: 50px;
+    border: 3px solid var(--border);
+    width: 100%;
+    max-width: 900px;
+    padding: 35px 50px;
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    column-gap: 50px;
+    row-gap: 15px;
+    align-items: start;
+    margin: 0 auto;
+}
+
+/* LEFT SIDE - HEADER */
+.loginHeader {
+    grid-column: 1;
+    text-align: left;
+    padding-right: 30px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.logoContainer {
+    display: flex;
+    justify-content: flex-start;
+    margin-bottom: 12px;
+}
+
+.mainLogo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+}
+
+.loginHeader h1 {
+    color: var(--text-primary);
+    font-size: 28px;
+    font-weight: 400;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.loginHeader p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+.stepExplanation {
+    margin-top: 16px;
+}
+
+    .stepExplanation p {
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+/* RIGHT SIDE - FORM */
+.loginForm {
+    grid-column: 2;
+}
+
+/* Progress dots */
+.progressIndicator {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.progressDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s ease;
+}
+
+    .progressDot.active {
+        background: var(--border-focus);
+        transform: scale(1.2);
+    }
+
+    .progressDot.completed {
+        background: #4caf50;
+    }
+
+/* Steps wrapper */
+.stepsWrapper {
+    position: relative;
+    min-height: 150px;
+    overflow: hidden;
+    margin-bottom: -5px;
+}
+
+/* Step animations */
+.stepContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+    .stepContainer.active {
+        opacity: 1;
+        pointer-events: all;
+        position: relative;
+    }
+
+    .stepContainer.slidingOutLeft {
+        animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .stepContainer.slidingOutRight {
+        animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .stepContainer.comingFromLeft {
+        animation: slideInFromLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .stepContainer.comingFromRight {
+        animation: slideInFromRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInFromLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Step header */
+.stepHeader {
+    margin-bottom: 8px;
+}
+
+    .stepHeader h2 {
+        font-size: 16px;
+        font-weight: 400;
+        color: var(--text-primary);
+        margin-bottom: 2px;
+    }
+
+    .stepHeader p {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+/* Inputs */
+.inputGroup {
+    margin-bottom: 0;
+}
+
+    .inputGroup label {
+        display: block;
+        color: var(--text-primary);
+        font-size: 12px;
+        font-weight: 400;
+        margin-bottom: 2px;
+    }
+
+    .inputGroup input {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 14px;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+    }
+
+        .inputGroup input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1);
+        }
+
+        .inputGroup input::placeholder {
+            color: var(--text-secondary);
+        }
+
+/* Divider */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 6px 0;
+}
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background-color: var(--border);
+    }
+
+    .divider span {
+        background-color: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-size: 11px;
+        padding: 0 10px;
+        position: relative;
+    }
+
+/* OAuth buttons */
+.oauthButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 13px;
+}
+
+.oauthBtn {
+    width: 100%;
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+    .oauthBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .oauthBtn:hover:not(:disabled) {
+        border-color: var(--border-focus);
+    }
+
+[data-theme="light"] .oauthBtn:hover:not(:disabled) {
+    background-color: #f8f8f8;
+}
+
+[data-theme="dark"] .oauthBtn:hover:not(:disabled) {
+    background-color: #3c3c3c;
+}
+
+/* Buttons */
+.buttonContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.backBtn {
+    padding: 5.5px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    background: transparent;
+    color: var(--border-focus);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+}
+
+    .backBtn img {
+        width: 20px;
+        height: 20px;
+        display: block;
+    }
+
+    .backBtn:hover:not(:disabled) {
+        background: rgba(255, 152, 0, 0.1);
+        border-color: var(--border-focus);
+    }
+
+    .backBtn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+.loginBtn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .loginBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .loginBtn.primary {
+        background: var(--button-primary);
+        color: var(--button-primary-text);
+        font-weight: 600;
+    }
+
+        .loginBtn.primary:hover:not(:disabled) {
+            background: var(--button-primary-hover);
+        }
+
+/* Footer */
+.loginFooter {
+    grid-column: 1 / -1;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+    .loginFooter p {
+        color: var(--text-secondary);
+        font-size: 32px;
+        margin: 0;
+        margin-top: 22px;
+    }
+
+    .loginFooter a {
+        color: var(--border-focus);
+        text-decoration: none;
+    }
+
+        .loginFooter a:hover {
+            text-decoration: underline;
+            color: #f57c00;
+        }
+
+.starCanvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    background: #000;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .loginCard {
+        max-width: 400px;
+        padding: 30px;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        background: var(--signin-card);
+    }
+
+    .loginHeader {
+        text-align: center;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding-right: 0;
+        padding-bottom: 20px;
+    }
+
+    .logoContainer {
+        justify-content: center;
+    }
+
+    .loginHeader h1,
+    .loginHeader p {
+        text-align: center;
+    }
+
+    .loginHeader h1 {
+        font-size: 24px;
+        justify-content: center;
+    }
+
+    .loginForm {
+        grid-column: 1;
+    }
+
+    .loginFooter {
+        grid-column: 1;
+        margin-top: -6px;
+    }
+
+        .loginFooter p {
+            font-size: 15px;
+        }
+}
+
+/* Step-specific input spacing */
+.step0 .inputGroup {
+    margin-bottom: 0;
+}
+
+.step1 .inputGroup {
+    margin-bottom: 15px;
+}
+
+/* Step-specific stepHeader spacing */
+.step0 .stepHeader {
+    margin-bottom: 8px;
+}
+
+.step1 .stepHeader {
+    margin-bottom: 20px;
+}
+
+/* Step-specific progressIndicator spacing */
+.step0 .progressIndicator {
+    margin-bottom: 33px;
+}
+
+.step1 .progressIndicator {
+    margin-bottom: 50px;
+}
+
+/* Autofill styling */
+.inputGroup input:-webkit-autofill,
+.inputGroup input:-webkit-autofill:hover,
+.inputGroup input:-webkit-autofill:focus,
+.inputGroup input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--bg-secondary) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    caret-color: var(--text-primary);
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.inputGroup input:-moz-autofill,
+.inputGroup input:-moz-autofill-preview {
+    filter: none;
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
