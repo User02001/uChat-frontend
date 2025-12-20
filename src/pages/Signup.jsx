@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as stylex from '@stylexjs/stylex';
 import { signupStyles } from '../styles/signup';
@@ -29,6 +29,30 @@ const Signup = () => {
 
  // Used to replicate `.checkboxLabel:hover .checkboxCustom`
  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
+
+ const ids = useMemo(() => {
+  return {
+   pageTitle: 'signup-page-title',
+   form: 'signup-form',
+   progress: 'signup-progress',
+   stepTitle: (i) => `signup-step-${i}-title`,
+   stepSubtitle: (i) => `signup-step-${i}-subtitle`,
+   stepExplain: (i) => `signup-step-${i}-explain`,
+   stepError: (i) => `signup-step-${i}-error`,
+   field: {
+    email: 'signup-email',
+    username: 'signup-username',
+    handle: 'signup-handle',
+    password: 'signup-password',
+    confirmPassword: 'signup-confirm-password',
+    terms: 'signup-terms'
+   },
+   counter: {
+    username: 'signup-username-counter',
+    handle: 'signup-handle-counter'
+   }
+  };
+ }, []);
 
  useEffect(() => {
   document.title = 'uChat - Sign Up';
@@ -301,7 +325,7 @@ const Signup = () => {
     body: JSON.stringify(formData)
    });
 
-   const data = await response.json();
+   await response.json();
 
    if (response.ok) {
     navigate('/verify', { state: { email: formData.email } });
@@ -314,6 +338,11 @@ const Signup = () => {
   } finally {
    setLoading(false);
   }
+ };
+
+ const handleFormSubmit = (e) => {
+  e.preventDefault();
+  handleContinue();
  };
 
  // Converted from string className builder to StyleX style list
@@ -416,11 +445,28 @@ const Signup = () => {
   }
  ];
 
+ const getActiveErrorText = () => error || validationError;
+
+ const activeErrorId = ids.stepError(currentStep);
+ const activeSubtitleId = ids.stepSubtitle(currentStep);
+ const activeExplainId = ids.stepExplain(currentStep);
+
+ const buildDescribedBy = (parts) => parts.filter(Boolean).join(' ') || undefined;
+
  return (
   <div {...stylex.props(signupStyles.loginContainer)}>
-   <canvas ref={canvasRef} {...stylex.props(signupStyles.starCanvas)} />
+   <canvas
+    ref={canvasRef}
+    {...stylex.props(signupStyles.starCanvas)}
+    aria-hidden="true"
+    role="presentation"
+   />
 
-   <div {...stylex.props(signupStyles.loginCard)}>
+   <div
+    {...stylex.props(signupStyles.loginCard)}
+    role="main"
+    aria-labelledby={ids.pageTitle}
+   >
     <div {...stylex.props(signupStyles.loginHeader)}>
      <div {...stylex.props(signupStyles.logoContainer)}>
       <Icon
@@ -431,14 +477,19 @@ const Signup = () => {
        draggable="false"
       />
      </div>
-     <h1 {...stylex.props(signupStyles.headerTitle)}>
-      <i className="fas fa-user-plus" style={{ marginRight: '12px', color: 'var(--border-focus)' }}></i>
+
+     <h1 id={ids.pageTitle} {...stylex.props(signupStyles.headerTitle)}>
+      <i
+       className="fas fa-user-plus"
+       aria-hidden="true"
+       style={{ marginRight: '12px', color: 'var(--border-focus)' }}
+      />
       Create your account
      </h1>
 
      {currentStep === 0 && (
       <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p {...stylex.props(signupStyles.stepExplanationP)}>
+       <p id={ids.stepExplain(0)} {...stylex.props(signupStyles.stepExplanationP)}>
         Ah, welcome! This text is here to help you signup. First, let's enter your email address that you own OR you can sign up with Google for instant access. Whichever you prefer.
        </p>
       </div>
@@ -446,7 +497,7 @@ const Signup = () => {
 
      {currentStep === 1 && (
       <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p {...stylex.props(signupStyles.stepExplanationP)}>
+       <p id={ids.stepExplain(1)} {...stylex.props(signupStyles.stepExplanationP)}>
         Choose how you want to be known on uChat. This is your username that others will see in chats and your profile. Think of it like a nickname.
        </p>
       </div>
@@ -454,7 +505,7 @@ const Signup = () => {
 
      {currentStep === 2 && (
       <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p {...stylex.props(signupStyles.stepExplanationP)}>
+       <p id={ids.stepExplain(2)} {...stylex.props(signupStyles.stepExplanationP)}>
         Your handle is a unique identifier that ensures your account isn’t duplicated or impersonated. It will appear as "@handle" to other users. For example, if multiple people share the same name, handles help distinguish who is who.
        </p>
       </div>
@@ -462,7 +513,7 @@ const Signup = () => {
 
      {currentStep === 3 && (
       <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p {...stylex.props(signupStyles.stepExplanationP)}>
+       <p id={ids.stepExplain(3)} {...stylex.props(signupStyles.stepExplanationP)}>
         Create a strong password with at least 8 characters. We recommend using a mix of letters, numbers, and symbols for better security.
        </p>
       </div>
@@ -470,19 +521,38 @@ const Signup = () => {
 
      {currentStep === 4 && (
       <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p {...stylex.props(signupStyles.stepExplanationP)}>
+       <p id={ids.stepExplain(4)} {...stylex.props(signupStyles.stepExplanationP)}>
         Almost there. Confirm your password and agree to our terms (you should read them—though no one really does). Once you’re done, you’ll be ready. You’ll still need to verify your email! You can skip it, but you probably shouldn’t—you’ll see why later.
        </p>
       </div>
      )}
     </div>
 
-    <div {...stylex.props(signupStyles.loginForm)}>
+    <form
+     id={ids.form}
+     {...stylex.props(signupStyles.loginForm)}
+     onSubmit={handleFormSubmit}
+     noValidate
+     aria-busy={loading ? 'true' : 'false'}
+     aria-describedby={buildDescribedBy([
+      activeSubtitleId,
+      activeExplainId,
+      getActiveErrorText() ? activeErrorId : null
+     ])}
+    >
      <div>
-      <div {...stylex.props(signupStyles.progressIndicator, progressSpacingStyle(currentStep))}>
+      <div
+       {...stylex.props(signupStyles.progressIndicator, progressSpacingStyle(currentStep))}
+       aria-label="Signup progress"
+       role="list"
+       id={ids.progress}
+      >
        {[0, 1, 2, 3, 4].map((step) => (
         <div
          key={step}
+         role="listitem"
+         aria-label={`Step ${step + 1} of 5${step === currentStep ? ', current step' : ''}`}
+         aria-current={step === currentStep ? 'step' : undefined}
          {...stylex.props(
           signupStyles.progressDot,
           step === currentStep && signupStyles.progressDotActive,
@@ -494,53 +564,80 @@ const Signup = () => {
      </div>
 
      <div {...stylex.props(signupStyles.stepsWrapper)}>
-      <div {...stylex.props(...getStepStyleList(0))}>
+      {/* STEP 0 */}
+      <div {...stylex.props(...getStepStyleList(0))} aria-hidden={currentStep !== 0}>
        <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(0))}>
-        <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[0].title}</h2>
-        <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[0].subtitle}</p>
+        <h2 id={ids.stepTitle(0)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[0].title}</h2>
+        <p id={ids.stepSubtitle(0)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[0].subtitle}</p>
        </div>
 
        <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(0))}>
+        {/* Visible label not required visually, but required for accessibility. */}
+        <label htmlFor={ids.field.email} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
+         Email address
+        </label>
+
         <input
          {...stylex.props(signupStyles.inputGroupInput)}
+         id={ids.field.email}
          type={steps[0].type}
          name={steps[0].field}
          value={formData[steps[0].field]}
          onChange={handleInputChange}
          placeholder={steps[0].placeholder}
-         autoFocus
+         title="Enter the email address you will use to sign in"
+         autoFocus={currentStep === 0 && !isTransitioning}
          autoComplete="email"
+         inputMode="email"
+         required
+         aria-required="true"
+         aria-invalid={Boolean((error || validationError) && currentStep === 0) ? 'true' : 'false'}
+         aria-describedby={buildDescribedBy([
+          ids.stepSubtitle(0),
+          ids.stepExplain(0),
+          (error || validationError) ? ids.stepError(0) : null
+         ])}
         />
+
         {(error || validationError) && (
-         <div style={{
-          fontSize: '12px',
-          color: 'var(--error-text, #c53030)',
-          marginTop: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-         }}>
-          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+         <div
+          id={ids.stepError(0)}
+          role="alert"
+          aria-live="assertive"
+          style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '4px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}
+         >
+          <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
           {error || validationError}
          </div>
         )}
        </div>
 
-       {/* Divider: replaces .divider::before with a real element */}
-       <div {...stylex.props(signupStyles.divider)}>
+       {/* Divider */}
+       <div {...stylex.props(signupStyles.divider)} aria-hidden="true">
         <div {...stylex.props(signupStyles.dividerLine)} />
         <span {...stylex.props(signupStyles.dividerSpan)}>or</span>
        </div>
 
        <div {...stylex.props(signupStyles.oauthButtons)}>
         <button
+         type="button"
          onClick={handleGoogleSignup}
          {...stylex.props(signupStyles.oauthBtn)}
          disabled={loading}
+         aria-disabled={loading ? 'true' : 'false'}
+         title="Sign up with Google"
         >
          <img
           src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
-          alt="Google"
+          alt=""
+          aria-hidden="true"
           width="18"
           height="18"
          />
@@ -550,147 +647,268 @@ const Signup = () => {
 
        <div {...stylex.props(signupStyles.buttonContainer)}>
         <button
-         type="button"
-         onClick={handleContinue}
+         type="submit"
          {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
          disabled={loading || !!validationError}
+         aria-disabled={(loading || !!validationError) ? 'true' : 'false'}
+         title="Continue to the next step"
         >
-         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
+         <i
+          className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'}
+          aria-hidden="true"
+          style={{ marginRight: '8px' }}
+         />
          {loading ? 'Checking...' : 'Continue'}
         </button>
        </div>
       </div>
 
-      {[1, 2, 3].map(stepNum => (
-       <div key={stepNum} {...stylex.props(...getStepStyleList(stepNum))}>
-        <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(stepNum))}>
-         <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[stepNum].title}</h2>
-         <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[stepNum].subtitle}</p>
-        </div>
+      {/* STEPS 1 - 3 */}
+      {[1, 2, 3].map(stepNum => {
+       const fieldName = steps[stepNum].field;
+       const fieldId = ids.field[fieldName];
+       const hasStepError = Boolean((error || validationError) && currentStep === stepNum);
 
-        <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(stepNum))}>
-         <div style={{ position: 'relative' }}>
-          <input
-           {...stylex.props(signupStyles.inputGroupInput)}
-           type={steps[stepNum].type}
-           name={steps[stepNum].field}
-           value={formData[steps[stepNum].field]}
-           onChange={handleInputChange}
-           placeholder={steps[stepNum].placeholder}
-           autoFocus={currentStep === stepNum}
-          />
-          {stepNum === 3 && (
-           <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
+       const extraDescribedBy = [];
+       if (stepNum === 1) extraDescribedBy.push(ids.counter.username);
+       if (stepNum === 2) extraDescribedBy.push(ids.counter.handle);
+
+       const inputPropsByStep = (() => {
+        if (stepNum === 1) {
+         return {
+          autoComplete: 'username',
+          minLength: 3,
+          maxLength: 30,
+          required: true,
+          spellCheck: 'false'
+         };
+        }
+        if (stepNum === 2) {
+         return {
+          autoComplete: 'nickname',
+          minLength: 3,
+          maxLength: 15,
+          required: true,
+          spellCheck: 'false',
+          pattern: '^[a-zA-Z0-9_]+$'
+         };
+        }
+        // stepNum === 3 password
+        return {
+         autoComplete: 'new-password',
+         minLength: 8,
+         required: true
+        };
+       })();
+
+       const labelText =
+        stepNum === 1 ? 'Username' :
+         stepNum === 2 ? 'Handle' :
+          'Password';
+
+       return (
+        <div
+         key={stepNum}
+         {...stylex.props(...getStepStyleList(stepNum))}
+         aria-hidden={currentStep !== stepNum}
+        >
+         <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(stepNum))}>
+          <h2 id={ids.stepTitle(stepNum)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[stepNum].title}</h2>
+          <p id={ids.stepSubtitle(stepNum)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[stepNum].subtitle}</p>
+         </div>
+
+         <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(stepNum))}>
+          <div style={{ position: 'relative' }}>
+           <label htmlFor={fieldId} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
+            {labelText}
+           </label>
+
+           <input
+            {...stylex.props(signupStyles.inputGroupInput)}
+            id={fieldId}
+            type={steps[stepNum].type}
+            name={fieldName}
+            value={formData[fieldName]}
+            onChange={handleInputChange}
+            placeholder={steps[stepNum].placeholder}
+            title={steps[stepNum].subtitle}
+            autoFocus={currentStep === stepNum && !isTransitioning}
+            aria-required="true"
+            aria-invalid={hasStepError ? 'true' : 'false'}
+            aria-describedby={buildDescribedBy([
+             ids.stepSubtitle(stepNum),
+             ids.stepExplain(stepNum),
+             ...extraDescribedBy,
+             hasStepError ? ids.stepError(stepNum) : null
+            ])}
+            {...inputPropsByStep}
+           />
+
+           {stepNum === 3 && (
+            <button
+             type="button"
+             onClick={() => setShowPassword(!showPassword)}
+             aria-label={showPassword ? 'Hide password' : 'Show password'}
+             aria-pressed={showPassword ? 'true' : 'false'}
+             title={showPassword ? 'Hide password' : 'Show password'}
+             style={{
+              position: 'absolute',
+              right: '12px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'var(--text-secondary, #666)',
+              fontSize: '14px'
+             }}
+            >
+             <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true" />
+            </button>
+           )}
+
+           {stepNum === 1 && (
+            <div
+             id={ids.counter.username}
+             aria-live="polite"
+             style={{
+              fontSize: '12px',
+              color: formData.username.length > 30 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
+              marginTop: '4px',
+              textAlign: 'right'
+             }}
+            >
+             {formData.username.length}/30 characters
+            </div>
+           )}
+
+           {stepNum === 2 && (
+            <div
+             id={ids.counter.handle}
+             aria-live="polite"
+             style={{
+              fontSize: '12px',
+              color: formData.handle.length > 15 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
+              marginTop: '4px',
+              textAlign: 'right'
+             }}
+            >
+             {formData.handle.length}/15 characters
+            </div>
+           )}
+          </div>
+
+          {(stepNum === 1 || stepNum === 2) && (error || validationError) && (
+           <div
+            id={ids.stepError(stepNum)}
+            role="alert"
+            aria-live="assertive"
             style={{
-             position: 'absolute',
-             right: '12px',
-             top: '50%',
-             transform: 'translateY(-50%)',
-             background: 'none',
-             border: 'none',
-             cursor: 'pointer',
-             color: 'var(--text-secondary, #666)',
-             fontSize: '14px'
+             fontSize: '12px',
+             color: 'var(--error-text, #c53030)',
+             marginTop: '-12.5px',
+             display: 'flex',
+             alignItems: 'center',
+             gap: '4px'
             }}
            >
-            <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
-           </button>
-          )}
-          {stepNum === 1 && (
-           <div style={{
-            fontSize: '12px',
-            color: formData.username.length > 30 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
-            marginTop: '4px',
-            textAlign: 'right'
-           }}>
-            {formData.username.length}/30 characters
+            <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
+            {error || validationError}
            </div>
           )}
-          {stepNum === 2 && (
-           <div style={{
-            fontSize: '12px',
-            color: formData.handle.length > 15 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
-            marginTop: '4px',
-            textAlign: 'right'
-           }}>
-            {formData.handle.length}/15 characters
+
+          {stepNum === 3 && (error || validationError) && (
+           <div
+            id={ids.stepError(stepNum)}
+            role="alert"
+            aria-live="assertive"
+            style={{
+             fontSize: '12px',
+             color: 'var(--error-text, #c53030)',
+             marginTop: '4px',
+             display: 'flex',
+             alignItems: 'center',
+             gap: '4px'
+            }}
+           >
+            <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
+            {error || validationError}
            </div>
           )}
          </div>
 
-         {(stepNum === 1 || stepNum === 2) && (error || validationError) && (
-          <div style={{
-           fontSize: '12px',
-           color: 'var(--error-text, #c53030)',
-           marginTop: '-12.5px',
-           display: 'flex',
-           alignItems: 'center',
-           gap: '4px'
-          }}>
-           <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
-           {error || validationError}
-          </div>
-         )}
-         {stepNum === 3 && (error || validationError) && (
-          <div style={{
-           fontSize: '12px',
-           color: 'var(--error-text, #c53030)',
-           marginTop: '4px',
-           display: 'flex',
-           alignItems: 'center',
-           gap: '4px'
-          }}>
-           <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
-           {error || validationError}
-          </div>
-         )}
-        </div>
+         <div {...stylex.props(signupStyles.buttonContainer)}>
+          <button
+           type="button"
+           onClick={handleBack}
+           {...stylex.props(signupStyles.backBtn)}
+           disabled={loading}
+           aria-disabled={loading ? 'true' : 'false'}
+           title="Go back to the previous step"
+          >
+           <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
+           Back
+          </button>
 
-        <div {...stylex.props(signupStyles.buttonContainer)}>
-         <button
-          type="button"
-          onClick={handleBack}
-          {...stylex.props(signupStyles.backBtn)}
-          disabled={loading}
-         >
-          <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
-          Back
-         </button>
-         <button
-          type="button"
-          onClick={handleContinue}
-          {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
-          disabled={loading || !!validationError}
-         >
-          <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
-          {loading ? 'Checking...' : 'Continue'}
-         </button>
+          <button
+           type="submit"
+           {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
+           disabled={loading || !!validationError}
+           aria-disabled={(loading || !!validationError) ? 'true' : 'false'}
+           title="Continue to the next step"
+          >
+           <i
+            className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'}
+            aria-hidden="true"
+            style={{ marginRight: '8px' }}
+           />
+           {loading ? 'Checking...' : 'Continue'}
+          </button>
+         </div>
         </div>
-       </div>
-      ))}
+       );
+      })}
 
-      <div {...stylex.props(...getStepStyleList(4))}>
+      {/* STEP 4 */}
+      <div {...stylex.props(...getStepStyleList(4))} aria-hidden={currentStep !== 4}>
        <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(4))}>
-        <h2 {...stylex.props(signupStyles.stepHeaderH2)}>{steps[4].title}</h2>
-        <p {...stylex.props(signupStyles.stepHeaderP)}>{steps[4].subtitle}</p>
+        <h2 id={ids.stepTitle(4)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[4].title}</h2>
+        <p id={ids.stepSubtitle(4)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[4].subtitle}</p>
        </div>
 
        <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(4))}>
         <div style={{ position: 'relative' }}>
+         <label htmlFor={ids.field.confirmPassword} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
+          Confirm password
+         </label>
+
          <input
           {...stylex.props(signupStyles.inputGroupInput)}
+          id={ids.field.confirmPassword}
           type={steps[4].type}
           name={steps[4].field}
           value={formData[steps[4].field]}
           onChange={handleInputChange}
           placeholder={steps[4].placeholder}
-          autoFocus
+          title="Re-enter your password to confirm"
+          autoFocus={currentStep === 4 && !isTransitioning}
+          autoComplete="new-password"
+          required
+          aria-required="true"
+          aria-invalid={Boolean((error || validationError) && currentStep === 4) ? 'true' : 'false'}
+          aria-describedby={buildDescribedBy([
+           ids.stepSubtitle(4),
+           ids.stepExplain(4),
+           (error || validationError) ? ids.stepError(4) : null
+          ])}
          />
+
          <button
           type="button"
           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+          aria-pressed={showConfirmPassword ? 'true' : 'false'}
+          title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
           style={{
            position: 'absolute',
            right: '12px',
@@ -703,19 +921,25 @@ const Signup = () => {
            fontSize: '14px'
           }}
          >
-          <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+          <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true" />
          </button>
         </div>
+
         {(error || validationError) && (
-         <div style={{
-          fontSize: '12px',
-          color: 'var(--error-text, #c53030)',
-          marginTop: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-         }}>
-          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+         <div
+          id={ids.stepError(4)}
+          role="alert"
+          aria-live="assertive"
+          style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '4px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}
+         >
+          <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
           {error || validationError}
          </div>
         )}
@@ -724,40 +948,59 @@ const Signup = () => {
        <div {...stylex.props(signupStyles.termsCheckbox)}>
         <label
          {...stylex.props(signupStyles.checkboxLabel)}
+         htmlFor={ids.field.terms}
          onMouseEnter={() => setIsCheckboxHovered(true)}
          onMouseLeave={() => setIsCheckboxHovered(false)}
         >
          <input
+          id={ids.field.terms}
           type="checkbox"
           checked={agreedToTerms}
           onChange={(e) => {
            setAgreedToTerms(e.target.checked);
-           if (e.target.checked && validationError.includes('terms')) {
+           if (e.target.checked && validationError.toLowerCase().includes('terms')) {
             setValidationError('');
            }
           }}
           {...stylex.props(signupStyles.checkboxInput)}
+          aria-describedby={buildDescribedBy([
+           ids.stepExplain(4),
+           (error || validationError) ? ids.stepError(4) : null
+          ])}
          />
 
-         {/* checkboxCustom: checked + hover handled here (replaces sibling selector & hover descendant selector) */}
          <span
           {...stylex.props(
            signupStyles.checkboxCustom,
            isCheckboxHovered && signupStyles.checkboxCustomHovered,
            agreedToTerms && signupStyles.checkboxCustomChecked
           )}
+          aria-hidden="true"
          >
-          {/* Checkmark: replaces .checkboxCustom::after */}
           {agreedToTerms && <span {...stylex.props(signupStyles.checkboxCheckmark)} />}
          </span>
 
          <span {...stylex.props(signupStyles.checkboxText)}>
           I agree to the{' '}
-          <a href="/terms" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
+          <a
+           href="/terms"
+           target="_blank"
+           rel="noreferrer"
+           {...stylex.props(signupStyles.termsLink)}
+           aria-label="Terms and Conditions (opens in a new tab)"
+           title="Open Terms and Conditions in a new tab"
+          >
            Terms & Conditions
           </a>
           {' '}and{' '}
-          <a href="/privacy" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
+          <a
+           href="/privacy"
+           target="_blank"
+           rel="noreferrer"
+           {...stylex.props(signupStyles.termsLink)}
+           aria-label="Privacy Policy (opens in a new tab)"
+           title="Open Privacy Policy in a new tab"
+          >
            Privacy Policy
           </a>
          </span>
@@ -770,30 +1013,38 @@ const Signup = () => {
          onClick={handleBack}
          {...stylex.props(signupStyles.backBtn)}
          disabled={loading}
+         aria-disabled={loading ? 'true' : 'false'}
+         title="Go back to the previous step"
         >
          <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
          Back
         </button>
+
         <button
-         type="button"
-         onClick={handleContinue}
+         type="submit"
          {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
          disabled={loading || !!validationError || !agreedToTerms}
+         aria-disabled={(loading || !!validationError || !agreedToTerms) ? 'true' : 'false'}
+         title="Create your account"
         >
-         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
+         <i
+          className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'}
+          aria-hidden="true"
+          style={{ marginRight: '8px' }}
+         />
          {loading ? 'Creating...' : 'Create Account'}
         </button>
        </div>
       </div>
      </div>
-    </div>
+    </form>
 
     {/* Footer stays EXACTLY here (outside loginForm) */}
     <div {...stylex.props(signupStyles.loginFooter)}>
      <p {...stylex.props(signupStyles.footerP)}>
       Already have an account?
-      <a href="/login" {...stylex.props(signupStyles.footerA)}>
-       <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+      <a href="/login" {...stylex.props(signupStyles.footerA)} title="Go to sign in">
+       <i className="fas fa-sign-in-alt" aria-hidden="true" style={{ marginLeft: '8px', marginRight: '4px' }} />
        Sign in!
       </a>
      </p>

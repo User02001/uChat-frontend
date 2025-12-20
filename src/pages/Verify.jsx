@@ -158,8 +158,8 @@ const Verify = () => {
 
  return (
   <div {...stylex.props(verifyStyles.container)}>
-   <canvas ref={canvasRef} {...stylex.props(verifyStyles.starCanvas)} />
-   <div {...stylex.props(verifyStyles.card)}>
+   <canvas ref={canvasRef} {...stylex.props(verifyStyles.starCanvas)} aria-hidden="true" />
+   <div {...stylex.props(verifyStyles.card)} role="region" aria-label="Email verification form">
     <div {...stylex.props(verifyStyles.header)}>
      <div {...stylex.props(verifyStyles.logoContainer)}>
       <Icon
@@ -170,7 +170,7 @@ const Verify = () => {
       />
      </div>
      <h1 {...stylex.props(verifyStyles.title)}>
-      <i className="fas fa-envelope-open" style={{ marginRight: '12px', color: 'orange' }}></i>
+      <i className="fas fa-envelope-open" style={{ marginRight: '12px', color: 'orange' }} aria-hidden="true"></i>
       Verify Your Email
      </h1>
 
@@ -189,15 +189,15 @@ const Verify = () => {
 
     <div {...stylex.props(verifyStyles.form)}>
      {error && (
-      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertError)}>
-       <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }}></i>
+      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertError)} role="alert">
+       <i className="fas fa-exclamation-circle" style={{ marginRight: '8px' }} aria-hidden="true"></i>
        {error}
       </div>
      )}
 
      {success && (
-      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertSuccess)}>
-       <i className="fas fa-check-circle" style={{ marginRight: '8px' }}></i>
+      <div {...stylex.props(verifyStyles.alert, verifyStyles.alertSuccess)} role="alert">
+       <i className="fas fa-check-circle" style={{ marginRight: '8px' }} aria-hidden="true"></i>
        {success}
       </div>
      )}
@@ -209,6 +209,12 @@ const Verify = () => {
       </div>
 
       <div {...stylex.props(verifyStyles.inputGroup)}>
+       <label
+        htmlFor="verificationCode"
+        style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px' }}
+       >
+        Verification code
+       </label>
        <div style={{ position: 'relative' }}>
         <input
          type="text"
@@ -222,14 +228,20 @@ const Verify = () => {
          required
          autoFocus
          {...stylex.props(verifyStyles.input)}
+         aria-invalid={!!error}
+         aria-describedby={error ? "verify-error" : "code-counter"}
         />
        </div>
-       <div style={{
-        fontSize: '12px',
-        color: verificationCode.length === 7 ? '#4caf50' : 'var(--text-secondary)',
-        marginTop: '4px',
-        textAlign: 'right'
-       }}>
+       <div
+        id="code-counter"
+        style={{
+         fontSize: '12px',
+         color: verificationCode.length === 7 ? '#4caf50' : 'var(--text-secondary)',
+         marginTop: '4px',
+         textAlign: 'right'
+        }}
+        aria-live="polite"
+       >
         {verificationCode.length}/7 digits
        </div>
       </div>
@@ -239,8 +251,9 @@ const Verify = () => {
         type="submit"
         {...stylex.props(verifyStyles.primaryBtn)}
         disabled={loading || verificationCode.length !== 7}
+        aria-label={loading ? "Verifying email" : "Verify email"}
        >
-        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
+        <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
         {loading ? 'Verifying...' : 'Verify Email'}
        </button>
       </div>
@@ -249,13 +262,14 @@ const Verify = () => {
        type="button"
        onClick={() => navigate('/chat')}
        {...stylex.props(verifyStyles.skipBtn)}
+       aria-label="Skip email verification and continue to chat"
       >
-       <i className="fas fa-arrow-right" style={{ marginRight: '8px' }}></i>
+       <i className="fas fa-arrow-right" style={{ marginRight: '8px' }} aria-hidden="true"></i>
        Skip verification for now
       </button>
      </form>
 
-     <div {...stylex.props(verifyStyles.divider)}>
+     <div {...stylex.props(verifyStyles.divider)} role="separator" aria-label="Or">
       <div {...stylex.props(verifyStyles.dividerLine)}></div>
       <span {...stylex.props(verifyStyles.dividerText)}>didn't receive the code?</span>
      </div>
@@ -265,8 +279,9 @@ const Verify = () => {
       onClick={handleResendCode}
       {...stylex.props(verifyStyles.resendBtn)}
       disabled={loading}
+      aria-label={loading ? "Sending verification code" : "Resend verification code"}
      >
-      <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'} style={{ marginRight: '8px' }}></i>
+      <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-paper-plane'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
       {loading ? 'Sending...' : 'Resend Code'}
      </button>
     </div>
@@ -275,7 +290,7 @@ const Verify = () => {
      <p {...stylex.props(verifyStyles.footerText)}>
       Remember your password?
       <a href="/login" {...stylex.props(verifyStyles.footerLink)}>
-       <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+       <i className="fas fa-sign-in-alt" style={{ marginLeft: '8px', marginRight: '4px' }} aria-hidden="true"></i>
        Back to Login
       </a>
      </p>

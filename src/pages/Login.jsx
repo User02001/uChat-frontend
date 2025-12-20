@@ -257,8 +257,8 @@ const Login = () => {
 
  return (
   <div {...stylex.props(loginStyles.loginContainer)}>
-   <canvas ref={canvasRef} {...stylex.props(loginStyles.starCanvas)} />
-   <div {...stylex.props(loginStyles.loginCard)}>
+   <canvas ref={canvasRef} {...stylex.props(loginStyles.starCanvas)} aria-hidden="true" />
+   <div {...stylex.props(loginStyles.loginCard)} role="region" aria-label="Login form">
     <div {...stylex.props(loginStyles.loginHeader)}>
      <div {...stylex.props(loginStyles.logoContainer)}>
       <Icon
@@ -271,7 +271,7 @@ const Login = () => {
      </div>
 
      <h1 {...stylex.props(loginStyles.headerTitle)}>
-      <i className="fas fa-sign-in-alt" style={{ marginRight: '12px', color: 'orange' }}></i>
+      <i className="fas fa-sign-in-alt" style={{ marginRight: '12px', color: 'orange' }} aria-hidden="true"></i>
       Welcome back!
      </h1>
 
@@ -294,7 +294,14 @@ const Login = () => {
 
     <div {...stylex.props(loginStyles.loginForm)}>
      <div>
-      <div {...stylex.props(loginStyles.progressIndicator, progressSpacingStyle(currentStep))}>
+      <div
+       {...stylex.props(loginStyles.progressIndicator, progressSpacingStyle(currentStep))}
+       role="progressbar"
+       aria-valuenow={currentStep + 1}
+       aria-valuemin="1"
+       aria-valuemax="2"
+       aria-label={`Step ${currentStep + 1} of 2`}
+      >
        {[0, 1].map((step) => (
         <div
          key={step}
@@ -303,6 +310,7 @@ const Login = () => {
           step === currentStep && loginStyles.progressDotActive,
           step < currentStep && loginStyles.progressDotCompleted
          )}
+         aria-current={step === currentStep ? "step" : undefined}
         />
        ))}
       </div>
@@ -316,7 +324,14 @@ const Login = () => {
        </div>
 
        <div className="inputGroup" {...stylex.props(loginStyles.inputGroup, inputGroupSpacingStyle(0))}>
+        <label
+         htmlFor="email-input"
+         style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px' }}
+        >
+         Email address
+        </label>
         <input
+         id="email-input"
          {...stylex.props(loginStyles.inputGroupInput)}
          type={steps[0].type}
          name={steps[0].field}
@@ -325,17 +340,22 @@ const Login = () => {
          placeholder={steps[0].placeholder}
          autoFocus
          autoComplete="email"
+         aria-invalid={!!(error || validationError)}
+         aria-describedby={error || validationError ? "email-error" : undefined}
         />
         {(error || validationError) && (
-         <div style={{
-          fontSize: '12px',
-          color: 'var(--error-text, #c53030)',
-          marginTop: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-         }}>
-          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+         <div
+          id="email-error"
+          role="alert"
+          style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '4px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
           {error || validationError}
          </div>
         )}
@@ -353,12 +373,14 @@ const Login = () => {
          className="oauthBtn"
          {...stylex.props(loginStyles.oauthBtn, loginStyles.google)}
          disabled={loading}
+         aria-label="Sign in with Google"
         >
          <img
           src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
-          alt="Google"
+          alt=""
           width="18"
           height="18"
+          aria-hidden="true"
          />
          Continue with Google
         </button>
@@ -371,7 +393,7 @@ const Login = () => {
          {...stylex.props(loginStyles.loginBtn, loginStyles.primary)}
          disabled={loading || !!validationError}
         >
-         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }}></i>
+         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
          {loading ? 'Checking...' : 'Continue'}
         </button>
        </div>
@@ -384,8 +406,15 @@ const Login = () => {
        </div>
 
        <div className="inputGroup" {...stylex.props(loginStyles.inputGroup, inputGroupSpacingStyle(1))}>
+        <label
+         htmlFor="password-input"
+         style={{ position: 'absolute', left: '-10000px', width: '1px', height: '1px' }}
+        >
+         Password
+        </label>
         <div style={{ position: 'relative' }}>
          <input
+          id="password-input"
           {...stylex.props(loginStyles.inputGroupInput)}
           type={steps[1].type}
           name={steps[1].field}
@@ -393,10 +422,13 @@ const Login = () => {
           onChange={handleInputChange}
           placeholder={steps[1].placeholder}
           autoFocus={currentStep === 1}
+          aria-invalid={!!(error || validationError)}
+          aria-describedby={error || validationError ? "password-error" : undefined}
          />
          <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
           style={{
            position: 'absolute',
            right: '12px',
@@ -409,20 +441,23 @@ const Login = () => {
            fontSize: '14px'
           }}
          >
-          <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'}></i>
+          <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true"></i>
          </button>
         </div>
 
         {(error || validationError) && (
-         <div style={{
-          fontSize: '12px',
-          color: 'var(--error-text, #c53030)',
-          marginTop: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-         }}>
-          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }}></i>
+         <div
+          id="password-error"
+          role="alert"
+          style={{
+           fontSize: '12px',
+           color: 'var(--error-text, #c53030)',
+           marginTop: '4px',
+           display: 'flex',
+           alignItems: 'center',
+           gap: '4px'
+          }}>
+          <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
           {error || validationError}
          </div>
         )}
@@ -448,7 +483,7 @@ const Login = () => {
          {...stylex.props(loginStyles.loginBtn, loginStyles.primary)}
          disabled={loading || !!validationError}
         >
-         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }}></i>
+         <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
          {loading ? 'Logging in...' : 'Login'}
         </button>
        </div>
@@ -460,11 +495,11 @@ const Login = () => {
      <p {...stylex.props(loginStyles.footerP)}>
       Don't have an account?
       <a href="/signup" {...stylex.props(loginStyles.footerA)}>
-       <i className="fas fa-user-plus" style={{ marginLeft: '8px', marginRight: '4px' }}></i>
+       <i className="fas fa-user-plus" style={{ marginLeft: '8px', marginRight: '4px' }} aria-hidden="true"></i>
        Sign up!
       </a>
      </p>
-    </div>
+     </div>
    </div>
   </div>
  );
