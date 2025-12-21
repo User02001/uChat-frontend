@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './Gifs.css';
+import React, { useState, useEffect, useRef } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GifsPickerModalStyles as styles } from "../styles/gifs_picker_modal";
 
-const Gifs = ({ onSelectGif, onClose }) => {
- const [searchQuery, setSearchQuery] = useState('');
+const GifsPickerModal = ({ onSelectGif, onClose }) => {
+ const [searchQuery, setSearchQuery] = useState("");
  const [gifs, setGifs] = useState([]);
  const [loading, setLoading] = useState(false);
  const [featured, setFeatured] = useState(true);
  const modalRef = useRef(null);
 
- const TENOR_BASE_URL = 'https://tenor.googleapis.com/v2';
- const TENOR_KEY = 'AIzaSyDMchXk1LmxF_UmEuiXV-HjkKNl40UDbjc'; // your real key
- const CLIENT_KEY = 'uChat'; // arbitrary name for your app
+ const TENOR_BASE_URL = "https://tenor.googleapis.com/v2";
+ const TENOR_KEY = "AIzaSyDMchXk1LmxF_UmEuiXV-HjkKNl40UDbjc";
+ const CLIENT_KEY = "uChat";
 
  useEffect(() => {
   loadTrendingGifs();
@@ -22,8 +23,8 @@ const Gifs = ({ onSelectGif, onClose }) => {
     onClose();
    }
   };
-  document.addEventListener('mousedown', handleClickOutside);
-  return () => document.removeEventListener('mousedown', handleClickOutside);
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
  }, [onClose]);
 
  const loadTrendingGifs = async () => {
@@ -32,12 +33,12 @@ const Gifs = ({ onSelectGif, onClose }) => {
    const response = await fetch(
     `${TENOR_BASE_URL}/featured?key=${TENOR_KEY}&client_key=${CLIENT_KEY}&limit=30`
    );
-   if (!response.ok) throw new Error('Bad response');
+   if (!response.ok) throw new Error("Bad response");
    const data = await response.json();
    setGifs(data.results || []);
    setFeatured(true);
   } catch (err) {
-   console.error('Failed to load trending GIFs:', err);
+   console.error("Failed to load trending GIFs:", err);
   } finally {
    setLoading(false);
   }
@@ -52,13 +53,15 @@ const Gifs = ({ onSelectGif, onClose }) => {
   setFeatured(false);
   try {
    const response = await fetch(
-    `${TENOR_BASE_URL}/search?q=${encodeURIComponent(query)}&key=${TENOR_KEY}&client_key=${CLIENT_KEY}&limit=30`
+    `${TENOR_BASE_URL}/search?q=${encodeURIComponent(
+     query
+    )}&key=${TENOR_KEY}&client_key=${CLIENT_KEY}&limit=30`
    );
-   if (!response.ok) throw new Error('Bad response');
+   if (!response.ok) throw new Error("Bad response");
    const data = await response.json();
    setGifs(data.results || []);
   } catch (err) {
-   console.error('Failed to search GIFs:', err);
+   console.error("Failed to search GIFs:", err);
   } finally {
    setLoading(false);
   }
@@ -79,54 +82,54 @@ const Gifs = ({ onSelectGif, onClose }) => {
  };
 
  return (
-  <div className="gif-picker-overlay">
-   <div className="gif-picker-modal" ref={modalRef}>
-    <div className="gif-picker-header">
-     <h3>{featured ? 'Trending GIFs' : 'Search Results'}</h3>
-     <button className="gif-picker-close" onClick={onClose}>
+  <div {...stylex.props(styles.overlay)}>
+   <div {...stylex.props(styles.modal)} ref={modalRef}>
+    <div {...stylex.props(styles.header)}>
+     <h3 {...stylex.props(styles.headerTitle)}>
+      {featured ? "Trending GIFs" : "Search Results"}
+     </h3>
+     <button {...stylex.props(styles.closeButton)} onClick={onClose} type="button">
       <i className="fas fa-times"></i>
      </button>
     </div>
 
-    <form className="gif-search-form" onSubmit={handleSearch}>
+    <form {...stylex.props(styles.searchForm)} onSubmit={handleSearch}>
      <input
       type="text"
       placeholder="Search for GIFs..."
       value={searchQuery}
       onChange={(e) => setSearchQuery(e.target.value)}
-      className="gif-search-input"
+      {...stylex.props(styles.searchInput)}
       autoFocus
      />
-     <button type="submit" className="gif-search-btn">
+     <button type="submit" {...stylex.props(styles.searchButton)}>
       <i className="fas fa-search"></i>
      </button>
     </form>
 
-    <div className="gif-grid-container">
+    <div {...stylex.props(styles.gridContainer)}>
      {loading ? (
-      <div className="gif-loading">
-       <div className="loading-spinner"></div>
+      <div {...stylex.props(styles.loadingEmptyWrap)}>
+       <div {...stylex.props(styles.spinner)}></div>
        <p>Loading GIFs...</p>
       </div>
      ) : gifs.length === 0 ? (
-      <div className="gif-empty">
+      <div {...stylex.props(styles.loadingEmptyWrap)}>
        <p>No GIFs found</p>
       </div>
      ) : (
-      <div className="gif-grid">
+      <div {...stylex.props(styles.grid)}>
        {gifs.map((gif) => (
         <div
          key={gif.id}
-         className="gif-item"
+         {...stylex.props(styles.gifItem)}
          onClick={() => handleGifClick(gif)}
         >
          <img
-          src={
-           gif.media_formats?.tinygif?.url ||
-           gif.media_formats?.gif?.url
-          }
-          alt={gif.content_description || 'GIF'}
+          src={gif.media_formats?.tinygif?.url || gif.media_formats?.gif?.url}
+          alt={gif.content_description || "GIF"}
           loading="lazy"
+          {...stylex.props(styles.gifImg)}
          />
         </div>
        ))}
@@ -134,7 +137,7 @@ const Gifs = ({ onSelectGif, onClose }) => {
      )}
     </div>
 
-    <div className="gif-picker-footer">
+    <div {...stylex.props(styles.footer)}>
      <span>Powered by Tenor</span>
     </div>
    </div>
@@ -142,4 +145,4 @@ const Gifs = ({ onSelectGif, onClose }) => {
  );
 };
 
-export default Gifs;
+export default GifsPickerModal;

@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { API_BASE_URL } from '../config';
-import styles from './MediaViewer.module.css';
-import VideoPlayer from './VideoPlayer';
+import React, { useState, useRef, useEffect } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { API_BASE_URL } from "../config";
+import { MediaViewerStyles as styles } from "../styles/media_viewer";
+import VideoPlayer from "./VideoPlayer";
 
 const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  const [scale, setScale] = useState(1);
@@ -10,21 +11,22 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
  const [isDownloading, setIsDownloading] = useState(false);
  const [showHeader, setShowHeader] = useState(true);
+
  const containerRef = useRef(null);
+ const overlayRef = useRef(null);
  const audioRef = useRef(null);
  const headerTimeoutRef = useRef(null);
  const videoPlayerRef = useRef(null);
 
- const mediaUrl = media.url.startsWith('http') ? media.url : `${API_BASE_URL}${media.url}`;
- const isVideo = media.type === 'video' || /\.(mp4|webm|ogg|mov)$/i.test(media.url);
- const isAudio = media.type === 'audio' || /\.(mp3|wav|ogg|m4a|aac)$/i.test(media.url);
+ const mediaUrl = media.url.startsWith("http") ? media.url : `${API_BASE_URL}${media.url}`;
+ const isVideo = media.type === "video" || /\.(mp4|webm|ogg|mov)$/i.test(media.url);
+ const isAudio = media.type === "audio" || /\.(mp3|wav|ogg|m4a|aac)$/i.test(media.url);
  const isImage = !isVideo && !isAudio;
 
  const handleClose = () => {
-  const overlay = document.querySelector(`.${styles.mediaViewerOverlay}`);
-  if (overlay) {
-   overlay.style.transition = 'opacity 0.3s ease';
-   overlay.style.opacity = '0';
+  if (overlayRef.current) {
+   overlayRef.current.style.transition = "opacity 0.3s ease";
+   overlayRef.current.style.opacity = "0";
   }
 
   setTimeout(() => {
@@ -41,10 +43,10 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
 
  useEffect(() => {
   const handleKeyDown = (e) => {
-   if (e.key === 'Escape') handleClose();
+   if (e.key === "Escape") handleClose();
   };
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
+  window.addEventListener("keydown", handleKeyDown);
+  return () => window.removeEventListener("keydown", handleKeyDown);
  }, [onClose]);
 
  const handleMouseMove = () => {
@@ -72,7 +74,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
   setIsDragging(true);
   setDragStart({
    x: e.clientX - position.x,
-   y: e.clientY - position.y
+   y: e.clientY - position.y,
   });
  };
 
@@ -80,7 +82,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
   if (!isDragging) return;
   setPosition({
    x: e.clientX - dragStart.x,
-   y: e.clientY - dragStart.y
+   y: e.clientY - dragStart.y,
   });
  };
 
@@ -94,7 +96,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
   setIsDragging(true);
   setDragStart({
    x: touch.clientX - position.x,
-   y: touch.clientY - position.y
+   y: touch.clientY - position.y,
   });
  };
 
@@ -103,7 +105,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
   const touch = e.touches[0];
   setPosition({
    x: touch.clientX - dragStart.x,
-   y: touch.clientY - dragStart.y
+   y: touch.clientY - dragStart.y,
   });
  };
 
@@ -112,7 +114,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  };
 
  const handleZoomIn = () => {
-  setScale(prev => Math.min(prev + 0.5, 5));
+  setScale((prev) => Math.min(prev + 0.5, 5));
  };
 
  const handleZoomOut = () => {
@@ -134,7 +136,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
    const response = await fetch(mediaUrl);
    const blob = await response.blob();
    const url = window.URL.createObjectURL(blob);
-   const a = document.createElement('a');
+   const a = document.createElement("a");
    a.href = url;
    a.download = media.name || `download.${media.type}`;
    document.body.appendChild(a);
@@ -142,7 +144,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
    window.URL.revokeObjectURL(url);
    document.body.removeChild(a);
   } catch (error) {
-   console.error('Download failed:', error);
+   console.error("Download failed:", error);
   } finally {
    setIsDownloading(false);
   }
@@ -150,66 +152,78 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
 
  useEffect(() => {
   if (isDragging) {
-   window.addEventListener('mousemove', handleMouseMove2);
-   window.addEventListener('mouseup', handleMouseUp);
-   window.addEventListener('touchmove', handleTouchMove);
-   window.addEventListener('touchend', handleTouchEnd);
+   window.addEventListener("mousemove", handleMouseMove2);
+   window.addEventListener("mouseup", handleMouseUp);
+   window.addEventListener("touchmove", handleTouchMove);
+   window.addEventListener("touchend", handleTouchEnd);
 
    return () => {
-    window.removeEventListener('mousemove', handleMouseMove2);
-    window.removeEventListener('mouseup', handleMouseUp);
-    window.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleTouchEnd);
+    window.removeEventListener("mousemove", handleMouseMove2);
+    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener("touchmove", handleTouchMove);
+    window.removeEventListener("touchend", handleTouchEnd);
    };
   }
  }, [isDragging, dragStart]);
 
  return (
   <div
-   className={styles.mediaViewerOverlay}
+   ref={overlayRef}
+   {...stylex.props(styles.mediaViewerOverlay)}
    onClick={handleClose}
    onMouseMove={handleMouseMove}
   >
-   <div className={styles.mediaViewerContainer} onClick={(e) => e.stopPropagation()}>
-    {/* Floating Header */}
-    <div className={`${styles.mediaViewerHeader} ${showHeader ? styles.mediaViewerHeaderVisible : ''}`}>
-     <div className={styles.mediaViewerTitle}>
-      {media.name || 'Media'}
-     </div>
-     <div className={styles.mediaViewerActions}>
+   <div
+    {...stylex.props(styles.mediaViewerContainer)}
+    onClick={(e) => e.stopPropagation()}
+   >
+    <div
+     {...stylex.props(
+      styles.mediaViewerHeader,
+      showHeader && styles.mediaViewerHeaderVisible
+     )}
+    >
+     <div {...stylex.props(styles.mediaViewerTitle)}>{media.name || "Media"}</div>
+
+     <div {...stylex.props(styles.mediaViewerActions)}>
       {isImage && (
        <>
         <button
-         className={styles.mediaViewerBtn}
+         {...stylex.props(styles.mediaViewerBtn)}
          onClick={handleZoomOut}
          disabled={scale <= 0.5}
          title="Zoom out"
+         type="button"
         >
          <i className="fas fa-search-minus"></i>
         </button>
         <button
-         className={styles.mediaViewerBtn}
+         {...stylex.props(styles.mediaViewerBtn)}
          onClick={handleZoomIn}
          disabled={scale >= 5}
          title="Zoom in"
+         type="button"
         >
          <i className="fas fa-search-plus"></i>
         </button>
         <button
-         className={styles.mediaViewerBtn}
+         {...stylex.props(styles.mediaViewerBtn)}
          onClick={handleReset}
          disabled={scale === 1 && position.x === 0 && position.y === 0}
          title="Reset zoom"
+         type="button"
         >
          <i className="fas fa-undo"></i>
         </button>
        </>
       )}
+
       <button
-       className={styles.mediaViewerBtn}
+       {...stylex.props(styles.mediaViewerBtn)}
        onClick={handleDownload}
        disabled={isDownloading}
        title="Download"
+       type="button"
       >
        {isDownloading ? (
         <i className="fas fa-spinner fa-spin"></i>
@@ -217,10 +231,12 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
         <i className="fas fa-download"></i>
        )}
       </button>
+
       <button
-       className={styles.mediaViewerBtnClose}
+       {...stylex.props(styles.mediaViewerBtnClose)}
        onClick={handleClose}
        title="Close"
+       type="button"
       >
        <i className="fas fa-times"></i>
       </button>
@@ -228,14 +244,14 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
     </div>
 
     <div
-     className={styles.mediaViewerContent}
+     {...stylex.props(styles.mediaViewerContent)}
      ref={containerRef}
      onWheel={handleWheel}
      onMouseDown={handleMouseDown}
      onTouchStart={handleTouchStart}
     >
      {isVideo && (
-      <div className={styles.mediaViewerVideoWrapper}>
+      <div {...stylex.props(styles.mediaViewerVideoWrapper)}>
        <VideoPlayer
         ref={videoPlayerRef}
         src={mediaUrl}
@@ -247,38 +263,40 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
      )}
 
      {isAudio && (
-      <div className={styles.mediaViewerAudioWrapper}>
-       <div className={styles.mediaViewerAudioIcon}>
+      <div {...stylex.props(styles.mediaViewerAudioWrapper)}>
+       <div {...stylex.props(styles.mediaViewerAudioIcon)}>
         <i className="fas fa-music"></i>
        </div>
-       <div className={styles.mediaViewerAudioInfo}>
-        <h3>{media.name || 'Audio File'}</h3>
-        <p>Playing audio...</p>
+
+       <div {...stylex.props(styles.mediaViewerAudioInfo)}>
+        <h3 {...stylex.props(styles.mediaViewerAudioInfoTitle)}>
+         {media.name || "Audio File"}
+        </h3>
+        <p {...stylex.props(styles.mediaViewerAudioInfoSubtitle)}>Playing audio...</p>
        </div>
+
        <audio
         ref={audioRef}
         src={mediaUrl}
         controls
         autoPlay
-        className={styles.mediaViewerAudio}
+        {...stylex.props(styles.mediaViewerAudio)}
        />
       </div>
      )}
 
      {isImage && (
       <div
-       className={styles.mediaViewerImageWrapper}
-       style={{
-        cursor: scale > 1 ? 'grab' : 'default'
-       }}
+       {...stylex.props(styles.mediaViewerImageWrapper)}
+       style={{ cursor: scale > 1 ? "grab" : "default" }}
       >
        <img
         src={mediaUrl}
-        alt={media.name || 'Media'}
-        className={styles.mediaViewerImage}
+        alt={media.name || "Media"}
+        {...stylex.props(styles.mediaViewerImage)}
         style={{
          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-         cursor: isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default')
+         cursor: isDragging ? "grabbing" : scale > 1 ? "grab" : "default",
         }}
         draggable={false}
        />
@@ -287,7 +305,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
     </div>
 
     {isImage && scale > 1 && (
-     <div className={styles.mediaViewerZoomIndicator}>
+     <div {...stylex.props(styles.mediaViewerZoomIndicator)}>
       {Math.round(scale * 100)}%
      </div>
     )}

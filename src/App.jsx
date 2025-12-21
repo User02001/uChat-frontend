@@ -11,14 +11,13 @@ import MessagesSkeleton from "./components/MessagesSkeleton";
 import ContactsSkeleton from "./components/ContactsSkeleton";
 import Reaction from "./components/Reaction";
 import ReactionMore from "./components/ReactionMore";
-import DeleteModal from "./components/DeleteModal";
+import DeleteMessageConfirmationModal from "./components/DeleteMessageConfirmationModal";
 import ReportModal from "./components/ReportModal";
 import VerificationModal from "./components/VerificationModal";
-import UnverifiedModal from "./components/UnverifiedModal";
+import UnverifiedUserWarningModal from "./components/UnverifiedUserWarningModal";
 import linkify from "./hooks/linkify.jsx";
-import Gifs from "./components/Gifs";
+import GifsPickerModal from "./components/GifsPickerModal";
 import ProfileModal from "./components/ProfileModal";
-import MessageOptions from "./components/MessageOptions";
 import MessageOptionsPhone from "./components/MessageOptionsPhone";
 import styles from "./index.module.css";
 import "./pages/downloads-recommend.css";
@@ -80,13 +79,13 @@ const App = () => {
   reactionPopupPosition, setReactionPopupPosition,
   socketConnected, setSocketConnected,
   reconnectAttempts, setReconnectAttempts,
-  showGifPicker, setShowGifPicker,
+  showGifsPickerModal, setShowGifsPickerModal,
   dragOver, setDragOver,
   deleteConfirm, setDeleteConfirm,
   showDownloadRecommendation, setShowDownloadRecommendation,
   sessionDismissed, setSessionDismissed,
   showVerificationBanner, setShowVerificationBanner,
-  showUnverifiedModal, setShowUnverifiedModal,
+  showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal,
   isOffline, setIsOffline,
   callMinimized, setCallMinimized,
   screenshareMinimized, setScreenshareMinimized,
@@ -1049,7 +1048,7 @@ const App = () => {
                className={styles.unverifiedIcon}
                onClick={(e) => {
                 e.stopPropagation();
-                setShowUnverifiedModal(contact.username);
+                setShowUnverifiedUserWarningModal(contact.username);
                }}
                title="Unverified user"
               />
@@ -1118,7 +1117,23 @@ const App = () => {
          <div {...stylex.props(chatStyles.chatUserInfo)}>
           <div {...stylex.props(chatStyles.chatUsernameContainer)}>
            <span {...stylex.props(chatStyles.chatUsername)}>
-            {activeContact.username}
+            <span
+             className="username-text"
+             ref={(el) => {
+              if (el && el.parentElement) {
+               const overflow = el.scrollWidth - el.parentElement.clientWidth;
+               if (overflow > 0) {
+                el.style.setProperty('--scroll-distance', `-${overflow}px`);
+                el.style.animation = 'marqueeScroll 3s linear 1s infinite';
+               } else {
+                el.style.animation = 'none';
+               }
+              }
+             }}
+             {...stylex.props(chatStyles.chatUsernameText)}
+            >
+             {activeContact.username}
+            </span>
            </span>
            {!activeContact.is_verified && (
             <Icon
@@ -1126,7 +1141,7 @@ const App = () => {
              alt="Unverified"
              {...stylex.props(chatStyles.chatUnverifiedIcon)}
              onClick={() =>
-              setShowUnverifiedModal(activeContact.username)
+              setShowUnverifiedUserWarningModal(activeContact.username)
              }
              title="Unverified user - Click for more info"
             />
@@ -1139,11 +1154,27 @@ const App = () => {
            )}
           </div>
           <span {...stylex.props(chatStyles.chatStatus)}>
-           {userStatuses[activeContact.id] === "online"
-            ? "Available Now"
-            : userStatuses[activeContact.id] === "away"
-             ? formatInactiveTime(activeContact.last_seen)
-             : formatLastSeen(activeContact.last_seen)}
+           <span
+            className="status-text"
+            ref={(el) => {
+             if (el && el.parentElement) {
+              const overflow = el.scrollWidth - el.parentElement.clientWidth;
+              if (overflow > 0) {
+               el.style.setProperty('--scroll-distance', `-${overflow}px`);
+               el.style.animation = 'marqueeScroll 3s linear 1s infinite';
+              } else {
+               el.style.animation = 'none';
+              }
+             }
+            }}
+            {...stylex.props(chatStyles.chatStatusText)}
+           >
+            {userStatuses[activeContact.id] === "online"
+             ? "Available Now"
+             : userStatuses[activeContact.id] === "away"
+              ? formatInactiveTime(activeContact.last_seen)
+              : formatLastSeen(activeContact.last_seen)}
+           </span>
           </span>
          </div>
          <div className="call-buttons">
@@ -1252,8 +1283,8 @@ const App = () => {
               }}>
                <em>
                 {message.sender_id === user.id
-                 ? "You have DELETED this message."
-                 : "This message has been DELETED."}
+                 ? "You have deleted this message."
+                 : "This message has been deleted."}
                </em>
               </div>
              ) : message.message_type === "image" ? (
@@ -1295,7 +1326,7 @@ const App = () => {
 
          <div ref={messagesEndRef} />
          {deleteConfirm && (
-          <DeleteModal
+          <DeleteMessageConfirmationModal
            message={deleteConfirm}
            onClose={() => setDeleteConfirm(null)}
            onConfirm={async (messageId) => {
@@ -1377,7 +1408,7 @@ const App = () => {
           <button
            type="button"
            {...stylex.props(inputStyles.gifButton)}
-           onClick={() => setShowGifPicker(true)}
+           onClick={() => setShowGifsPickerModal(true)}
            title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
            disabled={isOffline}
           >
@@ -1597,10 +1628,10 @@ const App = () => {
        </div>
       </div>
      )}
-     {showUnverifiedModal && (
-      <UnverifiedModal
-       username={showUnverifiedModal}
-       onClose={() => setShowUnverifiedModal(null)}
+     {showUnverifiedUserWarningModal && (
+      <UnverifiedUserWarningModal
+       username={showUnverifiedUserWarningModal}
+       onClose={() => setShowUnverifiedUserWarningModal(null)}
       />
      )}
      <audio ref={ringtoneRef} preload="none">
@@ -1615,8 +1646,8 @@ const App = () => {
      </audio>
     </div>
    </div>
-   {showGifPicker && (
-    <Gifs
+   {showGifsPickerModal && (
+    <GifsPickerModal
      onSelectGif={(gifUrl) => {
       if (socketRef.current && activeContact) {
        socketRef.current.emit("send_message", {
@@ -1627,7 +1658,7 @@ const App = () => {
        setReplyingTo(null);
       }
      }}
-     onClose={() => setShowGifPicker(false)}
+     onClose={() => setShowGifsPickerModal(false)}
     />
    )}
    {showProfileModal && (

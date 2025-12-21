@@ -1,6 +1,10 @@
 import React from 'react';
 
 const GifMessage = ({ message, onOpenViewer }) => {
+ const maxWidth = 300;
+ const imageWidth = message.media_width || 300;
+ const imageHeight = message.media_height || 300;
+
  return (
   <div
    onClick={() => onOpenViewer({
@@ -12,12 +16,10 @@ const GifMessage = ({ message, onOpenViewer }) => {
     cursor: 'pointer',
     margin: '8px 0',
     position: 'relative',
-    width: message.media_width && message.media_height
-     ? `${Math.min(message.media_width, 500)}px`
-     : '300px',
-    height: message.media_width && message.media_height
-     ? `${Math.min(message.media_width, 500) * (message.media_height / message.media_width)}px`
-     : '300px',
+    width: '100%',
+    maxWidth: `${maxWidth}px`,
+    aspectRatio: message.media_width && message.media_height ? `${imageWidth} / ${imageHeight}` : undefined,
+    height: message.media_width && message.media_height ? undefined : '260px',
     background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
     backgroundSize: '200% 100%',
     animation: 'skeletonLoading 1.5s infinite',

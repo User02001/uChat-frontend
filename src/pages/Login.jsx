@@ -375,12 +375,11 @@ const Login = () => {
          disabled={loading}
          aria-label="Sign in with Google"
         >
-         <img
-          src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
+         <Icon
+          name="google_logo"
           alt=""
-          width="18"
-          height="18"
           aria-hidden="true"
+          style={{ width: '16px', height: '16px', marginTop: '-1px' }}
          />
          Continue with Google
         </button>
@@ -394,7 +393,7 @@ const Login = () => {
          disabled={loading || !!validationError}
         >
          <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
-         {loading ? 'Checking...' : 'Continue'}
+         {loading ? 'Loading...' : 'Continue'}
         </button>
        </div>
       </div>

@@ -40,13 +40,13 @@ export const useAppLogic = () => {
  const [reactionPopupPosition, setReactionPopupPosition] = useState({ x: 0, y: 0 });
  const [socketConnected, setSocketConnected] = useState(false);
  const [reconnectAttempts, setReconnectAttempts] = useState(0);
- const [showGifPicker, setShowGifPicker] = useState(false);
+ const [showGifsPickerModal, setShowGifsPickerModal] = useState(false);
  const [dragOver, setDragOver] = useState(false);
  const [deleteConfirm, setDeleteConfirm] = useState(null);
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
  const [sessionDismissed, setSessionDismissed] = useState(false);
  const [showVerificationBanner, setShowVerificationBanner] = useState(false);
- const [showUnverifiedModal, setShowUnverifiedModal] = useState(null);
+ const [showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal] = useState(null);
  const [isOffline, setIsOffline] = useState(false);
  const [callMinimized, setCallMinimized] = useState(false);
  const [screenshareMinimized, setScreenshareMinimized] = useState(false);
@@ -124,8 +124,7 @@ export const useAppLogic = () => {
    } else {
     navigate("/login", { replace: true });
    }
-  } catch (error) {
-   console.error("Auth check failed:", error);
+  } catch (err) {
    navigate("/login", { replace: true });
   }
  }, [navigate]);
@@ -153,7 +152,6 @@ export const useAppLogic = () => {
   socketRef.current = socket;
 
   socket.on("connect", () => {
-   console.log('[SOCKET] Connected to server');
    setSocketConnected(true);
    setReconnectAttempts(0);
 
@@ -168,7 +166,6 @@ export const useAppLogic = () => {
 
    // CRITICAL: Manually trigger call listeners setup
    if (window.__setupCallListeners) {
-    console.log('[SOCKET] Triggering call listeners setup');
     window.__setupCallListeners();
    }
   });
@@ -189,14 +186,12 @@ export const useAppLogic = () => {
    // Update user statuses map
    setUserStatuses((prev) => ({
     ...prev,
-    [data.user_id]: data.status
+    [data.user_id]: data.status,
    }));
 
    setOnlineUsers((prev) => {
     if (data.status === "online" || data.status === "away") {
-     return [...prev, data.user_id].filter(
-      (id, index, arr) => arr.indexOf(id) === index
-     );
+     return [...prev, data.user_id].filter((id, index, arr) => arr.indexOf(id) === index);
     } else {
      return prev.filter((id) => id !== data.user_id);
     }
@@ -206,17 +201,13 @@ export const useAppLogic = () => {
    if (data.last_seen) {
     setContacts((prev) =>
      prev.map((contact) =>
-      contact.id === data.user_id
-       ? { ...contact, last_seen: data.last_seen }
-       : contact
+      contact.id === data.user_id ? { ...contact, last_seen: data.last_seen } : contact
      )
     );
 
     // Also update active contact if it's the same user
     setActiveContact((prev) =>
-     prev && prev.id === data.user_id
-      ? { ...prev, last_seen: data.last_seen }
-      : prev
+     prev && prev.id === data.user_id ? { ...prev, last_seen: data.last_seen } : prev
     );
    }
   });
@@ -229,10 +220,8 @@ export const useAppLogic = () => {
    if (
     currentActiveContact &&
     currentUser &&
-    (
-     (message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
-     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id)
-    )
+    ((message.sender_id === currentActiveContact.id && message.receiver_id === currentUser.id) ||
+     (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))
    ) {
     setMessages((prev) => {
      const exists = prev.some((m) => m.id === message.id);
@@ -258,7 +247,7 @@ export const useAppLogic = () => {
    handleMessageNotification(message);
   });
 
-  socket.on('messages_loaded', (data) => {
+  socket.on("messages_loaded", (data) => {
    const { messages: newMessages, has_more, contact_id } = data;
 
    if (socketRef.current._loadingTimer) {
@@ -310,7 +299,6 @@ export const useAppLogic = () => {
    const message = data.message;
 
    // Message is already decrypted by server
-
    if (!currentActiveContact || currentActiveContact.id !== message.sender_id) {
     handleMessageNotification(message);
    }
@@ -327,10 +315,7 @@ export const useAppLogic = () => {
        file_path: null,
        file_name: null,
       };
-     } else if (
-      m.original_message &&
-      m.original_message.id === data.message_id
-     ) {
+     } else if (m.original_message && m.original_message.id === data.message_id) {
       return {
        ...m,
        original_message: {
@@ -373,14 +358,12 @@ export const useAppLogic = () => {
        lastMessage: data.lastMessage,
        lastMessageTime: data.lastMessageTime,
        last_seen: data.last_seen || contact.last_seen,
-       unread: isActive ? false : (data.unread || false),
+       unread: isActive ? false : data.unread || false,
        username: data.username || contact.username,
        avatar_url: data.avatar_url || contact.avatar_url,
        handle: data.handle || contact.handle,
        is_verified:
-        data.is_verified !== undefined
-         ? data.is_verified
-         : contact.is_verified,
+        data.is_verified !== undefined ? data.is_verified : contact.is_verified,
       };
      }
      return contact;
@@ -436,17 +419,17 @@ export const useAppLogic = () => {
    }));
   });
 
-  socket.on('new_warning', () => {
+  socket.on("new_warning", () => {
    setShowWarning(true);
   });
 
-  socket.on('account_banned', (data) => {
+  socket.on("account_banned", (data) => {
    setError(`Your account has been banned: ${data.reason}`);
    setTimeout(() => {
     if (socketRef.current) {
      socketRef.current.disconnect();
     }
-    window.location.href = '/login';
+    window.location.href = "/login";
    }, 3000);
   });
  }, []);
@@ -469,8 +452,7 @@ export const useAppLogic = () => {
    } else if (response.status === 401) {
     navigate("/login", { replace: true });
    }
-  } catch (error) {
-   console.error("Failed to load contacts:", error);
+  } catch (err) {
    setContactsLoading(false);
   }
  }, [navigate]);
@@ -479,7 +461,6 @@ export const useAppLogic = () => {
   if (!socketRef.current) return;
 
   if (!beforeId && messageCacheRef.current[contactId]) {
-   console.log('Loading from cache for contact:', contactId);
    setMessages(messageCacheRef.current[contactId]);
    setIsLoadingMessages(false);
 
@@ -489,7 +470,7 @@ export const useAppLogic = () => {
     socketRef.current.emit("load_messages", {
      contact_id: contactId,
      before_id: null,
-     limit: 30
+     limit: 30,
     });
    } else {
     const onConnectOnce = () => {
@@ -497,7 +478,7 @@ export const useAppLogic = () => {
      socketRef.current.emit("load_messages", {
       contact_id: contactId,
       before_id: null,
-      limit: 30
+      limit: 30,
      });
      socketRef.current.off("connect", onConnectOnce);
     };
@@ -525,7 +506,7 @@ export const useAppLogic = () => {
    socketRef.current.emit("load_messages", {
     contact_id: contactId,
     before_id: beforeId,
-    limit: 30
+    limit: 30,
    });
   } else {
    const onConnectOnce = () => {
@@ -535,7 +516,7 @@ export const useAppLogic = () => {
     socketRef.current.emit("load_messages", {
      contact_id: contactId,
      before_id: beforeId,
-     limit: 30
+     limit: 30,
     });
     socketRef.current.off("connect", onConnectOnce);
    };
@@ -552,22 +533,22 @@ export const useAppLogic = () => {
 
  const handleSubmitReport = async (messageId, category) => {
   if (!socketRef.current) {
-   setError('Not connected to server');
+   setError("Not connected to server");
    return;
   }
 
-  socketRef.current.emit('report_message', {
+  socketRef.current.emit("report_message", {
    message_id: messageId,
-   category: category
+   category: category,
   });
 
   // Listen for confirmation
-  socketRef.current.once('report_submitted', (data) => {
+  socketRef.current.once("report_submitted", (data) => {
    setError(data.message); // Use error toast to show success message
-   setTimeout(() => setError(''), 3000);
+   setTimeout(() => setError(""), 3000);
   });
 
-  socketRef.current.once('report_error', (data) => {
+  socketRef.current.once("report_error", (data) => {
    setError(data.error);
   });
  };
@@ -575,7 +556,7 @@ export const useAppLogic = () => {
  const checkForWarnings = useCallback(async () => {
   try {
    const res = await fetch(`${API_BASE_URL}/api/warnings/active`, {
-    credentials: 'include'
+    credentials: "include",
    });
    if (res.ok) {
     const data = await res.json();
@@ -583,86 +564,87 @@ export const useAppLogic = () => {
      setShowWarning(true);
     }
    }
-  } catch (error) {
-   console.error('Failed to check warnings:', error);
+  } catch (err) {
+   // no-op
   }
  }, []);
 
  // Search for users
- const searchUsers = useCallback(async (query) => {
-  if (!query.trim()) {
-   setSearchResults([]);
-   return;
-  }
-
-  try {
-   const response = await fetch(
-    `${API_BASE_URL}/api/search_users?q=${encodeURIComponent(query)}`,
-    {
-     credentials: "include",
-    }
-   );
-
-   if (response.ok) {
-    const data = await response.json();
-    setSearchResults(data.users);
-   } else if (response.status === 401) {
-    navigate("/login", { replace: true });
+ const searchUsers = useCallback(
+  async (query) => {
+   if (!query.trim()) {
+    setSearchResults([]);
+    return;
    }
-  } catch (error) {
-   console.error("Search failed:", error);
-  }
- }, [navigate]);
 
- const addContact = useCallback(async (userId) => {
-  try {
-   const response = await fetch(
-    `${API_BASE_URL}/api/add_contact/${userId}`,
-    {
+   try {
+    const response = await fetch(
+     `${API_BASE_URL}/api/search_users?q=${encodeURIComponent(query)}`,
+     {
+      credentials: "include",
+     }
+    );
+
+    if (response.ok) {
+     const data = await response.json();
+     setSearchResults(data.users);
+    } else if (response.status === 401) {
+     navigate("/login", { replace: true });
+    }
+   } catch (err) {
+    // no-op
+   }
+  },
+  [navigate]
+ );
+
+ const addContact = useCallback(
+  async (userId) => {
+   try {
+    const response = await fetch(`${API_BASE_URL}/api/add_contact/${userId}`, {
      method: "POST",
      credentials: "include",
+    });
+
+    if (response.ok) {
+     const data = await response.json();
+     const contact = data.contact;
+
+     // Contact data is already decrypted by server
+     setContacts((prev) => [...prev, contact]);
+     setSearchResults([]);
+     setSearchQuery("");
+    } else if (response.status === 401) {
+     navigate("/login", { replace: true });
+    } else {
+     const errorData = await response.json();
+     setError(errorData.error);
     }
-   );
-
-   if (response.ok) {
-    const data = await response.json();
-    const contact = data.contact;
-
-    // Contact data is already decrypted by server
-    setContacts((prev) => [...prev, contact]);
-    setSearchResults([]);
-    setSearchQuery("");
-   } else if (response.status === 401) {
-    navigate("/login", { replace: true });
-   } else {
-    const errorData = await response.json();
-    setError(errorData.error);
+   } catch (err) {
+    setError("Failed to add contact");
    }
-  } catch (error) {
-   console.error("Failed to add contact:", error);
-   setError("Failed to add contact");
-  }
- }, [navigate]);
+  },
+  [navigate]
+ );
 
  const handleSetStatus = async (status) => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/set-status`, {
-    method: 'POST',
-    credentials: 'include',
+    method: "POST",
+    credentials: "include",
     headers: {
-     'Content-Type': 'application/json'
+     "Content-Type": "application/json",
     },
-    body: JSON.stringify({ status: status === 'online' ? null : status })
+    body: JSON.stringify({ status: status === "online" ? null : status }),
    });
 
    if (response.ok) {
     const data = await response.json();
     setUserForcedStatus(data.forced_status);
-    setUser(prev => ({ ...prev, forced_status: data.forced_status }));
+    setUser((prev) => ({ ...prev, forced_status: data.forced_status }));
    }
-  } catch (error) {
-   console.error('Failed to set status:', error);
-   setError('Failed to update status');
+  } catch (err) {
+   setError("Failed to update status");
   }
  };
 
@@ -676,11 +658,7 @@ export const useAppLogic = () => {
      });
     }
 
-    setContacts((prev) =>
-     prev.map((c) =>
-      c.id === contact.id ? { ...c, unread: false } : c
-     )
-    );
+    setContacts((prev) => prev.map((c) => (c.id === contact.id ? { ...c, unread: false } : c)));
 
     // CLEAR MESSAGES FIRST - IMPORTANT!
     setMessages([]);
@@ -806,8 +784,7 @@ export const useAppLogic = () => {
    const newValue = e.target.value;
    setMessageText(newValue);
 
-   if (!activeContact || !socketRef.current || !socketRef.current.connected)
-    return;
+   if (!activeContact || !socketRef.current || !socketRef.current.connected) return;
 
    if (typingTimeoutRef.current) {
     clearTimeout(typingTimeoutRef.current);
@@ -818,7 +795,7 @@ export const useAppLogic = () => {
 
    if (shouldBeTyping) {
     // Only emit typing event if cooldown has passed
-    if (!isTyping || (now - lastTypingEmit.current) > typingEmitCooldown) {
+    if (!isTyping || now - lastTypingEmit.current > typingEmitCooldown) {
      setIsTyping(true);
      lastTypingEmit.current = now;
      socketRef.current.emit("typing", {
@@ -862,25 +839,27 @@ export const useAppLogic = () => {
    }
 
    navigate("/login", { replace: true });
-  } catch (error) {
-   console.error("Logout failed:", error);
+  } catch (err) {
    navigate("/login", { replace: true });
   }
  }, [navigate]);
 
  // Save last contact to localStorage
- const saveLastContact = useCallback((contact) => {
-  if (!isMobile && contact) {
-   localStorage.setItem(
-    "lastSelectedContact",
-    JSON.stringify({
-     id: contact.id,
-     username: contact.username,
-     avatar_url: contact.avatar_url,
-    })
-   );
-  }
- }, [isMobile]);
+ const saveLastContact = useCallback(
+  (contact) => {
+   if (!isMobile && contact) {
+    localStorage.setItem(
+     "lastSelectedContact",
+     JSON.stringify({
+      id: contact.id,
+      username: contact.username,
+      avatar_url: contact.avatar_url,
+     })
+    );
+   }
+  },
+  [isMobile]
+ );
 
  // Load last contact from localStorage
  const loadLastContact = useCallback(() => {
@@ -890,8 +869,8 @@ export const useAppLogic = () => {
     if (saved) {
      return JSON.parse(saved);
     }
-   } catch (error) {
-    console.error("Failed to load last contact:", error);
+   } catch (err) {
+    // no-op
    }
   }
   return null;
@@ -909,25 +888,17 @@ export const useAppLogic = () => {
   const currentUser = userRef.current;
 
   if (message.sender_id !== currentUser?.id) {
-   const senderName =
-    message.sender_username || message.username || "Unknown User";
-   const avatarFromMessage =
-    message.sender_avatar || message.avatar_url || message.avatar;
+   const senderName = message.sender_username || message.username || "Unknown User";
+   const avatarFromMessage = message.sender_avatar || message.avatar_url || message.avatar;
    let senderAvatarUrl = avatarFromMessage;
 
    if (!senderAvatarUrl) {
     const currentContacts = contactsRef.current;
-    const senderContact = currentContacts.find(
-     (contact) => contact.id === message.sender_id
-    );
-    senderAvatarUrl =
-     senderContact?.avatar_url || senderContact?.avatar || null;
+    const senderContact = currentContacts.find((contact) => contact.id === message.sender_id);
+    senderAvatarUrl = senderContact?.avatar_url || senderContact?.avatar || null;
    }
 
-   if (
-    window.AndroidBridge &&
-    typeof window.AndroidBridge.postMessage === "function"
-   ) {
+   if (window.AndroidBridge && typeof window.AndroidBridge.postMessage === "function") {
     try {
      window.AndroidBridge.postMessage(
       JSON.stringify({
@@ -949,7 +920,7 @@ export const useAppLogic = () => {
       })
      );
     } catch (e) {
-     console.error("[Android] Failed to send notification:", e);
+     // no-op
     }
    } else if (window.require) {
     try {
@@ -981,7 +952,9 @@ export const useAppLogic = () => {
         ? "📷 Sent an image"
         : message.message_type === "file"
          ? `📎 ${message.file_name}`
-         : (message.content && (message.content.startsWith('https://media.tenor.com/') || message.content.startsWith('https://media.giphy.com/')))
+         : message.content &&
+          (message.content.startsWith("https://media.tenor.com/") ||
+           message.content.startsWith("https://media.giphy.com/"))
           ? "🎞️ Sent a GIF"
           : message.content || "New message";
 
@@ -1018,29 +991,29 @@ export const useAppLogic = () => {
 
         ctx.beginPath();
         ctx.arc(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = "#ffffff";
         ctx.fill();
 
         ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
 
         canvas.toBlob((blob) => {
-        const roundedIconUrl = URL.createObjectURL(blob);
+         const roundedIconUrl = URL.createObjectURL(blob);
 
-        const notification = new Notification(notificationTitle, {
-         body: notificationBody,
-         icon: roundedIconUrl,
-         tag: `message-${message.id}`,
-         requireInteraction: false,
-        });
+         const notification = new Notification(notificationTitle, {
+          body: notificationBody,
+          icon: roundedIconUrl,
+          tag: `message-${message.id}`,
+          requireInteraction: false,
+         });
 
-        notification.onclick = () => {
-         window.focus();
-         notification.close();
-        };
+         notification.onclick = () => {
+          window.focus();
+          notification.close();
+         };
 
-        notification.onclose = () => {
-         URL.revokeObjectURL(roundedIconUrl);
-        };
+         notification.onclose = () => {
+          URL.revokeObjectURL(roundedIconUrl);
+         };
 
          setTimeout(() => {
           URL.revokeObjectURL(roundedIconUrl);
@@ -1078,13 +1051,13 @@ export const useAppLogic = () => {
   const handleClickOutside = (event) => {
    if (
     showUserMenu &&
-    !event.target.closest('.user-profile') &&
-    !event.target.closest('.user-menu-btn') &&
-    !event.target.closest('.mobile-header-actions')
+    !event.target.closest(".user-profile") &&
+    !event.target.closest(".user-menu-btn") &&
+    !event.target.closest(".mobile-header-actions")
    ) {
     setShowUserMenu(false);
    }
-   if (showSearch && !event.target.closest('.search-section') && !event.target.closest('.search-results')) {
+   if (showSearch && !event.target.closest(".search-section") && !event.target.closest(".search-results")) {
     setShowSearch(false);
    }
    if (
@@ -1118,7 +1091,7 @@ export const useAppLogic = () => {
      ipcRenderer.removeAllListeners("network-status-changed");
     };
    } catch (e) {
-    console.log("Electron IPC not available for network status");
+    // no-op
    }
   }
  }, []);
@@ -1142,8 +1115,7 @@ export const useAppLogic = () => {
    }
 
    const refreshData = JSON.parse(
-    localStorage.getItem("uchat-refresh-tracker") ||
-    '{"count": 0, "lastReset": 0}'
+    localStorage.getItem("uchat-refresh-tracker") || '{"count": 0, "lastReset": 0}'
    );
    const now = Date.now();
    const oneDayMs = 600000;
@@ -1154,10 +1126,7 @@ export const useAppLogic = () => {
    }
 
    refreshData.count += 1;
-   localStorage.setItem(
-    "uchat-refresh-tracker",
-    JSON.stringify(refreshData)
-   );
+   localStorage.setItem("uchat-refresh-tracker", JSON.stringify(refreshData));
 
    if (refreshData.count % 3 === 0) {
     setTimeout(() => {
@@ -1179,9 +1148,12 @@ export const useAppLogic = () => {
  useEffect(() => {
   if (!loading) {
    // These were causing lag during splash
-   requestIdleCallback(() => {
-    // Any heavy initialization goes here
-   }, { timeout: 2000 });
+   requestIdleCallback(
+    () => {
+     // Any heavy initialization goes here
+    },
+    { timeout: 2000 }
+   );
   }
  }, [loading]);
 
@@ -1189,9 +1161,7 @@ export const useAppLogic = () => {
  useEffect(() => {
   if ("Notification" in window && Notification.permission === "default") {
    if (!window.require && !window.AndroidBridge) {
-    Notification.requestPermission().then((permission) => {
-     console.log("Notification permission:", permission);
-    });
+    Notification.requestPermission();
    }
   }
  }, []);
@@ -1242,7 +1212,7 @@ export const useAppLogic = () => {
    if (socketRef.current && socketRef.current.connected) {
     // Pass the active contact ID so server knows not to mark it as unread
     socketRef.current.emit("request_contacts_update", {
-     active_contact_id: activeContactRef.current?.id
+     active_contact_id: activeContactRef.current?.id,
     });
    }
   };
@@ -1290,20 +1260,12 @@ export const useAppLogic = () => {
 
  // Set theme
  useEffect(() => {
-  const prefersDark = window.matchMedia(
-   "(prefers-color-scheme: dark)"
-  ).matches;
-  document.documentElement.setAttribute(
-   "data-theme",
-   prefersDark ? "dark" : "light"
-  );
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const handleThemeChange = (e) => {
-   document.documentElement.setAttribute(
-    "data-theme",
-    e.matches ? "dark" : "light"
-   );
+   document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
   };
 
   mediaQuery.addEventListener("change", handleThemeChange);
@@ -1324,16 +1286,16 @@ export const useAppLogic = () => {
   };
 
   // Track meaningful user activities (removed mousemove to avoid constant triggers)
-  window.addEventListener('keydown', handleActivity);
-  window.addEventListener('click', handleActivity);
-  window.addEventListener('scroll', handleActivity);
-  window.addEventListener('touchstart', handleActivity);
+  window.addEventListener("keydown", handleActivity);
+  window.addEventListener("click", handleActivity);
+  window.addEventListener("scroll", handleActivity);
+  window.addEventListener("touchstart", handleActivity);
 
   return () => {
-   window.removeEventListener('keydown', handleActivity);
-   window.removeEventListener('click', handleActivity);
-   window.removeEventListener('scroll', handleActivity);
-   window.removeEventListener('touchstart', handleActivity);
+   window.removeEventListener("keydown", handleActivity);
+   window.removeEventListener("click", handleActivity);
+   window.removeEventListener("scroll", handleActivity);
+   window.removeEventListener("touchstart", handleActivity);
   };
  }, [emitActivity]);
 
@@ -1412,8 +1374,8 @@ export const useAppLogic = () => {
   setSocketConnected,
   reconnectAttempts,
   setReconnectAttempts,
-  showGifPicker,
-  setShowGifPicker,
+  showGifsPickerModal,
+  setShowGifsPickerModal,
   dragOver,
   setDragOver,
   deleteConfirm,
@@ -1424,8 +1386,8 @@ export const useAppLogic = () => {
   setSessionDismissed,
   showVerificationBanner,
   setShowVerificationBanner,
-  showUnverifiedModal,
-  setShowUnverifiedModal,
+  showUnverifiedUserWarningModal,
+  setShowUnverifiedUserWarningModal,
   isOffline,
   setIsOffline,
   callMinimized,

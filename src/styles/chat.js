@@ -31,11 +31,26 @@ export const styles = stylex.create({
   fontSize: '18px',
   fontWeight: 600,
   color: 'var(--chat-username)',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
   marginBottom: '2px',
   lineHeight: 1.2,
+  position: 'relative',
+  overflow: 'hidden',
+  maxWidth: '200px',
+ },
+
+ chatUsernameText: {
+  display: 'inline-block',
+  whiteSpace: 'nowrap',
+ },
+
+ chatUsernameScrolling: {
+  display: 'inline-block',
+  whiteSpace: 'nowrap',
+  animationName: 'marqueeScroll',
+  animationDuration: '3s',
+  animationTimingFunction: 'linear',
+  animationIterationCount: 'infinite',
+  animationDelay: '1s',
  },
 
  chatUserInfo: {
@@ -49,6 +64,14 @@ export const styles = stylex.create({
   fontSize: '11px',
   color: 'var(--text-secondary)',
   fontWeight: 500,
+  position: 'relative',
+  overflow: 'hidden',
+  maxWidth: '250px',
+ },
+
+ chatStatusText: {
+  display: 'inline-block',
+  whiteSpace: 'nowrap',
  },
 
  chatUnverifiedIcon: {
@@ -58,6 +81,9 @@ export const styles = stylex.create({
   display: 'inline-flex',
   alignItems: 'center',
   verticalAlign: 'middle',
+  '@media (max-width: 768px)': {
+   display: 'none',
+  },
  },
 
  chatUsernameContainer: {

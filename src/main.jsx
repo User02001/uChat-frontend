@@ -11,36 +11,44 @@ if (process.env.NODE_ENV === "production") {
  disableReactDevTools();
 }
 
-// Warning message
-const imageUrl = "https://uchat.ufonic.xyz/resources/favicon.png";
 const warningStyle = [
- "color: #fff",
- "background: #a80000",
+ "color: #ffffff",
+ "background: linear-gradient(135deg, #a80000, #ff3b3b)",
  "font-weight: 900",
  "font-size: 16px",
- "padding: 6px 10px",
- "border-radius: 4px",
- "display: inline-block"
+ "padding: 10px 14px",
+ "border-radius: 6px",
+ "line-height: 1.4",
+ "display: inline-block",
+].join(";");
+
+const headerStyle = [
+ "color: #ff3b3b",
+ "font-size: 28px",
+ "font-weight: 900",
+ "text-shadow: 0 2px 6px rgba(0,0,0,.4)",
+].join(";");
+
+const hiringStyle = [
+ "color: #00ffcc",
+ "font-size: 14px",
+ "font-weight: 700",
 ].join(";");
 
 function showUChatWarning() {
- const msg = "⚠️ WARNING. THIS IS THE CONSOLE WHICH IS ONLY USED BY DEVELOPERS. IF ANYONE TOLD YOU TO COPY AND PASTE A CODE HERE, DON'T DO IT. IT IS LIKELY AN ATTEMPT TO GAIN ACCESS TO YOUR ACCOUNT. YOU HAVE BEEN WARNED. ONLY PASTE A CODE HERE IF YOU KNOW WHAT YOU ARE DOING.";
- const style =
-  typeof warningStyle !== "undefined"
-   ? warningStyle
-   : [
-    "color: #fff",
-    "background: #a80000",
-    "font-weight: 900",
-    "font-size: 16px",
-    "padding: 6px 10px",
-    "border-radius: 4px",
-    "display: inline-block",
-   ].join(";");
- console.log("%c" + msg, style);
+ const warningMsg =
+  "⚠️ THIS IS THE CONSOLE WHICH IS ONLY USED BY DEVELOPERS. IF ANYONE TOLD YOU TO COPY AND PASTE A CODE HERE, DON'T DO IT. IT IS LIKELY AN ATTEMPT TO GAIN ACCESS TO YOUR ACCOUNT. YOU HAVE BEEN WARNED. ONLY PASTE A CODE HERE IF YOU KNOW WHAT YOU ARE DOING.";
+
+ const hiringMsg =
+  "However, if you know what you are EXACTLY DOING, then you can be our partner! Not legal hiring but kinda neat, just contact me through my email, it is ufonic.official@gmail.com.";
+
+ console.log("\n");
+ console.log("%cSTOP!!", headerStyle);
+ console.log("%c" + warningMsg, warningStyle);
+ console.log("%c" + hiringMsg, hiringStyle);
+ console.log("\n");
 }
 
-// show immediately and re-show every 15s
 showUChatWarning();
 
 // Lazy load pages

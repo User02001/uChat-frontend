@@ -634,12 +634,11 @@ const Signup = () => {
          aria-disabled={loading ? 'true' : 'false'}
          title="Sign up with Google"
         >
-         <img
-          src="https://cdn.cdnlogo.com/logos/g/35/google-icon.svg"
+         <Icon
+          name="google_logo"
           alt=""
           aria-hidden="true"
-          width="18"
-          height="18"
+          style={{ width: '16px', height: '16px', marginTop: '-1px' }}
          />
          Continue with Google
         </button>
@@ -658,7 +657,7 @@ const Signup = () => {
           aria-hidden="true"
           style={{ marginRight: '8px' }}
          />
-         {loading ? 'Checking...' : 'Continue'}
+         {loading ? 'Loading...' : 'Continue'}
         </button>
        </div>
       </div>
@@ -862,7 +861,7 @@ const Signup = () => {
             aria-hidden="true"
             style={{ marginRight: '8px' }}
            />
-           {loading ? 'Checking...' : 'Continue'}
+           {loading ? 'Loading...' : 'Continue'}
           </button>
          </div>
         </div>

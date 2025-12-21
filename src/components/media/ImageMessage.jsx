@@ -1,6 +1,11 @@
 import React from 'react';
 
 const ImageMessage = ({ message, API_BASE_URL, onOpenViewer }) => {
+ const maxWidth = 280;
+ const imageWidth = message.media_width || 300;
+ const imageHeight = message.media_height || 225;
+ const aspectRatio = imageHeight / imageWidth;
+
  return (
   <div
    onClick={() => onOpenViewer({
@@ -12,12 +17,10 @@ const ImageMessage = ({ message, API_BASE_URL, onOpenViewer }) => {
     cursor: 'pointer',
     margin: '8px 0',
     position: 'relative',
-    width: message.media_width && message.media_height
-     ? `${Math.min(message.media_width, 450)}px`
-     : '300px',
-    height: message.media_width && message.media_height
-     ? `${Math.min(message.media_width, 450) * (message.media_height / message.media_width)}px`
-     : '225px',
+    width: '100%',
+    maxWidth: `${maxWidth}px`,
+    aspectRatio: message.media_width && message.media_height ? `${imageWidth} / ${imageHeight}` : undefined,
+    height: message.media_width && message.media_height ? undefined : '200px',
     background: 'linear-gradient(90deg, var(--border) 25%, var(--border-light) 50%, var(--border) 75%)',
     backgroundSize: '200% 100%',
     animation: 'skeletonLoading 1.5s infinite',
