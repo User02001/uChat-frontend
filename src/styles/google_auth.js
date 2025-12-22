@@ -1,81 +1,134 @@
 import * as stylex from "@stylexjs/stylex";
 
+/* =========================================================
+   CSS VARS + GLOBAL/COMPLEX SELECTORS (INJECTED ONCE)
+========================================================= */
+
 const injectedCss = `
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{margin:0;padding:0;width:100%;height:100%}
-:root{
- --bg-primary:#f5f5f5;
- --bg-secondary:#ffffff;
- --signin-card:#ffffff;
- --text-primary:#1a1a1a;
- --text-secondary:#666666;
- --border:#e0e0e0;
- --border-focus:#ff9800;
- --button-primary:linear-gradient(135deg,#ffa726 0%,#ff9800 100%);
- --button-primary-hover:linear-gradient(135deg,#ff9800 0%,#f57c00 100%);
- --button-primary-text:#1a1a1a;
- --shadow:rgba(0,0,0,0.1);
- --error-bg:#fee;
- --error-text:#c53030;
- --error-border:#feb2b2;
- --success-bg:#f0f9ff;
- --success-text:#065f46;
- --success-border:#a7f3d0;
- --focus-ring:rgba(255,152,0,0.12);
- --star-bg:#000;
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-[data-theme="dark"]{
- --bg-primary:linear-gradient(135deg,#000000 0%,#000000 100%);
- --bg-secondary:#000000;
- --signin-card:#1212128c;
- --text-primary:#ffffff;
- --text-secondary:#cccccc;
- --border:#404040;
- --border-focus:#ff9800;
- --button-primary:linear-gradient(135deg,#ffa726 0%,#ff9800 100%);
- --button-primary-hover:linear-gradient(135deg,#ff9800 0%,#f57c00 100%);
- --button-primary-text:#1a1a1a;
- --shadow:rgba(0,0,0,0.3);
- --error-bg:#2d1b1b;
- --error-text:#fc8181;
- --error-border:#9b2c2c;
- --success-bg:rgba(6,95,70,0.12);
- --success-text:#8ff0c8;
- --success-border:rgba(167,243,208,0.35);
- --focus-ring:rgba(255,152,0,0.16);
- --star-bg:#000;
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
 }
+
+/* Theme variables */
+:root {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --signup-card: #ffffff;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --border: #e0e0e0;
+  --border-focus: #ff9800;
+  --button-primary: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+  --button-primary-hover: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  --button-primary-text: #1a1a1a;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --error-bg: #fee;
+  --error-text: #c53030;
+  --error-border: #feb2b2;
+  --success: #4caf50;
+  --link-hover: #f57c00;
+  --focus-ring: rgba(255, 152, 0, 0.1);
+  --back-hover-bg: rgba(255, 152, 0, 0.1);
+  --star-bg: #000;
+}
+
+[data-theme="dark"] {
+  --bg-primary: linear-gradient(135deg, #000000 0%, #000000 100%);
+  --bg-secondary: #000000;
+  --signup-card: #1212128c;
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --border: #404040;
+  --border-focus: #ff9800;
+  --button-primary: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+  --button-primary-hover: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  --button-primary-text: #1a1a1a;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --error-bg: #2d1b1b;
+  --error-text: #fc8181;
+  --error-border: #9b2c2c;
+  --success: #4caf50;
+  --link-hover: #f57c00;
+  --focus-ring: rgba(255, 152, 0, 0.1);
+  --back-hover-bg: rgba(255, 152, 0, 0.1);
+  --star-bg: #000;
+}
+
+/* Autofill styling */
 .inputGroup input:-webkit-autofill,
 .inputGroup input:-webkit-autofill:hover,
 .inputGroup input:-webkit-autofill:focus,
-.inputGroup input:-webkit-autofill:active{
- -webkit-box-shadow:0 0 0 30px var(--bg-secondary) inset !important;
- -webkit-text-fill-color:var(--text-primary) !important;
- caret-color:var(--text-primary);
- transition:background-color 5000s ease-in-out 0s
+.inputGroup input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px var(--bg-secondary) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  caret-color: var(--text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill */
+.inputGroup input:-moz-autofill,
+.inputGroup input:-moz-autofill-preview {
+  filter: none;
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
 }
 `;
 
 if (typeof document !== "undefined") {
- if (!document.getElementById("login-stylex-injected")) {
+ if (!document.getElementById("google-auth-stylex-injected")) {
   const styleTag = document.createElement("style");
-  styleTag.id = "login-stylex-injected";
+  styleTag.id = "google-auth-stylex-injected";
   styleTag.textContent = injectedCss;
   document.head.appendChild(styleTag);
  }
 }
 
+/* =========================================================
+   KEYFRAMES
+========================================================= */
+
+const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+
+const slideInFromRight = stylex.keyframes({
+ from: { transform: "translateX(100%)", opacity: 0 },
+ to: { transform: "translateX(0)", opacity: 1 },
+});
+
+const slideInFromLeft = stylex.keyframes({
+ from: { transform: "translateX(-100%)", opacity: 0 },
+ to: { transform: "translateX(0)", opacity: 1 },
+});
+
+const slideOutLeft = stylex.keyframes({
+ from: { transform: "translateX(0)", opacity: 1 },
+ to: { transform: "translateX(-100%)", opacity: 0 },
+});
+
+const slideOutRight = stylex.keyframes({
+ from: { transform: "translateX(0)", opacity: 1 },
+ to: { transform: "translateX(100%)", opacity: 0 },
+});
+
 export const GoogleAuthStyles = stylex.create({
  loginContainer: {
   minHeight: "100vh",
-  width: "100%",
+  background: "transparent",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   padding: "20px",
-  position: "relative",
-  background: "transparent",
-  fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif",
+  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
+  width: "100%",
  },
 
  starCanvas: {
@@ -90,26 +143,45 @@ export const GoogleAuthStyles = stylex.create({
  },
 
  loginCard: {
+  backgroundColor: "var(--signup-card)",
+  borderRadius: "50px",
+  border: "3px solid var(--border)",
+  width: "100%",
+  maxWidth: "900px",
+  padding: "35px 50px",
   position: "relative",
   zIndex: 2,
-  width: "100%",
-  maxWidth: "520px",
-  borderRadius: "50px",
-  backgroundColor: "var(--signin-card)",
-  border: "3px solid var(--border)",
-  boxShadow: "0 18px 56px var(--shadow)",
-  padding: "35px 50px",
-  backdropFilter: "blur(14px)",
-  "@media (max-width: 520px)": {
+  display: "grid",
+  gridTemplateColumns: "380px 1fr",
+  columnGap: "50px",
+  rowGap: "15px",
+  alignItems: "start",
+  margin: "0 auto",
+
+  "@media (max-width: 900px)": {
+   maxWidth: "400px",
    padding: "30px",
-   borderRadius: "40px",
+   gridTemplateColumns: "1fr",
+   gap: "24px",
+   background: "var(--signup-card)",
   },
  },
 
  loginHeader: {
+  gridColumn: 1,
   textAlign: "left",
-  "@media (max-width: 520px)": {
+  paddingRight: "30px",
+  borderRight: "1px solid var(--border)",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
+
+  "@media (max-width: 900px)": {
    textAlign: "center",
+   borderRight: "none",
+   borderBottom: "1px solid var(--border)",
+   paddingRight: 0,
+   paddingBottom: "20px",
   },
  },
 
@@ -117,7 +189,8 @@ export const GoogleAuthStyles = stylex.create({
   display: "flex",
   justifyContent: "flex-start",
   marginBottom: "12px",
-  "@media (max-width: 520px)": {
+
+  "@media (max-width: 900px)": {
    justifyContent: "center",
   },
  },
@@ -135,150 +208,247 @@ export const GoogleAuthStyles = stylex.create({
   margin: 0,
   display: "flex",
   alignItems: "center",
-  lineHeight: 1.2,
-  "@media (max-width: 520px)": {
+  justifyContent: "flex-start",
+
+  "@media (max-width: 900px)": {
    fontSize: "24px",
    justifyContent: "center",
+   textAlign: "center",
   },
  },
 
- headerParagraph: {
-  color: "var(--text-secondary)",
+ stepExplanation: {
+  marginTop: "16px",
+ },
+
+ stepExplanationP: {
   fontSize: "15px",
   lineHeight: 1.5,
-  marginTop: "16px",
-  marginBottom: 0,
- },
-
- infoBox: {
-  backgroundColor: "var(--success-bg)",
-  color: "var(--success-text)",
-  padding: "12px 12px",
-  borderRadius: "10px",
-  marginTop: "14px",
-  fontSize: "13px",
-  border: "1px solid var(--success-border)",
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
- },
-
- errorBox: {
-  backgroundColor: "var(--error-bg)",
-  color: "var(--error-text)",
-  padding: "12px 12px",
-  borderRadius: "10px",
-  marginBottom: "14px",
-  fontSize: "13px",
-  border: "1px solid var(--error-border)",
-  display: "flex",
-  alignItems: "center",
-  gap: "10px",
+  color: "var(--text-secondary)",
+  margin: 0,
  },
 
  loginForm: {
-  marginTop: "18px",
+  gridColumn: 2,
+  "@media (max-width: 900px)": {
+   gridColumn: 1,
+  },
  },
 
- inputGroup: {
-  marginBottom: "14px",
- },
-
- inputLabel: {
+ progressIndicator: {
   display: "flex",
-  alignItems: "center",
+  justifyContent: "center",
   gap: "8px",
-  fontSize: "13px",
-  color: "var(--text-primary)",
-  marginBottom: "8px",
-  fontWeight: 600,
+  marginBottom: "16px",
  },
 
- inputWrapper: {
+ progressDot: {
+  width: "8px",
+  height: "8px",
+  borderRadius: "50%",
+  background: "var(--border)",
+  transition: "all 0.3s ease",
+ },
+
+ progressDotActive: {
+  background: "var(--border-focus)",
+  transform: "scale(1.2)",
+ },
+
+ progressDotCompleted: {
+  background: "var(--success)",
+ },
+
+ stepsWrapper: {
+  position: "relative",
+  minHeight: "150px",
+  overflow: "hidden",
+  marginBottom: "-5px",
+ },
+
+ stepContainer: {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  width: "100%",
+  opacity: 0,
+  pointerEvents: "none",
+ },
+
+ stepContainerActive: {
+  opacity: 1,
+  pointerEvents: "all",
   position: "relative",
  },
 
- inputIcon: {
-  position: "absolute",
-  left: "12px",
-  top: "50%",
-  transform: "translateY(-50%)",
+ slidingOutLeft: {
+  animationName: slideOutLeft,
+  animationDuration: "0.3s",
+  animationTimingFunction: EASE,
+  animationFillMode: "forwards",
+ },
+
+ slidingOutRight: {
+  animationName: slideOutRight,
+  animationDuration: "0.3s",
+  animationTimingFunction: EASE,
+  animationFillMode: "forwards",
+ },
+
+ comingFromLeft: {
+  animationName: slideInFromLeft,
+  animationDuration: "0.3s",
+  animationTimingFunction: EASE,
+  animationFillMode: "forwards",
+ },
+
+ comingFromRight: {
+  animationName: slideInFromRight,
+  animationDuration: "0.3s",
+  animationTimingFunction: EASE,
+  animationFillMode: "forwards",
+ },
+
+ stepHeader: {
+  marginBottom: "8px",
+ },
+
+ stepHeaderH2: {
+  fontSize: "16px",
+  fontWeight: 400,
+  color: "var(--text-primary)",
+  marginBottom: "2px",
+ },
+
+ stepHeaderP: {
+  fontSize: "12px",
   color: "var(--text-secondary)",
-  fontSize: "14px",
-  opacity: 0.95,
-  pointerEvents: "none",
+ },
+
+ inputGroup: {
+  marginBottom: 0,
  },
 
  inputGroupInput: {
   width: "100%",
-  padding: "9px 12px 9px 40px",
+  padding: "9px 12px",
   border: "1px solid var(--border)",
   borderRadius: "4px",
   fontSize: "14px",
   backgroundColor: "var(--bg-secondary)",
   color: "var(--text-primary)",
-  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+
   ":focus": {
    outline: "none",
    borderColor: "var(--border-focus)",
    boxShadow: "0 0 0 2px var(--focus-ring)",
   },
-  ":hover": {
-   borderColor: "var(--border-focus)",
-  },
+
   "::placeholder": {
    color: "var(--text-secondary)",
   },
  },
 
- helperText: {
-  color: "var(--text-secondary)",
-  fontSize: "12px",
-  marginTop: "6px",
+ buttonContainer: {
   display: "flex",
+  justifyContent: "space-between",
   alignItems: "center",
-  gap: "6px",
+  gap: "10px",
+  marginTop: "6px",
  },
 
- loginBtn: {
-  width: "100%",
-  padding: "8px 18px",
-  border: "none",
-  borderRadius: "6px",
+ backBtn: {
+  padding: "5.5px 18px",
   fontSize: "13px",
-  fontWeight: 600,
+  fontWeight: 500,
+  background: "transparent",
+  color: "var(--border-focus)",
+  border: "1px solid var(--border)",
+  borderRadius: "6px",
   cursor: "pointer",
   transition: "all 0.2s ease",
   display: "inline-flex",
   alignItems: "center",
-  justifyContent: "center",
   gap: "8px",
+  lineHeight: 1,
+
+  ":hover:not(:disabled)": {
+   background: "var(--back-hover-bg)",
+   borderColor: "var(--border-focus)",
+  },
+
+  ":disabled": {
+   opacity: 0.5,
+   cursor: "not-allowed",
+  },
+ },
+
+ backBtnImg: {
+  width: "20px",
+  height: "20px",
+  display: "block",
+ },
+
+ loginBtn: {
+  padding: "8px 18px",
+  border: "none",
+  borderRadius: "6px",
+  fontSize: "13px",
+  fontWeight: 500,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+
   ":disabled": {
    opacity: 0.6,
    cursor: "not-allowed",
   },
  },
 
- primary: {
+ loginBtnPrimary: {
   background: "var(--button-primary)",
   color: "var(--button-primary-text)",
+  fontWeight: 600,
+
   ":hover:not(:disabled)": {
    background: "var(--button-primary-hover)",
   },
  },
 
  loginFooter: {
-  marginTop: "18px",
-  paddingTop: "14px",
+  gridColumn: "1 / -1",
+  textAlign: "center",
   borderTop: "1px solid var(--border)",
+  paddingTop: "10px",
+  marginTop: "10px",
+
+  "@media (max-width: 900px)": {
+   gridColumn: 1,
+   marginTop: "-6px",
+  },
  },
 
  footerP: {
   color: "var(--text-secondary)",
   fontSize: "13px",
   margin: 0,
+  marginTop: "22px",
   display: "flex",
   alignItems: "center",
-  gap: "8px",
+  justifyContent: "center",
+
+  "@media (max-width: 900px)": {
+   fontSize: "12px",
+   marginTop: "18px",
+  },
  },
+
+ /* Step-specific spacing */
+ step0_inputGroup: { marginBottom: "15px" },
+ step1_inputGroup: { marginBottom: "15px" },
+
+ step0_stepHeader: { marginBottom: "20px" },
+ step1_stepHeader: { marginBottom: "20px" },
+
+ step0_progress: { marginBottom: "34px" },
+ step1_progress: { marginBottom: "52px" },
 });

@@ -1,7 +1,7 @@
 // src/components/DownloadsForSoftwareOrApp.jsx
 import React, { useState, useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import SVG from "react-inlinesvg";
+import Icon from '../components/Icon';
 import { DownloadsForSoftwareOrAppStyles as styles } from "../styles/downloads_for_software_or_app";
 
 const DownloadsForSoftwareOrApp = () => {
@@ -113,8 +113,8 @@ const DownloadsForSoftwareOrApp = () => {
    <div {...stylex.props(styles.downloadsContent)}>
     <div {...stylex.props(styles.downloadsHeader)}>
      <div {...stylex.props(styles.logoSection)}>
-      <SVG
-       src="/resources/main-logo.svg"
+      <Icon
+       name="main_logo"
        alt="uChat"
        className={stylex.props(styles.appLogo).className}
        onClick={handleLogoClick}
