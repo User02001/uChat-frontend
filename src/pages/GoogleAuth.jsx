@@ -4,10 +4,12 @@ import * as stylex from "@stylexjs/stylex";
 import { GoogleAuthStyles as styles } from "../styles/google_auth";
 import { API_BASE_URL } from "../config";
 import Icon from '../components/Icon';
+import useStars from "../hooks/useStars";
 
 const GoogleAuth = () => {
  const navigate = useNavigate();
  const location = useLocation();
+ const canvasRef = useStars();
  const [formData, setFormData] = useState({
   username: "",
   handle: "",
@@ -139,7 +141,7 @@ const GoogleAuth = () => {
  if (!userInfo) {
   return (
    <div {...stylex.props(styles.loginContainer)}>
-    <div {...stylex.props(styles.auraBackground)}></div>
+    <canvas ref={canvasRef} {...stylex.props(styles.starCanvas)} aria-hidden="true" />
     <div {...stylex.props(styles.loginCard)}>
      <div {...stylex.props(styles.loginHeader)}>
       <div {...stylex.props(styles.logoContainer)}>
@@ -165,7 +167,7 @@ const GoogleAuth = () => {
 
  return (
   <div {...stylex.props(styles.loginContainer)}>
-   <div {...stylex.props(styles.auraBackground)}></div>
+   <canvas ref={canvasRef} {...stylex.props(styles.starCanvas)} aria-hidden="true" />
    <div {...stylex.props(styles.loginCard)}>
     <div {...stylex.props(styles.loginHeader)}>
      <div {...stylex.props(styles.logoContainer)}>

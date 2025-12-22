@@ -21,7 +21,8 @@ html,body{margin:0;padding:0;width:100%;height:100%}
  --success-bg:#f0f9ff;
  --success-text:#065f46;
  --success-border:#a7f3d0;
- --focus-ring:rgba(255,152,0,0.12)
+ --focus-ring:rgba(255,152,0,0.12);
+ --star-bg:#000;
 }
 [data-theme="dark"]{
  --bg-primary:linear-gradient(135deg,#000000 0%,#000000 100%);
@@ -41,7 +42,8 @@ html,body{margin:0;padding:0;width:100%;height:100%}
  --success-bg:rgba(6,95,70,0.12);
  --success-text:#8ff0c8;
  --success-border:rgba(167,243,208,0.35);
- --focus-ring:rgba(255,152,0,0.16)
+ --focus-ring:rgba(255,152,0,0.16);
+ --star-bg:#000;
 }
 .inputGroup input:-webkit-autofill,
 .inputGroup input:-webkit-autofill:hover,
@@ -63,17 +65,6 @@ if (typeof document !== "undefined") {
  }
 }
 
-const auraDrift = stylex.keyframes({
- "0%": { transform: "translate3d(0,0,0) scale(1)", opacity: 0.85 },
- "50%": { transform: "translate3d(-2%,1%,0) scale(1.05)", opacity: 1 },
- "100%": { transform: "translate3d(0,0,0) scale(1)", opacity: 0.85 },
-});
-
-const cardIn = stylex.keyframes({
- from: { transform: "translateY(10px) scale(0.99)", opacity: 0 },
- to: { transform: "translateY(0) scale(1)", opacity: 1 },
-});
-
 export const GoogleAuthStyles = stylex.create({
  loginContainer: {
   minHeight: "100vh",
@@ -83,78 +74,79 @@ export const GoogleAuthStyles = stylex.create({
   justifyContent: "center",
   padding: "20px",
   position: "relative",
-  background: "var(--bg-primary)",
+  background: "transparent",
   fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif",
  },
 
- auraBackground: {
+ starCanvas: {
   position: "fixed",
   inset: 0,
+  display: "block",
+  width: "100%",
+  height: "100%",
   zIndex: 0,
   pointerEvents: "none",
-  background:
-   "radial-gradient(60% 50% at 15% 20%, rgba(255,167,38,0.22) 0%, rgba(255,152,0,0) 60%), radial-gradient(55% 45% at 85% 30%, rgba(255,152,0,0.18) 0%, rgba(255,152,0,0) 62%), radial-gradient(70% 55% at 50% 85%, rgba(245,124,0,0.16) 0%, rgba(245,124,0,0) 65%)",
-  filter: "blur(18px)",
-  animationName: auraDrift,
-  animationDuration: "10s",
-  animationTimingFunction: "ease-in-out",
-  animationIterationCount: "infinite",
+  background: "var(--star-bg)",
  },
 
  loginCard: {
   position: "relative",
-  zIndex: 1,
+  zIndex: 2,
   width: "100%",
   maxWidth: "520px",
-  borderRadius: "26px",
+  borderRadius: "50px",
   backgroundColor: "var(--signin-card)",
-  border: "2px solid var(--border)",
+  border: "3px solid var(--border)",
   boxShadow: "0 18px 56px var(--shadow)",
-  padding: "34px 34px 22px 34px",
-  animationName: cardIn,
-  animationDuration: "0.35s",
-  animationTimingFunction: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+  padding: "35px 50px",
   backdropFilter: "blur(14px)",
   "@media (max-width: 520px)": {
-   padding: "26px 18px 18px 18px",
-   borderRadius: "20px",
+   padding: "30px",
+   borderRadius: "40px",
   },
  },
 
  loginHeader: {
   textAlign: "left",
+  "@media (max-width: 520px)": {
+   textAlign: "center",
+  },
  },
 
  logoContainer: {
   display: "flex",
-  justifyContent: "center",
-  marginBottom: "18px",
+  justifyContent: "flex-start",
+  marginBottom: "12px",
+  "@media (max-width: 520px)": {
+   justifyContent: "center",
+  },
  },
 
  mainLogo: {
-  width: "80px",
-  height: "80px",
+  width: "60px",
+  height: "60px",
   objectFit: "contain",
  },
 
  headerTitle: {
   color: "var(--text-primary)",
-  fontSize: "24px",
-  fontWeight: 500,
+  fontSize: "28px",
+  fontWeight: 400,
   margin: 0,
   display: "flex",
   alignItems: "center",
   lineHeight: 1.2,
   "@media (max-width: 520px)": {
-   fontSize: "22px",
+   fontSize: "24px",
+   justifyContent: "center",
   },
  },
 
  headerParagraph: {
   color: "var(--text-secondary)",
-  fontSize: "14px",
-  lineHeight: 1.55,
-  marginTop: "10px",
+  fontSize: "15px",
+  lineHeight: 1.5,
+  marginTop: "16px",
   marginBottom: 0,
  },
 
@@ -219,17 +211,17 @@ export const GoogleAuthStyles = stylex.create({
 
  inputGroupInput: {
   width: "100%",
-  padding: "10px 12px 10px 40px",
+  padding: "9px 12px 9px 40px",
   border: "1px solid var(--border)",
-  borderRadius: "10px",
+  borderRadius: "4px",
   fontSize: "14px",
   backgroundColor: "var(--bg-secondary)",
   color: "var(--text-primary)",
-  transition: "border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease",
+  transition: "border-color 0.2s ease, box-shadow 0.2s ease",
   ":focus": {
    outline: "none",
    borderColor: "var(--border-focus)",
-   boxShadow: "0 0 0 3px var(--focus-ring)",
+   boxShadow: "0 0 0 2px var(--focus-ring)",
   },
   ":hover": {
    borderColor: "var(--border-focus)",
@@ -250,34 +242,28 @@ export const GoogleAuthStyles = stylex.create({
 
  loginBtn: {
   width: "100%",
-  padding: "11px 16px",
+  padding: "8px 18px",
   border: "none",
-  borderRadius: "12px",
-  fontSize: "14px",
-  fontWeight: 700,
+  borderRadius: "6px",
+  fontSize: "13px",
+  fontWeight: 600,
   cursor: "pointer",
-  transition: "transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease",
+  transition: "all 0.2s ease",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   gap: "8px",
   ":disabled": {
-   opacity: 0.65,
+   opacity: 0.6,
    cursor: "not-allowed",
-  },
-  ":active:not(:disabled)": {
-   transform: "scale(0.985)",
   },
  },
 
  primary: {
   background: "var(--button-primary)",
   color: "var(--button-primary-text)",
-  boxShadow: "0 10px 26px rgba(255,152,0,0.18)",
   ":hover:not(:disabled)": {
    background: "var(--button-primary-hover)",
-   boxShadow: "0 12px 30px rgba(255,152,0,0.24)",
-   transform: "translateY(-1px)",
   },
  },
 
