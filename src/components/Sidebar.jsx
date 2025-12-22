@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as stylex from '@stylexjs/stylex';
-import { styles } from '../styles/sidebar';
+import { SidebarStyles as styles } from '../styles/sidebar';
 import { useSidebarLogic } from '../hooks/useSidebarLogic';
 import Icon from './Icon';
 

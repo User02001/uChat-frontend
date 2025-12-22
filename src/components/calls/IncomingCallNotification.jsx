@@ -1,11 +1,12 @@
-import React from 'react';
-import styles from '../../index.module.css';
+import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GeneralCallsStyles as styles } from "../../styles/general_calls";
 
 const IncomingCallNotification = ({ callState, API_BASE_URL, onAnswer, onDecline }) => {
  return (
-  <div className={styles.incomingCallNotification}>
-   <div className={styles.incomingCallContent}>
-    <div className={styles.incomingCallInfo}>
+  <div {...stylex.props(styles.incomingCallNotification)}>
+   <div {...stylex.props(styles.incomingCallContent)}>
+    <div {...stylex.props(styles.incomingCallInfo)}>
      <img
       draggable="false"
       src={
@@ -14,26 +15,30 @@ const IncomingCallNotification = ({ callState, API_BASE_URL, onAnswer, onDecline
         : "/resources/default_avatar.png"
       }
       alt={callState.contact?.username}
-      className={styles.incomingCallAvatar}
+      {...stylex.props(styles.incomingCallAvatar)}
      />
-     <div className={styles.incomingCallText}>
-      <h4>{callState.contact?.username}</h4>
-      <p>
+     <div {...stylex.props(styles.incomingCallText)}>
+      <h4 {...stylex.props(styles.incomingCallTextH4)}>{callState.contact?.username}</h4>
+      <p {...stylex.props(styles.incomingCallTextP)}>
        Incoming {callState.type === "video" ? "video" : "audio"} call
       </p>
      </div>
     </div>
-    <div className={styles.incomingCallActions}>
+    <div {...stylex.props(styles.incomingCallActions)}>
      <button
-      className={styles.declineBtnSmall}
+      {...stylex.props(styles.declineBtnSmall, styles.declineBtnSmallHover, styles.btnSmallActive)}
       onClick={onDecline}
       title="Decline"
-     ></button>
+     >
+      <i className="fas fa-phone" style={{ transform: 'rotate(135deg)' }}></i>
+     </button>
      <button
-      className={styles.acceptBtnSmall}
+      {...stylex.props(styles.acceptBtnSmall, styles.acceptBtnSmallHover, styles.btnSmallActive)}
       onClick={onAnswer}
       title="Accept"
-     ></button>
+     >
+      <i className="fas fa-phone"></i>
+     </button>
     </div>
    </div>
   </div>

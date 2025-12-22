@@ -2,36 +2,32 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import * as stylex from '@stylexjs/stylex';
 import { useAppLogic } from "./hooks/useAppLogic";
 import lottie from 'lottie-web';
-import WarningForModeration from "./components/WarningForModeration";
+import ModerationCustomWarningForMessageModal from "./components/ModerationCustomWarningForMessageModal";
 import Sidebar from "./components/Sidebar";
 import Reply from "./components/Reply";
 import { API_BASE_URL, CDN_BASE_URL, SOCKET_URL } from "./config";
 import useCalls from "./hooks/useCalls";
-import MessagesSkeleton from "./components/MessagesSkeleton";
-import ContactsSkeleton from "./components/ContactsSkeleton";
-import Reaction from "./components/Reaction";
-import ReactionMore from "./components/ReactionMore";
+import ReactionBadge from "./components/ReactionBadge";
+import ReactionHoverPopup from "./components/ReactionHoverPopup";
 import DeleteMessageConfirmationModal from "./components/DeleteMessageConfirmationModal";
-import ReportModal from "./components/ReportModal";
-import VerificationModal from "./components/VerificationModal";
+import ReportMessageModal from "./components/ReportMessageModal";
+import ModalForUnverifiedUsers from "./components/ModalForUnverifiedUsers";
 import UnverifiedUserWarningModal from "./components/UnverifiedUserWarningModal";
 import linkify from "./hooks/linkify.jsx";
 import GifsPickerModal from "./components/GifsPickerModal";
-import ProfileModal from "./components/ProfileModal";
-import MessageOptionsPhone from "./components/MessageOptionsPhone";
+import QuickProfileModal from "./components/QuickProfileModal";
+import MessageActionsSheet from "./components/MessageActionsSheet";
 import styles from "./index.module.css";
-import "./pages/downloads-recommend.css";
-import "./pages/calls.css";
-import MediaViewer from "./components/MediaViewer";
-import VideoPlayer from "./components/VideoPlayer";
+import MediaViewer from "./components/media_viewer/MediaViewer";
+import VideoPlayer from "./components/media_viewer/VideoPlayer";
 import Message from "./components/Message";
-import ImageMessage from "./components/media/ImageMessage";
-import VideoMessage from "./components/media/VideoMessage";
-import AudioMessage from "./components/media/AudioMessage";
-import FileMessage from "./components/media/FileMessage";
-import GifMessage from "./components/media/GifMessage";
+import ImageMessage from "./components/message_types/ImageMessage";
+import VideoMessage from "./components/message_types/VideoMessage";
+import AudioMessage from "./components/message_types/AudioMessage";
+import FileMessage from "./components/message_types/FileMessage";
+import GifMessage from "./components/message_types/GifMessage";
 import StartOfChat from "./components/StartOfChat";
-import StatusModal from "./components/StatusModal";
+import ChangeOwnStatusModal from "./components/ChangeOwnStatusModal";
 import { useFormatters } from "./hooks/useFormatters";
 import { useMessageScroll } from "./hooks/useMessageScroll";
 import Icon from './components/Icon';
@@ -43,6 +39,8 @@ import ActiveCall from "./components/calls/ActiveCall";
 import IncomingScreenshareNotification from "./components/calls/IncomingScreenshareNotification";
 import MinimizedScreenshare from "./components/calls/MinimizedScreenshare";
 import ActiveScreenshare from "./components/calls/ActiveScreenshare";
+import { styles as callHeaderStyles } from './styles/call_header_buttons';
+import { DownloadRecommendationNotificationStyles as downloadStyles} from './styles/download_recommendation';
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -84,25 +82,25 @@ const App = () => {
   deleteConfirm, setDeleteConfirm,
   showDownloadRecommendation, setShowDownloadRecommendation,
   sessionDismissed, setSessionDismissed,
-  showVerificationBanner, setShowVerificationBanner,
+  showModalForUnverifiedUsers, setShowModalForUnverifiedUsers,
   showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal,
   isOffline, setIsOffline,
   callMinimized, setCallMinimized,
   screenshareMinimized, setScreenshareMinimized,
   userStatuses, setUserStatuses,
-  showProfileModal, setShowProfileModal,
+  showQuickProfileModal, setShowQuickProfileModal,
   callPosition, setCallPosition,
   isDragging, setIsDragging,
   dragOffset, setDragOffset,
   messageCache, setMessageCache,
   isLoadingMessages, setIsLoadingMessages,
   showMediaViewer, setShowMediaViewer,
-  showMessageOptionsPhone, setShowMessageOptionsPhone,
+  showMessageActionsSheet, setShowMessageActionsSheet,
   messagesContainerVisible, setMessagesContainerVisible,
-  showStatusModal, setShowStatusModal,
+  showChangeOwnStatusModal, setShowChangeOwnStatusModal,
   userForcedStatus, setUserForcedStatus,
-  showReportModal, setShowReportModal,
-  showWarning, setShowWarning,
+  showReportMessageModal, setShowReportMessageModal,
+  showModerationCustomWarningForMessageModal, setShowModerationCustomWarningForMessageModal,
 
   // Refs
   socketRef,
@@ -347,9 +345,9 @@ const App = () => {
  // Show verification modal for unverified users
  useEffect(() => {
   if (user && !user.is_verified) {
-   setShowVerificationBanner(true);
+   setShowModalForUnverifiedUsers(true);
   } else {
-   setShowVerificationBanner(false);
+   setShowModalForUnverifiedUsers(false);
   }
  }, [user]);
 
@@ -665,17 +663,17 @@ const App = () => {
      </div>
     </div>
    )}
-   {showVerificationBanner && (
-    <VerificationModal
-     onClose={() => setShowVerificationBanner(false)}
+   {showModalForUnverifiedUsers && (
+    <ModalForUnverifiedUsers
+     onClose={() => setShowModalForUnverifiedUsers(false)}
     />
    )}
 
    <div
-    className={`${styles.appContainer} ${isMobile && showMobileChat ? "mobile-chat-open" : ""} ${showVerificationBanner ? "with-banner" : ""}`}
+    className={`${styles.appContainer} ${isMobile && showMobileChat ? "mobile-chat-open" : ""} ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
    >
     <div
-     className={`${styles.appContent} ${showVerificationBanner ? "with-banner" : ""}`}
+     className={`${styles.appContent} ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
     >
      <Sidebar
       showMobileChat={showMobileChat}
@@ -699,7 +697,7 @@ const App = () => {
           }
           alt="Profile"
           className={styles.profileAvatar}
-          onClick={() => setShowProfileModal(user)}
+          onClick={() => setShowQuickProfileModal(user)}
           style={{ cursor: 'pointer' }}
           draggable="false"
           title="View Your Own Profile"
@@ -727,20 +725,20 @@ const App = () => {
         {showUserMenu && (
          <div className={styles.userMenu}>
           <button onClick={() => {
-           setShowProfileModal(user);
+           setShowQuickProfileModal(user);
            setShowUserMenu(false);
           }}>
            <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
            My Profile
           </button>
           <button onClick={() => {
-           setShowStatusModal(true);
+           setShowChangeOwnStatusModal(true);
            setShowUserMenu(false);
           }}>
            {userStatuses[user?.id] === 'away' ? (
             <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
              <Icon
-              name="away-icon"
+              name="away_icon"
               alt="Status"
               style={{ width: '18px', height: '18px' }}
              />
@@ -866,20 +864,20 @@ const App = () => {
        {showUserMenu && (
         <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
          <button onClick={() => {
-          setShowProfileModal(user);
+          setShowQuickProfileModal(user);
           setShowUserMenu(false);
          }}>
           <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
           My Profile
          </button>
          <button onClick={() => {
-          setShowStatusModal(true);
+          setShowChangeOwnStatusModal(true);
           setShowUserMenu(false);
          }}>
           {userStatuses[user?.id] === 'away' ? (
            <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
             <Icon
-             name="away-icon"
+             name="away_icon"
              alt="Status"
              style={{ width: '18px', height: '18px' }}
             />
@@ -1001,7 +999,15 @@ const App = () => {
 
       <div className={styles.contactsList}>
        {contactsLoading ? (
-        <ContactsSkeleton />
+        <div style={{
+         display: 'flex',
+         alignItems: 'center',
+         justifyContent: 'center',
+         height: '100%',
+         color: 'var(--text-secondary)'
+        }}>
+         <div className={styles.loadingSpinner}></div>
+        </div>
        ) : contacts.length === 0 ? (
         <div className={styles.emptyContacts}>
          <p>No contacts yet</p>
@@ -1024,7 +1030,7 @@ const App = () => {
             alt={contact.username}
             onClick={(e) => {
              e.stopPropagation();
-             setShowProfileModal(contact);
+             setShowQuickProfileModal(contact);
             }}
             style={{ cursor: 'pointer' }}
             className={styles.contactAvatar}
@@ -1103,7 +1109,7 @@ const App = () => {
              : "/resources/default_avatar.png"
            }
            alt={activeContact.username}
-           onClick={() => setShowProfileModal(activeContact)}
+           onClick={() => setShowQuickProfileModal(activeContact)}
            style={{ cursor: 'pointer' }}
            {...stylex.props(chatStyles.chatAvatar)}
            title={`View ${activeContact.username}'s Profile`}
@@ -1177,25 +1183,42 @@ const App = () => {
            </span>
           </span>
          </div>
-         <div className="call-buttons">
+         <div {...stylex.props(callHeaderStyles.callButtons)}>
           <button
-           className="call-btn audio-call"
+           {...stylex.props(
+            callHeaderStyles.callBtn,
+            callHeaderStyles.callBtnHover,
+            callHeaderStyles.callBtnActive,
+            callHeaderStyles.callBtnDisabled
+           )}
            onClick={() => startCall(activeContact, "audio")}
            disabled={callState.isActive}
-          ></button>
+           title="Audio call"
+          >
+           <i className="fas fa-phone"></i>
+          </button>
           <button
-           className="call-btn video-call"
+           {...stylex.props(
+            callHeaderStyles.callBtn,
+            callHeaderStyles.callBtnHover,
+            callHeaderStyles.callBtnActive,
+            callHeaderStyles.callBtnDisabled
+           )}
            onClick={() => startCall(activeContact, "video")}
            disabled={callState.isActive}
+           title="Video call"
           >
            <i className="fas fa-video"></i>
           </button>
           <button
-           className="call-btn screenshare-call"
+           {...stylex.props(
+            callHeaderStyles.callBtn,
+            callHeaderStyles.callBtnHover,
+            callHeaderStyles.callBtnActive,
+            callHeaderStyles.callBtnDisabled
+           )}
            onClick={() => startScreenshare(activeContact)}
-           disabled={
-            screenshareState.isActive || screenshareState.isSharing
-           }
+           disabled={screenshareState.isActive || screenshareState.isSharing}
            title="Share screen"
           >
            <i className="fas fa-desktop"></i>
@@ -1223,7 +1246,7 @@ const App = () => {
          {((isLoadingMessages === false && messages.length === 0) || (!hasMoreMessages && messages.length > 0 && !loadingMoreMessages)) && (
           <StartOfChat
            contact={activeContact}
-           onProfileClick={setShowProfileModal}
+           onProfileClick={setShowQuickProfileModal}
            API_BASE_URL={API_BASE_URL}
           />
          )}
@@ -1262,14 +1285,14 @@ const App = () => {
              userStatuses={userStatuses}
              isGrouped={isSameSenderAsPrev}
              showHeader={showHeader}
-             onProfileClick={(userData) => setShowProfileModal(userData)}
+             onProfileClick={(userData) => setShowQuickProfileModal(userData)}
              onAddReaction={handleAddReaction}
              onRemoveReaction={handleRemoveReaction}
              messageReactions={messageReactions}
              isMobile={isMobile}
              showReactionPopup={showReactionPopup}
              setShowReactionPopup={setShowReactionPopup}
-             onLongPress={(msg) => setShowMessageOptionsPhone(msg)}
+             onLongPress={(msg) => setShowMessageActionsSheet(msg)}
              onReply={handleReplyToMessage}
              onDelete={setDeleteConfirm}
              onReport={handleReportMessage}
@@ -1447,8 +1470,8 @@ const App = () => {
        </>
       ) : !isMobile ? (
        <div {...stylex.props(chatStyles.noChatSelected)}>
-        <h2>Welcome to uChat</h2>
-        <p>Select a contact to start chatting</p>
+        <h2>Hello there, {user?.username}!</h2>
+        <p>Select a contact to start chatting now :D</p>
        </div>
       ) : (
        <div style={{ display: "none" }}></div>
@@ -1588,42 +1611,46 @@ const App = () => {
        </>
       )}
      {showDownloadRecommendation && (
-      <div className="download-recommendation-notification">
-       <div className="download-recommendation-content">
-        <div className="download-recommendation-info">
-         <div className="download-icon">
+      <div {...stylex.props(downloadStyles.notification)}>
+       <div {...stylex.props(downloadStyles.content)}>
+        <div {...stylex.props(downloadStyles.info)}>
+         <div {...stylex.props(downloadStyles.iconWrap)}>
           <i className="fas fa-download"></i>
          </div>
-         <div className="download-recommendation-text">
-          <h4>Better uChat Experience</h4>
-          <p>
-           Download our desktop app for Windows for improved
-           performance and features
+         <div {...stylex.props(downloadStyles.text)}>
+          <h4 {...stylex.props(downloadStyles.title)}>Better uChat Experience</h4>
+          <p {...stylex.props(downloadStyles.subtitle)}>
+           Download our desktop app for Windows for improved performance and features
           </p>
          </div>
         </div>
-        <div className="download-recommendation-actions">
+        <div {...stylex.props(downloadStyles.actions)}>
          <button
-          className="dismiss-btn-small"
+          {...stylex.props(downloadStyles.btnSmallBase, downloadStyles.dismissBtnSmall)}
           onClick={dismissDownloadRecommendation}
           title="Dismiss"
+          type="button"
          >
           <i className="fas fa-times"></i>
          </button>
          <button
-          className="download-btn-small"
+          {...stylex.props(downloadStyles.btnSmallBase, downloadStyles.downloadBtnSmall)}
           onClick={() => window.open("/downloads", "_blank")}
           title="Download"
+          type="button"
          >
           <i className="fas fa-download"></i>
          </button>
         </div>
        </div>
-       <div className="download-recommendation-footer">
-        <label className="already-have-checkbox">
-         <input type="checkbox" onChange={handleAlreadyHaveApp} />
-         <span className="checkmark"></span>I already have the desktop
-         app
+       <div {...stylex.props(downloadStyles.footer)}>
+        <label {...stylex.props(downloadStyles.alreadyHaveCheckbox)}>
+         <input
+          type="checkbox"
+          onChange={handleAlreadyHaveApp}
+          className={stylex.props(downloadStyles.alreadyHaveInput).className}
+         />
+         <span {...stylex.props(downloadStyles.checkmark)}></span>I already have the desktop app
         </label>
        </div>
       </div>
@@ -1661,42 +1688,42 @@ const App = () => {
      onClose={() => setShowGifsPickerModal(false)}
     />
    )}
-   {showProfileModal && (
-    <ProfileModal
-     user={contacts.find(c => c.id === showProfileModal.id) || showProfileModal}
-     onClose={() => setShowProfileModal(null)}
+   {showQuickProfileModal && (
+    <QuickProfileModal
+     user={contacts.find(c => c.id === showQuickProfileModal.id) || showQuickProfileModal}
+     onClose={() => setShowQuickProfileModal(null)}
      currentUserId={user.id}
      onlineUsers={onlineUsers}
      userStatuses={userStatuses}
      onSendMessage={(message) => {
-      if (socketRef.current && showProfileModal) {
+      if (socketRef.current && showQuickProfileModal) {
        socketRef.current.emit("send_message", {
-        receiver_id: showProfileModal.id,
+        receiver_id: showQuickProfileModal.id,
         content: message,
         reply_to: null
        });
       }
      }}
      onStartCall={() => {
-      if (showProfileModal && startCall) {
-       startCall(showProfileModal, "audio");
+      if (showQuickProfileModal && startCall) {
+       startCall(showQuickProfileModal, "audio");
       }
      }}
      onStartVideoCall={() => {
-      if (showProfileModal && startCall) {
-       startCall(showProfileModal, "video");
+      if (showQuickProfileModal && startCall) {
+       startCall(showQuickProfileModal, "video");
       }
      }}
      onOpenChat={(u) => {
-      setShowProfileModal(false);
+      setShowQuickProfileModal(false);
       selectContact(u);
      }}
-     lastMessage={contacts.find(c => c.id === showProfileModal.id)?.lastMessage || showProfileModal?.lastMessage}
-     lastMessageSenderId={contacts.find(c => c.id === showProfileModal.id)?.lastSenderId || showProfileModal?.lastSenderId}
+     lastMessage={contacts.find(c => c.id === showQuickProfileModal.id)?.lastMessage || showQuickProfileModal?.lastMessage}
+     lastMessageSenderId={contacts.find(c => c.id === showQuickProfileModal.id)?.lastSenderId || showQuickProfileModal?.lastSenderId}
     />
    )}
    {showReactionPopup && (
-    <ReactionMore
+    <ReactionHoverPopup
      messageId={showReactionPopup}
      onAddReaction={handleAddReaction}
      onClose={() => setShowReactionPopup(null)}
@@ -1715,28 +1742,28 @@ const App = () => {
      autoplay={showMediaViewer.autoplay}
     />
    )}
-   {showMessageOptionsPhone && isMobile && (
-    <MessageOptionsPhone
-     message={showMessageOptionsPhone}
-     isOwnMessage={showMessageOptionsPhone.sender_id === user.id}
+   {showMessageActionsSheet && isMobile && (
+    <MessageActionsSheet
+     message={showMessageActionsSheet}
+     isOwnMessage={showMessageActionsSheet.sender_id === user.id}
      onReply={handleReplyToMessage}
      onAddReaction={handleAddReaction}
      onRemoveReaction={handleRemoveReaction}
      onDelete={setDeleteConfirm}
      onReport={handleReportMessage}
-     onClose={() => setShowMessageOptionsPhone(null)}
+     onClose={() => setShowMessageActionsSheet(null)}
      currentUserReactions={
-      messageReactions[showMessageOptionsPhone.id]
-       ? Object.entries(messageReactions[showMessageOptionsPhone.id])
+      messageReactions[showMessageActionsSheet.id]
+       ? Object.entries(messageReactions[showMessageActionsSheet.id])
         .filter(([type, data]) => data.users?.includes(user.id))
         .map(([type]) => type)
        : []
      }
     />
    )}
-   {showStatusModal && (
-    <StatusModal
-     onClose={() => setShowStatusModal(false)}
+   {showChangeOwnStatusModal && (
+    <ChangeOwnStatusModal
+     onClose={() => setShowChangeOwnStatusModal(false)}
      onSelectStatus={handleSetStatus}
      currentStatus={
       user?.forced_status === 'offline' ? 'offline' :
@@ -1748,15 +1775,15 @@ const App = () => {
      }
     />
    )}
-   {showReportModal && (
-    <ReportModal
-     message={showReportModal}
-     onClose={() => setShowReportModal(null)}
+   {showReportMessageModal && (
+    <ReportMessageModal
+     message={showReportMessageModal}
+     onClose={() => setShowReportMessageModal(null)}
      onSubmit={handleSubmitReport}
     />
    )}
-   {showWarning && (
-    <WarningForModeration onClose={() => setShowWarning(false)} />
+   {showModerationCustomWarningForMessageModal && (
+    <ModerationCustomWarningForMessageModal onClose={() => setShowModerationCustomWarningForMessageModal(false)} />
    )}
   </>
  );

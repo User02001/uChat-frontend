@@ -1,5 +1,6 @@
-import React from 'react';
-import '../../pages/calls.css';
+import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GeneralCallsStyles as styles } from "../../styles/general_calls";
 
 const ActiveScreenshare = ({
  screenshareState,
@@ -10,28 +11,30 @@ const ActiveScreenshare = ({
  onOverlayClick
 }) => {
  return (
-  <div className="modern-screenshare-overlay" onClick={onOverlayClick}>
-   <div className="modern-screenshare-active">
-    <div className="modern-screenshare-header">
-     <div className="modern-screenshare-info">
-      <div className="modern-screenshare-icon">
+  <div {...stylex.props(styles.modernScreenshareOverlay)} onClick={onOverlayClick}>
+   <div {...stylex.props(styles.modernScreenshareActive)}>
+    <div {...stylex.props(styles.modernScreenshareHeader)}>
+     <div {...stylex.props(styles.modernScreenshareInfo)}>
+      <div {...stylex.props(styles.modernScreenshareIcon)}>
        <i className="fas fa-desktop"></i>
       </div>
-      <div className="modern-screenshare-user">
-       <h3>
+      <div {...stylex.props(styles.modernScreenshareUser)}>
+       <h3 {...stylex.props(styles.modernScreenshareUserH3)}>
         {screenshareState.isSharing
          ? `Sharing with ${screenshareState.contact?.username}`
          : screenshareState.contact?.username}
        </h3>
-       <p>
-        {screenshareState.isSharing
-         ? "Screen Share Active"
-         : "Viewing Screen Share"}
+       <p {...stylex.props(styles.modernScreenshareUserP)}>
+        {screenshareState.isSharing ? "Screen Share Active" : "Viewing Screen Share"}
        </p>
       </div>
      </div>
      <button
-      className="modern-screenshare-minimize-btn"
+      {...stylex.props(
+       styles.modernScreenshareMinimizeBtn,
+       styles.modernScreenshareMinimizeBtnHover,
+       styles.modernScreenshareMinimizeBtnActive
+      )}
       onClick={(e) => {
        e.stopPropagation();
        onMinimize();
@@ -42,11 +45,11 @@ const ActiveScreenshare = ({
      </button>
     </div>
 
-    <div className="modern-screenshare-container">
+    <div {...stylex.props(styles.modernScreenshareContainer)}>
      {screenshareState.isViewing && (
       <video
        ref={screenshareRemoteVideoRef}
-       className="modern-screenshare-video"
+       {...stylex.props(styles.modernScreenshareVideo)}
        autoPlay
        playsInline
        controls={false}
@@ -55,7 +58,7 @@ const ActiveScreenshare = ({
      {screenshareState.isSharing && (
       <video
        ref={screenshareLocalVideoRef}
-       className="modern-screenshare-video"
+       {...stylex.props(styles.modernScreenshareVideo)}
        autoPlay
        playsInline
        muted
@@ -63,10 +66,14 @@ const ActiveScreenshare = ({
      )}
     </div>
 
-    <div className="modern-screenshare-controls-wrapper visible">
-     <div className="modern-screenshare-controls">
+    <div {...stylex.props(styles.modernScreenshareControlsWrapper, styles.modernScreenshareControlsWrapperVisible)}>
+     <div {...stylex.props(styles.modernScreenshareControls)}>
       <button
-       className="modern-screenshare-end-btn"
+       {...stylex.props(
+        styles.modernScreenshareEndBtn,
+        styles.modernScreenshareEndBtnHover,
+        styles.modernScreenshareEndBtnActive
+       )}
        onClick={(e) => {
         e.stopPropagation();
         onEnd();

@@ -487,7 +487,7 @@ export const styles = stylex.create({
 
  statusIndicatorAway: {
   backgroundColor: 'transparent',
-  backgroundImage: 'url("/resources/icons/away-icon.svg")',
+  backgroundImage: 'url("/src/assets/icons/away_icon.svg")',
   backgroundSize: 'contain',
   border: 'none',
   borderRadius: 0,

@@ -154,7 +154,7 @@ body, html {
    ============================================ */
 :root[data-theme="light"] :global(.statusIndicator.away),
 :root:not([data-theme]) :global(.statusIndicator.away) {
-    background-image: url('/resources/icons/away-icon-light.svg') !important;
+    background-image: url('/src/assets/icons/away_icon_light.svg') !important;
 }
 
 /* ============================================

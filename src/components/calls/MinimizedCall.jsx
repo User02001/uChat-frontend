@@ -1,5 +1,6 @@
-import React from 'react';
-import '../../pages/calls.css';
+import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GeneralCallsStyles as styles } from "../../styles/general_calls";
 
 const MinimizedCall = ({
  callState,
@@ -16,18 +17,18 @@ const MinimizedCall = ({
 }) => {
  return (
   <div
-   className="modern-minimized-call"
+   {...stylex.props(styles.modernMinimizedCall, styles.modernMinimizedCallHover, styles.modernMinimizedCallActive)}
    style={{
     left: `${callPosition.x}px`,
     top: `${callPosition.y}px`,
-    cursor: isDragging ? 'grabbing' : 'grab'
+    cursor: isDragging ? "grabbing" : "grab"
    }}
    onMouseDown={onDragStart}
    onTouchStart={onDragStart}
    onClick={onClick}
   >
-   <div className="modern-minimized-header">
-    <div className="modern-minimized-info">
+   <div {...stylex.props(styles.modernMinimizedHeader)}>
+    <div {...stylex.props(styles.modernMinimizedInfo)}>
      <img
       src={
        callState.contact?.avatar_url
@@ -35,35 +36,35 @@ const MinimizedCall = ({
         : "/resources/default_avatar.png"
       }
       alt={callState.contact?.username}
-      className="modern-minimized-avatar"
+      {...stylex.props(styles.modernMinimizedAvatar)}
       draggable="false"
      />
-     <div className="modern-minimized-user">
-      <h4>{callState.contact?.username}</h4>
-      <p>{callState.type === "video" ? "Video Call" : "Audio Call"}</p>
+     <div {...stylex.props(styles.modernMinimizedUser)}>
+      <h4 {...stylex.props(styles.modernMinimizedUserH4)}>{callState.contact?.username}</h4>
+      <p {...stylex.props(styles.modernMinimizedUserP)}>{callState.type === "video" ? "Video Call" : "Audio Call"}</p>
      </div>
     </div>
    </div>
 
    {callState.type === "video" ? (
-    <div className="modern-minimized-video">
+    <div {...stylex.props(styles.modernMinimizedVideo)}>
      <video
       ref={remoteVideoRef}
-      className="modern-minimized-remote-video"
+      {...stylex.props(styles.modernMinimizedRemoteVideo)}
       autoPlay
       playsInline
       muted={false}
      />
     </div>
    ) : (
-    <div className="modern-minimized-audio">
-     <div className="modern-minimized-audio-wave"></div>
+    <div {...stylex.props(styles.modernMinimizedAudio)}>
+     <div {...stylex.props(styles.modernMinimizedAudioWave, styles.modernMinimizedAudioWaveBefore)}></div>
     </div>
    )}
 
-   <div className="modern-minimized-controls">
+   <div {...stylex.props(styles.modernMinimizedControls)}>
     <button
-     className="modern-minimized-btn modern-minimized-maximize"
+     {...stylex.props(styles.modernMinimizedBtn, styles.modernMinimizedMaximize, styles.modernMinimizedMaximizeHover, styles.modernMinimizedBtnActive)}
      onClick={(e) => {
       e.stopPropagation();
       onMaximize();
@@ -73,14 +74,14 @@ const MinimizedCall = ({
      <i className="fas fa-expand"></i>
     </button>
     <button
-     className="modern-minimized-btn modern-minimized-end"
+     {...stylex.props(styles.modernMinimizedBtn, styles.modernMinimizedEnd, styles.modernMinimizedEndHover, styles.modernMinimizedBtnActive)}
      onClick={(e) => {
       e.stopPropagation();
       onEnd();
      }}
      title="End call"
     >
-     <i className="fas fa-phone"></i>
+     <i className="fas fa-phone" style={{ transform: 'rotate(135deg)' }}></i>
     </button>
    </div>
 

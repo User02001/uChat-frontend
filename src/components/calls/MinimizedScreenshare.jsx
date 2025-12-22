@@ -1,5 +1,6 @@
-import React from 'react';
-import '../../pages/calls.css';
+import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GeneralCallsStyles as styles } from "../../styles/general_calls";
 
 const MinimizedScreenshare = ({
  screenshareState,
@@ -13,34 +14,34 @@ const MinimizedScreenshare = ({
 }) => {
  return (
   <div
-   className="modern-minimized-screenshare"
+   {...stylex.props(styles.modernMinimizedScreenshare, styles.modernMinimizedScreenshareHover, styles.modernMinimizedScreenshareActive)}
    style={{
     left: `${callPosition.x}px`,
     top: `${callPosition.y}px`,
-    cursor: isDragging ? 'grabbing' : 'grab'
+    cursor: isDragging ? "grabbing" : "grab"
    }}
    onMouseDown={onDragStart}
    onTouchStart={onDragStart}
   >
-   <div className="modern-minimized-header">
-    <div className="modern-minimized-info">
-     <div className="modern-minimized-screenshare-icon">
+   <div {...stylex.props(styles.modernMinimizedHeader)}>
+    <div {...stylex.props(styles.modernMinimizedInfo)}>
+     <div {...stylex.props(styles.modernMinimizedScreenshareIcon)}>
       <i className="fas fa-desktop"></i>
      </div>
-     <div className="modern-minimized-user">
-      <h4>{screenshareState.contact?.username}</h4>
-      <p>
+     <div {...stylex.props(styles.modernMinimizedUser)}>
+      <h4 {...stylex.props(styles.modernMinimizedUserH4)}>{screenshareState.contact?.username}</h4>
+      <p {...stylex.props(styles.modernMinimizedUserP)}>
        {screenshareState.isSharing ? "Sharing Screen" : "Viewing Screen"}
       </p>
      </div>
     </div>
    </div>
 
-   <div className="modern-minimized-screenshare-preview">
+   <div {...stylex.props(styles.modernMinimizedScreensharePreview)}>
     {screenshareState.isViewing && (
      <video
       ref={screenshareRemoteVideoRef}
-      className="modern-minimized-screenshare-video"
+      {...stylex.props(styles.modernMinimizedScreenshareVideo)}
       autoPlay
       playsInline
      />
@@ -48,7 +49,7 @@ const MinimizedScreenshare = ({
     {screenshareState.isSharing && (
      <video
       ref={screenshareLocalVideoRef}
-      className="modern-minimized-screenshare-video"
+      {...stylex.props(styles.modernMinimizedScreenshareVideo)}
       autoPlay
       playsInline
       muted
@@ -56,9 +57,9 @@ const MinimizedScreenshare = ({
     )}
    </div>
 
-   <div className="modern-minimized-controls">
+   <div {...stylex.props(styles.modernMinimizedControls)}>
     <button
-     className="modern-minimized-btn modern-minimized-maximize"
+     {...stylex.props(styles.modernMinimizedBtn, styles.modernMinimizedMaximize, styles.modernMinimizedMaximizeHover, styles.modernMinimizedBtnActive)}
      onClick={(e) => {
       e.stopPropagation();
       onMaximize();
@@ -68,7 +69,7 @@ const MinimizedScreenshare = ({
      <i className="fas fa-expand"></i>
     </button>
     <button
-     className="modern-minimized-btn modern-minimized-end"
+     {...stylex.props(styles.modernMinimizedBtn, styles.modernMinimizedEnd, styles.modernMinimizedEndHover, styles.modernMinimizedBtnActive)}
      onClick={(e) => {
       e.stopPropagation();
       onEnd();

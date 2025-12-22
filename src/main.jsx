@@ -57,7 +57,7 @@ const Login = lazy(() => import('./pages/Login.jsx'))
 const Signup = lazy(() => import('./pages/Signup.jsx'))
 const Verify = lazy(() => import('./pages/Verify.jsx'))
 const Profile = lazy(() => import('./pages/Profile.jsx'))
-const Downloads = lazy(() => import('./pages/Downloads'))
+const DownloadsForSoftwareOrApp = lazy(() => import('./pages/DownloadsForSoftwareOrApp'))
 const GoogleAuth = lazy(() => import('./pages/GoogleAuth.jsx'))
 const Help = lazy(() => import('./pages/Help.jsx'))
 const TermsAndConditions = lazy(() => import('./pages/TermsAndConditions.jsx'))
@@ -86,10 +86,10 @@ const AppRoutes = () => {
     <Route path="/login" element={<Login key="login" />} />
     <Route path="/signup" element={<Signup key="signup" />} />
     <Route path="/verify" element={<Verify key="verify" />} />
-    <Route path="/google-setup" element={<GoogleAuth key="google" />} />
+    <Route path="/google_setup" element={<GoogleAuth key="google" />} />
     <Route path="/chat" element={<App key="chat" />} />
     <Route path="/profile" element={<Profile key="profile" />} />
-    <Route path="/downloads" element={<Downloads key="downloads" />} />
+    <Route path="/downloads" element={<DownloadsForSoftwareOrApp key="downloads" />} />
     <Route path="/terms" element={<TermsAndConditions key="terms" />} />
     <Route path="/privacy" element={<PrivacyPolicy key="privacy" />} />
     <Route path="/help" element={<Help key="help" />} />

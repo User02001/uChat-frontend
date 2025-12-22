@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { API_BASE_URL } from "../config";
-import { MediaViewerStyles as styles } from "../styles/media_viewer";
+import { API_BASE_URL } from "../../config";
+import { MediaViewerStyles as styles } from "../../styles/media_viewer";
 import VideoPlayer from "./VideoPlayer";
 
 const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {

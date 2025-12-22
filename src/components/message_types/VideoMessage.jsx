@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import VideoPlayer from '../VideoPlayer';
+import VideoPlayer from '../media_viewer/VideoPlayer';
 
 const VideoMessage = ({ message, API_BASE_URL, onOpenViewer }) => {
  const videoPlayerRef = useRef(null);

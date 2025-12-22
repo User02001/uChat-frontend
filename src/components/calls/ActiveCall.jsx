@@ -1,5 +1,6 @@
-import React from 'react';
-import '../../pages/calls.css';
+import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { GeneralCallsStyles as styles } from "../../styles/general_calls";
 
 const ActiveCall = ({
  callState,
@@ -15,10 +16,10 @@ const ActiveCall = ({
  onOverlayClick
 }) => {
  return (
-  <div className="modern-call-overlay" onClick={onOverlayClick}>
-   <div className="modern-active-call">
-    <div className="modern-call-header">
-     <div className="modern-call-info">
+  <div {...stylex.props(styles.modernCallOverlay)} onClick={onOverlayClick}>
+   <div {...stylex.props(styles.modernActiveCall)}>
+    <div {...stylex.props(styles.modernCallHeader)}>
+     <div {...stylex.props(styles.modernCallInfo)}>
       <img
        src={
         callState.contact?.avatar_url
@@ -26,12 +27,12 @@ const ActiveCall = ({
          : "/resources/default_avatar.png"
        }
        alt={callState.contact?.username}
-       className="modern-call-avatar"
+       {...stylex.props(styles.modernCallAvatar)}
        draggable="false"
       />
-      <div className="modern-call-user">
-       <h3>{callState.contact?.username}</h3>
-       <p>
+      <div {...stylex.props(styles.modernCallUser)}>
+       <h3 {...stylex.props(styles.modernCallUserH3)}>{callState.contact?.username}</h3>
+       <p {...stylex.props(styles.modernCallUserP)}>
         {callState.isOutgoing
          ? "Calling..."
          : callState.type === "video"
@@ -41,7 +42,11 @@ const ActiveCall = ({
       </div>
      </div>
      <button
-      className="modern-minimize-btn"
+      {...stylex.props(
+       styles.modernMinimizeBtn,
+       styles.modernMinimizeBtnHover,
+       styles.modernMinimizeBtnActive
+      )}
       onClick={(e) => {
        e.stopPropagation();
        onMinimize();
@@ -53,10 +58,10 @@ const ActiveCall = ({
     </div>
 
     {callState.type === "video" ? (
-     <div className="modern-video-container">
+     <div {...stylex.props(styles.modernVideoContainer)}>
       <video
        ref={remoteVideoRef}
-       className="modern-remote-video"
+       {...stylex.props(styles.modernRemoteVideo)}
        autoPlay
        playsInline
        controls={false}
@@ -64,7 +69,7 @@ const ActiveCall = ({
       />
       <video
        ref={localVideoRef}
-       className="modern-local-video"
+       {...stylex.props(styles.modernLocalVideo, styles.modernLocalVideoHover)}
        autoPlay
        playsInline
        controls={false}
@@ -72,8 +77,8 @@ const ActiveCall = ({
       />
      </div>
     ) : (
-     <div className="modern-audio-call-ui">
-      <div className="modern-audio-avatar-wrapper">
+     <div {...stylex.props(styles.modernAudioCallUi)}>
+      <div {...stylex.props(styles.modernAudioAvatarWrapper)}>
        <img
         src={
          callState.contact?.avatar_url
@@ -82,60 +87,66 @@ const ActiveCall = ({
         }
         alt={callState.contact?.username}
         draggable="false"
-        className="modern-audio-avatar"
+        {...stylex.props(styles.modernAudioAvatar)}
        />
-       <div className="modern-audio-pulse"></div>
+       <div {...stylex.props(styles.modernAudioPulse)}></div>
       </div>
-      <h3>{callState.contact?.username}</h3>
-      <p>{callState.isOutgoing ? "Calling..." : "Audio Call"}</p>
-      <audio
-       ref={remoteVideoRef}
-       autoPlay
-       muted={false}
-       style={{ display: "none" }}
-      />
-      <audio
-       ref={localVideoRef}
-       autoPlay
-       muted={true}
-       style={{ display: "none" }}
-      />
+      <h3 {...stylex.props(styles.modernAudioCallUiH3)}>{callState.contact?.username}</h3>
+      <p {...stylex.props(styles.modernAudioCallUiP)}>{callState.isOutgoing ? "Calling..." : "Audio Call"}</p>
+      <audio ref={remoteVideoRef} autoPlay muted={false} style={{ display: "none" }} />
+      <audio ref={localVideoRef} autoPlay muted={true} style={{ display: "none" }} />
      </div>
     )}
 
-    <div className="modern-call-controls-wrapper">
-     <div className="modern-call-controls">
+    <div {...stylex.props(styles.modernCallControlsWrapper)}>
+     <div {...stylex.props(styles.modernCallControls)}>
       <button
-       className={`modern-control-btn modern-mute-btn ${isMicMuted ? 'muted' : ''}`}
+       {...stylex.props(
+        styles.modernControlBtn,
+        styles.modernControlBtnHover,
+        styles.modernControlBtnActive,
+        styles.modernMuteBtn,
+        isMicMuted && styles.muted
+       )}
        onClick={(e) => {
         e.stopPropagation();
         onToggleMic();
        }}
        title={isMicMuted ? "Unmute" : "Mute"}
       >
-       <i className={`fas fa-microphone${isMicMuted ? '-slash' : ''}`}></i>
+       <i className={isMicMuted ? "fas fa-microphone-slash" : "fas fa-microphone"}></i>
       </button>
       {callState.type === "video" && (
        <button
-        className={`modern-control-btn modern-camera-btn ${isCameraOff ? 'camera-off' : ''}`}
+        {...stylex.props(
+         styles.modernControlBtn,
+         styles.modernControlBtnHover,
+         styles.modernControlBtnActive,
+         styles.modernCameraBtn,
+         isCameraOff && styles.cameraOff
+        )}
         onClick={(e) => {
          e.stopPropagation();
          onToggleCamera();
         }}
         title={isCameraOff ? "Turn on camera" : "Turn off camera"}
        >
-        <i className={`fas fa-video${isCameraOff ? '-slash' : ''}`}></i>
+        <i className={isCameraOff ? "fas fa-video-slash" : "fas fa-video"}></i>
        </button>
       )}
       <button
-       className="modern-end-call-btn"
+       {...stylex.props(
+        styles.modernEndCallBtn,
+        styles.modernEndCallBtnHover,
+        styles.modernEndCallBtnActive
+       )}
        onClick={(e) => {
         e.stopPropagation();
         onEnd();
        }}
        title="End call"
       >
-       <i className="fas fa-phone"></i>
+       <i className="fas fa-phone" style={{ transform: 'rotate(135deg)' }}></i>
       </button>
      </div>
     </div>

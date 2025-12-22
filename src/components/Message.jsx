@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as stylex from '@stylexjs/stylex';
 import { styles } from '../styles/message';
 import { API_BASE_URL } from '../config';
-import ReactionMore from './ReactionMore';
-import Reaction from './Reaction';
+import ReactionHoverPopup from './ReactionHoverPopup';
+import ReactionBadge from './ReactionBadge';
 import Reply from './Reply';
-import VideoPlayer from './VideoPlayer';
+import VideoPlayer from './media_viewer/VideoPlayer';
 
 const Message = ({
  message,
@@ -165,7 +165,7 @@ const Message = ({
       );
      })()}
      {children}
-     <Reaction
+     <ReactionBadge
       messageId={message.id}
       reactions={messageReactions?.[message.id] || {}}
       onAddReaction={onAddReaction}
@@ -179,7 +179,7 @@ const Message = ({
      styles.reactionPopup,
      isHovered && styles.reactionPopupVisible
     )}>
-     <ReactionMore
+     <ReactionHoverPopup
       messageId={message.id}
       onAddReaction={onAddReaction}
       onClose={() => { }}

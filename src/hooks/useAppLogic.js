@@ -45,25 +45,25 @@ export const useAppLogic = () => {
  const [deleteConfirm, setDeleteConfirm] = useState(null);
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
  const [sessionDismissed, setSessionDismissed] = useState(false);
- const [showVerificationBanner, setShowVerificationBanner] = useState(false);
+ const [showModalForUnverifiedUsers, setShowModalForUnverifiedUsers] = useState(false);
  const [showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal] = useState(null);
  const [isOffline, setIsOffline] = useState(false);
  const [callMinimized, setCallMinimized] = useState(false);
  const [screenshareMinimized, setScreenshareMinimized] = useState(false);
  const [userStatuses, setUserStatuses] = useState({}); // Track user statuses (online/away/offline)
- const [showProfileModal, setShowProfileModal] = useState(null);
+ const [showQuickProfileModal, setShowQuickProfileModal] = useState(null);
  const [isLoadingMessages, setIsLoadingMessages] = useState(null);
  const [callPosition, setCallPosition] = useState({ x: 20, y: 20 });
  const [isDragging, setIsDragging] = useState(false);
  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
  const [messageCache, setMessageCache] = useState({});
  const [showMediaViewer, setShowMediaViewer] = useState(null);
- const [showMessageOptionsPhone, setShowMessageOptionsPhone] = useState(null);
+ const [showMessageActionsSheet, setShowMessageActionsSheet] = useState(null);
  const [messagesContainerVisible, setMessagesContainerVisible] = useState(true);
- const [showStatusModal, setShowStatusModal] = useState(false);
+ const [showChangeOwnStatusModal, setShowChangeOwnStatusModal] = useState(false);
  const [userForcedStatus, setUserForcedStatus] = useState(null);
- const [showReportModal, setShowReportModal] = useState(null);
- const [showWarning, setShowWarning] = useState(false);
+ const [showReportMessageModal, setShowReportMessageModal] = useState(null);
+ const [showModerationCustomWarningForMessageModal, setShowModerationCustomWarningForMessageModal] = useState(false);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -420,7 +420,7 @@ export const useAppLogic = () => {
   });
 
   socket.on("new_warning", () => {
-   setShowWarning(true);
+   setShowModerationCustomWarningForMessageModal(true);
   });
 
   socket.on("account_banned", (data) => {
@@ -528,7 +528,7 @@ export const useAppLogic = () => {
  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
 
  const handleReportMessage = (message) => {
-  setShowReportModal(message);
+  setShowReportMessageModal(message);
  };
 
  const handleSubmitReport = async (messageId, category) => {
@@ -561,7 +561,7 @@ export const useAppLogic = () => {
    if (res.ok) {
     const data = await res.json();
     if (data.warnings.length > 0) {
-     setShowWarning(true);
+     setShowModerationCustomWarningForMessageModal(true);
     }
    }
   } catch (err) {
@@ -1384,8 +1384,8 @@ export const useAppLogic = () => {
   setShowDownloadRecommendation,
   sessionDismissed,
   setSessionDismissed,
-  showVerificationBanner,
-  setShowVerificationBanner,
+  showModalForUnverifiedUsers,
+  setShowModalForUnverifiedUsers,
   showUnverifiedUserWarningModal,
   setShowUnverifiedUserWarningModal,
   isOffline,
@@ -1396,8 +1396,8 @@ export const useAppLogic = () => {
   setScreenshareMinimized,
   userStatuses,
   setUserStatuses,
-  showProfileModal,
-  setShowProfileModal,
+  showQuickProfileModal,
+  setShowQuickProfileModal,
   hasMoreMessages,
   setHasMoreMessages,
   loadingMoreMessages,
@@ -1414,18 +1414,18 @@ export const useAppLogic = () => {
   setMessageCache,
   showMediaViewer,
   setShowMediaViewer,
-  showMessageOptionsPhone,
-  setShowMessageOptionsPhone,
+  showMessageActionsSheet,
+  setShowMessageActionsSheet,
   messagesContainerVisible,
   setMessagesContainerVisible,
-  showStatusModal,
-  setShowStatusModal,
+  showChangeOwnStatusModal,
+  setShowChangeOwnStatusModal,
   userForcedStatus,
   setUserForcedStatus,
-  showReportModal,
-  setShowReportModal,
-  showWarning,
-  setShowWarning,
+  showReportMessageModal,
+  setShowReportMessageModal,
+  showModerationCustomWarningForMessageModal,
+  setShowModerationCustomWarningForMessageModal,
 
   // Refs
   socketRef,

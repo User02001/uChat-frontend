@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 import { API_BASE_URL } from '../config';
-import SVG from 'react-inlinesvg';
+import Icon from '../components/Icon';
 
 const Profile = ({ onBack }) => {
  const navigate = useNavigate();
@@ -218,7 +218,7 @@ const Profile = ({ onBack }) => {
     {/* Sidebar Header */}
     <div className="sidebar-header">
      <div className="sidebar-brand">
-      <SVG draggable="false" src="/resources/main-logo.svg" alt="uChat Logo" className="sidebar-logo" />
+      <Icon draggable="false" name="main-logo" alt="uChat Logo" className="sidebar-logo" />
       <h2>uChat</h2>
      </div>
      <p>:D Welcome to uChat!!</p>

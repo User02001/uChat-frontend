@@ -11,7 +11,7 @@ const mobileMenuSlideIn = stylex.keyframes({
  },
 });
 
-export const styles = stylex.create({
+export const SidebarStyles = stylex.create({
  // Main nav sidebar container
  navSidebar: {
   width: '72px',
