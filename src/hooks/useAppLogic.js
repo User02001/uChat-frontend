@@ -64,6 +64,7 @@ export const useAppLogic = () => {
  const [userForcedStatus, setUserForcedStatus] = useState(null);
  const [showReportMessageModal, setShowReportMessageModal] = useState(null);
  const [showModerationCustomWarningForMessageModal, setShowModerationCustomWarningForMessageModal] = useState(false);
+ const [showNewDeviceBanner, setShowNewDeviceBanner] = useState(null);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
 
@@ -107,9 +108,15 @@ export const useAppLogic = () => {
 
    if (response.ok) {
     const data = await response.json();
+
+    // Check if force logout
+    if (data.force_logout) {
+     navigate("/login", { replace: true });
+     return;
+    }
+
     setUser(data.user);
 
-    // Delay to let splash animation play fully - THEN do heavy stuff
     // Initialize socket IMMEDIATELY (don't wait for animation)
     initializeSocket(messagesContainerRef);
 
@@ -119,10 +126,17 @@ export const useAppLogic = () => {
      // Load contacts after animation
      setTimeout(() => {
       loadContacts();
+      checkForNewDeviceSession();  // CHECK FOR NEW DEVICE
      }, 100);
     }, 2000);
    } else {
-    navigate("/login", { replace: true });
+    const data = await response.json();
+    if (data.force_logout) {
+     // Device session was revoked
+     navigate("/login", { replace: true, state: { message: "Your session was ended from another device" } });
+    } else {
+     navigate("/login", { replace: true });
+    }
    }
   } catch (err) {
    navigate("/login", { replace: true });
@@ -566,6 +580,52 @@ export const useAppLogic = () => {
    }
   } catch (err) {
    // no-op
+  }
+ }, []);
+
+ const checkForNewDeviceSession = useCallback(async () => {
+  try {
+   const res = await fetch(`${API_BASE_URL}/api/sessions/active`, {
+    credentials: "include",
+   });
+   if (res.ok) {
+    const data = await res.json();
+    // Find unacknowledged sessions
+    const unacknowledged = data.sessions.filter(s => !s.acknowledged && !s.is_current);
+    if (unacknowledged.length > 0) {
+     setShowNewDeviceBanner(unacknowledged[0]);
+    }
+   }
+  } catch (err) {
+   // no-op
+  }
+ }, []);
+
+ const handleAcknowledgeDevice = useCallback(async (sessionId) => {
+  try {
+   const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}/acknowledge`, {
+    method: "POST",
+    credentials: "include",
+   });
+   if (res.ok) {
+    setShowNewDeviceBanner(null);
+   }
+  } catch (err) {
+   setError("Failed to acknowledge session");
+  }
+ }, []);
+
+ const handleRevokeDevice = useCallback(async (sessionId) => {
+  try {
+   const res = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}/revoke`, {
+    method: "POST",
+    credentials: "include",
+   });
+   if (res.ok) {
+    setShowNewDeviceBanner(null);
+   }
+  } catch (err) {
+   setError("Failed to revoke session");
   }
  }, []);
 
@@ -1426,6 +1486,11 @@ export const useAppLogic = () => {
   setShowReportMessageModal,
   showModerationCustomWarningForMessageModal,
   setShowModerationCustomWarningForMessageModal,
+  showNewDeviceBanner,
+  setShowNewDeviceBanner,
+  handleAcknowledgeDevice,
+  handleRevokeDevice,
+  checkForNewDeviceSession,
 
   // Refs
   socketRef,

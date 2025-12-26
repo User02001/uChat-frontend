@@ -5,6 +5,7 @@ import { loginStyles } from '../styles/login';
 import { API_BASE_URL } from '../config';
 import useStars from "../hooks/useStars";
 import Icon from '../components/Icon';
+import { getDeviceIdentity } from '../utils/deviceFingerprint';
 
 const Login = () => {
  const navigate = useNavigate();
@@ -164,13 +165,20 @@ const Login = () => {
   setValidationError('');
 
   try {
+   const deviceIdentity = getDeviceIdentity();
+
    const response = await fetch(`${API_BASE_URL}/api/login`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-     'Content-Type': 'application/json',
+     "Content-Type": "application/json",
     },
-    credentials: 'include',
-    body: JSON.stringify(formData)
+    credentials: "include",
+    body: JSON.stringify({
+     email: formData.email,
+     password: formData.password,
+     deviceId: deviceIdentity.deviceId,
+     deviceFingerprint: deviceIdentity.deviceFingerprint,
+    }),
    });
 
    const data = await response.json();

@@ -40,7 +40,8 @@ import IncomingScreenshareNotification from "./components/calls/IncomingScreensh
 import MinimizedScreenshare from "./components/calls/MinimizedScreenshare";
 import ActiveScreenshare from "./components/calls/ActiveScreenshare";
 import { styles as callHeaderStyles } from './styles/call_header_buttons';
-import { DownloadRecommendationNotificationStyles as downloadStyles} from './styles/download_recommendation';
+import { DownloadRecommendationNotificationStyles as downloadStyles } from './styles/download_recommendation';
+import './utils/secureApiFetch';
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -131,6 +132,9 @@ const App = () => {
   handleReportMessage,
   handleSubmitReport,
   checkForWarnings,
+  showNewDeviceBanner,
+  handleAcknowledgeDevice,
+  handleRevokeDevice,
  } = useAppLogic();
 
  const { formatTimeAgo, formatInactiveTime, formatLastSeen, formatContactTime, formatFileSize, getFileIcon } = useFormatters();
@@ -660,6 +664,63 @@ const App = () => {
        />
        <span className={styles.splashBrandingName}>UFOnic</span>
       </div>
+     </div>
+    </div>
+   )}
+   {showNewDeviceBanner && (
+    <div style={{
+     position: 'fixed',
+     top: 0,
+     left: 0,
+     right: 0,
+     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+     color: 'white',
+     padding: '16px',
+     zIndex: 999998,
+     display: 'flex',
+     alignItems: 'center',
+     justifyContent: 'space-between',
+     boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+    }}>
+     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <i className="fas fa-shield-alt" style={{ fontSize: '20px' }}></i>
+      <div>
+       <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚠️ New device detected</div>
+       <div style={{ fontSize: '13px', opacity: 0.9 }}>
+        Someone logged into your account from {showNewDeviceBanner.user_agent || 'Unknown Device'}
+        {showNewDeviceBanner.ip_address && ` (${showNewDeviceBanner.ip_address})`}
+       </div>
+      </div>
+     </div>
+     <div style={{ display: 'flex', gap: '8px' }}>
+      <button
+       onClick={() => handleAcknowledgeDevice(showNewDeviceBanner.id)}
+       style={{
+        background: 'rgba(255,255,255,0.2)',
+        border: '1px solid rgba(255,255,255,0.3)',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: '500'
+       }}
+      >
+       ✓ Yes, it was me
+      </button>
+      <button
+       onClick={() => handleRevokeDevice(showNewDeviceBanner.id)}
+       style={{
+        background: '#dc2626',
+        border: 'none',
+        color: 'white',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        cursor: 'pointer',
+        fontWeight: '500'
+       }}
+      >
+       ✕ NO - Log them out!
+      </button>
      </div>
     </div>
    )}
