@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Help.css';
-import { API_BASE_URL } from '../config';
 import helpData from './helpData.json';
 
 const Help = () => {
@@ -15,34 +14,17 @@ const Help = () => {
  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
  useEffect(() => {
-  checkAuth();
- }, []);
-
- useEffect(() => {
   document.title = "uChat | Help Center";
- }, []);
 
- const checkAuth = async () => {
-  try {
-   const response = await fetch(`${API_BASE_URL}/api/me`, {
-    credentials: 'include'
-   });
-
-   if (response.ok) {
-    const data = await response.json();
-    setUser(data.user);
-   } else {
-    navigate('/login', { replace: true });
-    return;
-   }
-  } catch (error) {
-   console.error('Auth check failed:', error);
-   navigate('/login', { replace: true });
-   return;
-  } finally {
-   setLoading(false);
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+   link = document.createElement("link");
+   link.rel = "icon";
+   document.head.appendChild(link);
   }
- };
+  link.type = "image/png";
+  link.href = "/resources/favicons/help.png";
+ }, []);
 
  useEffect(() => {
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -60,6 +42,12 @@ const Help = () => {
   };
  }, []);
 
+ // IMPORTANT: You must end loading, otherwise you'll stay stuck forever.
+ useEffect(() => {
+  // If later you add a fetch here, keep setLoading(false) in finally.
+  setLoading(false);
+ }, []);
+
  const toggleCategory = (categoryId) => {
   setExpandedCategories(prev =>
    prev.includes(categoryId)
@@ -74,9 +62,9 @@ const Help = () => {
   setMobileMenuOpen(false);
 
   // Auto-expand the category if not already expanded
-  if (!expandedCategories.includes(categoryId)) {
-   setExpandedCategories(prev => [...prev, categoryId]);
-  }
+  setExpandedCategories(prev =>
+   prev.includes(categoryId) ? prev : [...prev, categoryId]
+  );
  };
 
  const selectArticle = (categoryId, subcategoryId, articleId) => {
@@ -86,7 +74,7 @@ const Help = () => {
  };
 
  const toggleMobileMenu = () => {
-  setMobileMenuOpen(!mobileMenuOpen);
+  setMobileMenuOpen(prev => !prev);
  };
 
  // Search logic
@@ -94,26 +82,35 @@ const Help = () => {
   if (!searchQuery) return helpData.categories;
 
   const query = searchQuery.toLowerCase();
-  return helpData.categories.map(category => ({
-   ...category,
-   subcategories: category.subcategories.map(subcategory => ({
-    ...subcategory,
-    articles: subcategory.articles.filter(article =>
-     article.title.toLowerCase().includes(query) ||
-     article.content.toLowerCase().includes(query)
-    )
-   })).filter(subcategory => subcategory.articles.length > 0)
-  })).filter(category => category.subcategories.length > 0);
+  return helpData.categories
+   .map(category => ({
+    ...category,
+    subcategories: category.subcategories
+     .map(subcategory => ({
+      ...subcategory,
+      articles: subcategory.articles.filter(article =>
+       article.title.toLowerCase().includes(query) ||
+       article.content.toLowerCase().includes(query)
+      )
+     }))
+     .filter(subcategory => subcategory.articles.length > 0)
+   }))
+   .filter(category => category.subcategories.length > 0);
  };
 
  const filteredData = getFilteredData();
- const currentCategory = filteredData.find(c => c.id === activeCategory) || filteredData[0];
+
+ // Avoid crashing when search returns zero categories
+ const currentCategory =
+  filteredData.find(c => c.id === activeCategory) ||
+  filteredData[0] ||
+  null;
 
  // Get current article if one is selected
- const currentArticleData = currentCategory && activeArticle
+ const currentArticleData = (currentCategory && activeArticle)
   ? currentCategory.subcategories
    .flatMap(sub => sub.articles)
-   .find(article => article.id === activeArticle)
+   .find(article => article.id === activeArticle) || null
   : null;
 
  if (loading) {
@@ -168,6 +165,7 @@ const Help = () => {
       </div>
 
       <h3 className="categories-title">Categories</h3>
+
       <div className="categories-list">
        {filteredData.map((category) => (
         <div key={category.id} className="category-group">
@@ -175,11 +173,16 @@ const Help = () => {
           className={`category-btn ${activeCategory === category.id ? 'active' : ''}`}
           onClick={() => {
            toggleCategory(category.id);
+           // Optional: if you want click to also select:
+           // selectCategory(category.id);
           }}
          >
           <i className={`${category.icon} category-icon`}></i>
           <span className="category-name">{category.name}</span>
-          <i className={`fas fa-chevron-down chevron-icon ${expandedCategories.includes(category.id) ? 'expanded' : ''}`}></i>
+          <i
+           className={`fas fa-chevron-down chevron-icon ${expandedCategories.includes(category.id) ? 'expanded' : ''
+            }`}
+          ></i>
          </button>
 
          {expandedCategories.includes(category.id) && (
@@ -219,7 +222,6 @@ const Help = () => {
          </div>
         </div>
 
-        {/* Show single article if selected */}
         {currentArticleData ? (
          <div className="single-article-view">
           <button
@@ -239,7 +241,6 @@ const Help = () => {
           </article>
          </div>
         ) : (
-         /* Show all articles grouped by subcategory */
          <div className="articles-list">
           {currentCategory.subcategories && currentCategory.subcategories.length > 0 ? (
            currentCategory.subcategories.map((subcategory) => (

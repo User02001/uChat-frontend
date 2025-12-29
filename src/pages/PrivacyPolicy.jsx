@@ -11,6 +11,15 @@ const PrivacyPolicy = () => {
 
  useEffect(() => {
   document.title = "uChat | Privacy Policy";
+
+  let link = document.querySelector("link[rel='icon']");
+  if (!link) {
+   link = document.createElement("link");
+   link.rel = "icon";
+   document.head.appendChild(link);
+  }
+  link.type = "image/png";
+  link.href = "/resources/favicons/main.png";
  }, []);
 
  useEffect(() => {

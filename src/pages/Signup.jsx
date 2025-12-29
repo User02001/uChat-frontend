@@ -1,10 +1,167 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as stylex from '@stylexjs/stylex';
 import { signupStyles } from '../styles/signup';
 import { API_BASE_URL } from '../config';
 import useStars from "../hooks/useStars";
+import useLiquidLayers from "../hooks/useLiquidLayers";
 import Icon from '../components/Icon';
+import { getDeviceIdentity } from '../utils/deviceFingerprint';
+import { useLanguage } from '../hooks/useLanguage';
+
+const LANGUAGES = [
+ // Core
+ { code: 'en', name: 'English' },
+ { code: 'en-US', name: 'English (United States)' },
+ { code: 'en-GB', name: 'English (United Kingdom)' },
+ { code: 'en-AU', name: 'English (Australia)' },
+ { code: 'en-CA', name: 'English (Canada)' },
+ { code: 'es', name: 'Español (Spanish)' },
+ { code: 'fr', name: 'Français (French)' },
+ { code: 'de', name: 'Deutsch (German)' },
+ { code: 'it', name: 'Italiano (Italian)' },
+ { code: 'pt', name: 'Português (Portuguese)' },
+ { code: 'pt-BR', name: 'Português (Brasil)' },
+ { code: 'ru', name: 'Русский (Russian)' },
+ { code: 'uk', name: 'Українська (Ukrainian)' },
+ { code: 'pl', name: 'Polski (Polish)' },
+ { code: 'nl', name: 'Nederlands (Dutch)' },
+ { code: 'sv', name: 'Svenska (Swedish)' },
+ { code: 'da', name: 'Dansk (Danish)' },
+ { code: 'fi', name: 'Suomi (Finnish)' },
+ { code: 'no', name: 'Norsk (Norwegian)' },
+ { code: 'zh-CN', name: '中文（简体）(Chinese Simplified)' },
+ { code: 'zh-TW', name: '中文（繁體）(Chinese Traditional)' },
+ { code: 'ja', name: '日本語 (Japanese)' },
+ { code: 'ko', name: '한국어 (Korean)' },
+ { code: 'vi', name: 'Tiếng Việt (Vietnamese)' },
+ { code: 'th', name: 'ไทย (Thai)' },
+ { code: 'id', name: 'Bahasa Indonesia' },
+ { code: 'ms', name: 'Bahasa Melayu (Malay)' },
+ { code: 'tl', name: 'Filipino / Tagalog' },
+ { code: 'hi', name: 'हिन्दी (Hindi)' },
+ { code: 'bn', name: 'বাংলা (Bengali)' },
+ { code: 'ur', name: 'اردو (Urdu)' },
+ { code: 'pa', name: 'ਪੰਜਾਬੀ (Punjabi)' },
+ { code: 'mr', name: 'मराठी (Marathi)' },
+ { code: 'ta', name: 'தமிழ் (Tamil)' },
+ { code: 'te', name: 'తెలుగు (Telugu)' },
+ { code: 'gu', name: 'ગુજરાતી (Gujarati)' },
+ { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },
+ { code: 'ml', name: 'മലയാളം (Malayalam)' },
+ { code: 'ne', name: 'नेपाली (Nepali)' },
+ { code: 'si', name: 'සිංහල (Sinhala)' },
+ { code: 'ar', name: 'العربية (Arabic)' },
+ { code: 'fa', name: 'فارسی (Persian)' },
+ { code: 'he', name: 'עברית (Hebrew)' },
+ { code: 'tr', name: 'Türkçe (Turkish)' },
+ { code: 'sw', name: 'Kiswahili (Swahili)' },
+ { code: 'am', name: 'አማርኛ (Amharic)' },
+ { code: 'ha', name: 'Hausa' },
+ { code: 'yo', name: 'Yorùbá (Yoruba)' },
+ { code: 'ig', name: 'Igbo' },
+ { code: 'zu', name: 'isiZulu (Zulu)' },
+ { code: 'xh', name: 'isiXhosa (Xhosa)' },
+ { code: 'so', name: 'Soomaali (Somali)' },
+ { code: 'af', name: 'Afrikaans' },
+ { code: 'cs', name: 'Čeština (Czech)' },
+ { code: 'sk', name: 'Slovenčina (Slovak)' },
+ { code: 'hu', name: 'Magyar (Hungarian)' },
+ { code: 'ro', name: 'Română (Romanian)' },
+ { code: 'bg', name: 'Български (Bulgarian)' },
+ { code: 'el', name: 'Ελληνικά (Greek)' },
+ { code: 'sr', name: 'Српски (Serbian)' },
+ { code: 'hr', name: 'Hrvatski (Croatian)' },
+ { code: 'sl', name: 'Slovenščina (Slovenian)' },
+ { code: 'lt', name: 'Lietuvių (Lithuanian)' },
+ { code: 'lv', name: 'Latviešu (Latvian)' },
+ { code: 'et', name: 'Eesti (Estonian)' },
+ { code: 'ca', name: 'Català (Catalan)' },
+ { code: 'eu', name: 'Euskara (Basque)' },
+ { code: 'gl', name: 'Galego (Galician)' },
+ { code: 'cy', name: 'Cymraeg (Welsh)' },
+ { code: 'ga', name: 'Gaeilge (Irish)' },
+ { code: 'is', name: 'Íslenska (Icelandic)' },
+ { code: 'ka', name: 'ქართული (Georgian)' },
+ { code: 'hy', name: 'Հայերեն (Armenian)' },
+ { code: 'az', name: 'Azərbaycan (Azerbaijani)' },
+ { code: 'kk', name: 'Қазақша (Kazakh)' },
+ { code: 'uz', name: 'Oʻzbek (Uzbek)' },
+ { code: 'ky', name: 'Кыргызча (Kyrgyz)' },
+ { code: 'tg', name: 'Тоҷикӣ (Tajik)' },
+ { code: 'mn', name: 'Монгол (Mongolian)' },
+ { code: 'my', name: 'မြန်မာ (Burmese)' },
+ { code: 'km', name: 'ខ្មែរ (Khmer)' },
+ { code: 'lo', name: 'ລາວ (Lao)' },
+];
+
+const ORIGINAL_CONTENT = {
+ // === COMMON ===
+ continueButton: "Continue",
+ backButton: "Back",
+ loading: "Loading...",
+ orDivider: "or",
+ termsOfUse: "Terms of use",
+ privacyPolicy: "Privacy Policy",
+ help: "Get help",
+ copyright: "© 2025 UFOnic LLC. All rights reserved.",
+ translatePrompt: "Would you like to translate to",
+ translateYes: "Yes",
+ translateNo: "No",
+ searchLanguages: "Search languages...",
+ emailPlaceholder: "Enter your email",
+ passwordPlaceholder: "Enter your password",
+ enterEmail: "Enter your email!",
+ enterPassword: "Enter your password!",
+ connectionError: "Having server errors, try again!",
+ couldNotVerify: "Could not verify email.",
+
+ // === SIGNUP PAGE ===
+ pageTitle: 'Create your account',
+ step0Title: "Signing up!",
+ step1Title: "Username...",
+ step2Title: "Handle time!",
+ step3Title: "Password eh?",
+ step4Title: "Confirm that!",
+ step0Subtitle: "You'll use this to sign in",
+ step1Subtitle: "This is how others will see you (3-30 characters)",
+ step2Subtitle: "Your unique identifier (3-15 characters)",
+ step3Subtitle: "Min 8 characters, 1 uppercase, 1 number",
+ step4Subtitle: "Just to make sure",
+ signupStep0Explanation: "Welcome! Let's get started by entering your email address OR you can sign up with Google for instant access.",
+ signupStep1Explanation: "Choose how you want to be known on uChat. This is your display name that others will see. It is like a nickname!",
+ signupStep2Explanation: "Your handle is like your identifier - it's completely unique to you and helps others find you. No one can copy your handle!",
+ signupStep3Explanation: "Create a strong password to keep your account secure, please make it secure like seriously! 🥺",
+ signupStep4Explanation: "Almost there! Confirm your password and agree to our terms to finish creating your account.",
+ usernamePlaceholder: "Enter your username",
+ handlePlaceholder: "Enter your handle",
+ confirmPasswordPlaceholder: "Enter your password again",
+ createAccountButton: "Create Account",
+ creating: "Creating...",
+ signupWithGoogle: "Sign up with Google",
+ agreeToTerms: "I agree to the",
+ and: "and",
+ alreadyHaveAccount: "Already have an account?",
+ signIn: "Sign in!",
+ enterUsername: "Username is required",
+ usernameTooShort: "Username must be at least 3 characters",
+ usernameTooLong: "Username cannot exceed 30 characters",
+ enterHandle: "Handle is required",
+ handleTooShort: "Handle must be at least 3 characters",
+ handleTooLong: "Handle cannot exceed 15 characters",
+ handleInvalid: "Handle can only contain letters, numbers, and underscores",
+ handleNoAt: "Don't include \"@\" because it will be added automatically",
+ passwordTooShort: "Password must be at least 8 characters",
+ passwordNoUppercase: "Password must contain at least one uppercase letter",
+ passwordNoNumber: "Password must contain at least one number",
+ passwordsNotMatch: "Passwords do not match",
+ mustAgreeToTerms: "Please agree to the terms and conditions",
+ emailTaken: "This email is already taken. Try again!",
+ handleTaken: "This handle is already taken. Try again!",
+ unableToVerify: "Unable to verify",
+ signupFailed: "Signup failed",
+ charactersCount: "characters",
+};
 
 const Signup = () => {
  const navigate = useNavigate();
@@ -21,38 +178,22 @@ const Signup = () => {
  const [showPassword, setShowPassword] = useState(false);
  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
  const [direction, setDirection] = useState('forward');
  const [isTransitioning, setIsTransitioning] = useState(false);
  const [prevStep, setPrevStep] = useState(0);
  const [validationError, setValidationError] = useState('');
- const canvasRef = useStars();
 
- // Used to replicate `.checkboxLabel:hover .checkboxCustom`
- const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
+ const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+ const [content, setContent] = useState(ORIGINAL_CONTENT);
+ const [languageSearch, setLanguageSearch] = useState('');
+ const { currentLanguage, changeLanguage, suggestedLanguage, showSuggestion, acceptSuggestion, dismissSuggestion } = useLanguage();
 
- const ids = useMemo(() => {
-  return {
-   pageTitle: 'signup-page-title',
-   form: 'signup-form',
-   progress: 'signup-progress',
-   stepTitle: (i) => `signup-step-${i}-title`,
-   stepSubtitle: (i) => `signup-step-${i}-subtitle`,
-   stepExplain: (i) => `signup-step-${i}-explain`,
-   stepError: (i) => `signup-step-${i}-error`,
-   field: {
-    email: 'signup-email',
-    username: 'signup-username',
-    handle: 'signup-handle',
-    password: 'signup-password',
-    confirmPassword: 'signup-confirm-password',
-    terms: 'signup-terms'
-   },
-   counter: {
-    username: 'signup-username-counter',
-    handle: 'signup-handle-counter'
-   }
-  };
- }, []);
+ const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+ const canvasRef = useStars({ enabled: isDark });
+ const liquidCanvasRef = useLiquidLayers({ enabled: !isDark });
+ const dropdownRef = useRef(null);
+ const translationsCacheRef = useRef(new Map());
 
  useEffect(() => {
   document.title = 'uChat - Sign Up';
@@ -68,6 +209,7 @@ const Signup = () => {
   const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
   const handleThemeChange = (e) => {
    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+   setIsDark(e.matches);
   };
 
   mediaQuery.addEventListener('change', handleThemeChange);
@@ -83,11 +225,56 @@ const Signup = () => {
   return () => clearTimeout(timeoutId);
  }, [currentStep, formData, isTransitioning]);
 
+ useEffect(() => {
+  const handleClickOutside = (event) => {
+   if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    setShowLanguageDropdown(false);
+   }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+ }, []);
+
+ const getTranslation = (langCode) => {
+  const translationPath = `/src/translations/${langCode}.json`;
+  const allTranslations = import.meta.glob('/src/translations/*.json', { eager: true, import: 'default' });
+  return allTranslations[translationPath] || ORIGINAL_CONTENT;
+ };
+
+ useEffect(() => {
+  if (currentLanguage.startsWith('en')) {
+   setContent(ORIGINAL_CONTENT);
+   return;
+  }
+
+  const cached = translationsCacheRef.current.get(currentLanguage);
+  if (cached) {
+   setContent(cached);
+   return;
+  }
+
+  const translation = getTranslation(currentLanguage);
+  translationsCacheRef.current.set(currentLanguage, translation);
+  setContent(translation);
+ }, [currentLanguage]);
+
+ const handleLanguageChange = (langCode) => {
+  changeLanguage(langCode);
+  setShowLanguageDropdown(false);
+  setLanguageSearch('');
+ };
+
+ const filteredLanguages = LANGUAGES.filter(lang =>
+  lang.name.toLowerCase().includes(languageSearch.toLowerCase()) ||
+  lang.code.toLowerCase().includes(languageSearch.toLowerCase())
+ );
+
  const handleInputChange = (e) => {
   const { name, value } = e.target;
 
   if (name === 'handle' && value.includes('@')) {
-   setValidationError('Don\'t include "@" because it will be added automatically.');
+   setValidationError(content.handleNoAt);
    return;
   }
 
@@ -99,11 +286,7 @@ const Signup = () => {
    finalValue = value.slice(0, 15);
   }
 
-  setFormData(prev => ({
-   ...prev,
-   [name]: finalValue
-  }));
-
+  setFormData((prev) => ({ ...prev, [name]: finalValue }));
   if (error) setError('');
  };
 
@@ -111,79 +294,80 @@ const Signup = () => {
   window.location.href = `${API_BASE_URL}/api/auth/google`;
  };
 
+ const normalizeEmail = (raw) => {
+  let email = (raw || '').trim();
+  if (!email) return email;
+  if (!email.includes('@')) email = email + '@gmail.com';
+  return email;
+ };
+
  const validateCurrentStepClientSide = () => {
-  switch (currentStep) {
-   case 0:
-    if (!formData.email.trim()) {
-     setValidationError('Email is required');
-     return false;
-    }
-    break;
-   case 1:
-    if (!formData.username.trim()) {
-     setValidationError('Username is required');
-     return false;
-    }
-    if (formData.username.length < 3) {
-     setValidationError('Username must be at least 3 characters');
-     return false;
-    }
-    if (formData.username.length > 30) {
-     setValidationError('Username cannot exceed 30 characters');
-     return false;
-    }
-    break;
-   case 2:
-    if (!formData.handle.trim()) {
-     setValidationError('Handle is required');
-     return false;
-    }
-    {
-     const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
-     if (handle.length < 3) {
-      setValidationError('Handle must be at least 3 characters');
-      return false;
-     }
-     if (handle.length > 15) {
-      setValidationError('Handle cannot exceed 15 characters');
-      return false;
-     }
-     if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
-      setValidationError('Handle can only contain letters, numbers, and underscores');
-      return false;
-     }
-    }
-    break;
-   case 3:
-    if (!formData.password) {
-     setValidationError('Password is required');
-     return false;
-    }
-    if (formData.password.length < 8) {
-     setValidationError('Password must be at least 8 characters!');
-     return false;
-    }
-    if (!/[A-Z]/.test(formData.password)) {
-     setValidationError('Password must contain at least one uppercase letter!');
-     return false;
-    }
-    if (!/[0-9]/.test(formData.password)) {
-     setValidationError('Password must contain at least one number!');
-     return false;
-    }
-    break;
-   case 4:
-    if (formData.password !== formData.confirmPassword) {
-     setValidationError('Passwords do not match!');
-     return false;
-    }
-    if (!agreedToTerms) {
-     setValidationError('Please agree to the terms and conditions');
-     return false;
-    }
-    break;
-   default:
-    break;
+  if (currentStep === 0) {
+   if (!formData.email.trim()) {
+    setValidationError(content.enterEmail);
+    return false;
+   }
+  }
+  if (currentStep === 1) {
+   if (!formData.username.trim()) {
+    setValidationError(content.enterUsername);
+    return false;
+   }
+   if (formData.username.length < 3) {
+    setValidationError(content.usernameTooShort);
+    return false;
+   }
+   if (formData.username.length > 30) {
+    setValidationError(content.usernameTooLong);
+    return false;
+   }
+  }
+  if (currentStep === 2) {
+   if (!formData.handle.trim()) {
+    setValidationError(content.enterHandle);
+    return false;
+   }
+   const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
+   if (handle.length < 3) {
+    setValidationError(content.handleTooShort);
+    return false;
+   }
+   if (handle.length > 15) {
+    setValidationError(content.handleTooLong);
+    return false;
+   }
+   if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
+    setValidationError(content.handleInvalid);
+    return false;
+   }
+  }
+  if (currentStep === 3) {
+   if (!formData.password) {
+    setValidationError(content.enterPassword);
+    return false;
+   }
+   if (formData.password.length < 8) {
+    setValidationError(content.passwordTooShort);
+    return false;
+   }
+   if (!/[A-Z]/.test(formData.password)) {
+    setValidationError(content.passwordNoUppercase);
+    return false;
+   }
+   if (!/[0-9]/.test(formData.password)) {
+    setValidationError(content.passwordNoNumber);
+    return false;
+   }
+  }
+  if (currentStep === 4) {
+   if (formData.password !== formData.confirmPassword) {
+    setValidationError(content.passwordsNotMatch);
+    return false;
+   }
+   if (!agreedToTerms) {
+    setValidationError(content.mustAgreeToTerms);
+    return false;
+   }
   }
   return true;
  };
@@ -192,34 +376,29 @@ const Signup = () => {
   if (currentStep === 0) {
    setLoading(true);
 
-   let emailToCheck = formData.email.trim();
-   if (!emailToCheck.includes('@')) {
-    emailToCheck = emailToCheck + '@gmail.com';
+   let emailToCheck = normalizeEmail(formData.email);
+   if (emailToCheck !== formData.email) {
     setFormData(prev => ({ ...prev, email: emailToCheck }));
    }
 
    try {
     const response = await fetch(`${API_BASE_URL}/api/check-email-availability`, {
      method: 'POST',
-     headers: {
-      'Content-Type': 'application/json',
-     },
+     headers: { 'Content-Type': 'application/json' },
      credentials: 'include',
-     body: JSON.stringify({
-      email: emailToCheck
-     })
+     body: JSON.stringify({ email: emailToCheck })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-     setError('Unable to verify email');
+     setError(content.unableToVerify);
      setLoading(false);
      return false;
     }
 
     if (!data.available) {
-     setError('This email is already taken. Try again!');
+     setError(content.emailTaken);
      setLoading(false);
      return false;
     }
@@ -227,8 +406,7 @@ const Signup = () => {
     setLoading(false);
     return true;
    } catch (err) {
-    console.error('Email check error:', err);
-    setError('Connection error');
+    setError(content.connectionError);
     setLoading(false);
     return false;
    }
@@ -238,25 +416,21 @@ const Signup = () => {
     const handle = formData.handle.startsWith('@') ? formData.handle.slice(1) : formData.handle;
     const response = await fetch(`${API_BASE_URL}/api/check-handle-availability`, {
      method: 'POST',
-     headers: {
-      'Content-Type': 'application/json',
-     },
+     headers: { 'Content-Type': 'application/json' },
      credentials: 'include',
-     body: JSON.stringify({
-      handle: handle
-     })
+     body: JSON.stringify({ handle: handle })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-     setError('Could not verify handle!');
+     setError(content.couldNotVerify);
      setLoading(false);
      return false;
     }
 
     if (!data.available) {
-     setError('This handle is already taken. Try again!');
+     setError(content.handleTaken);
      setLoading(false);
      return false;
     }
@@ -264,8 +438,7 @@ const Signup = () => {
     setLoading(false);
     return true;
    } catch (err) {
-    console.error('Handle check error:', err);
-    setError('Connection error');
+    setError(content.connectionError);
     setLoading(false);
     return false;
    }
@@ -318,9 +491,7 @@ const Signup = () => {
   try {
    const response = await fetch(`${API_BASE_URL}/api/signup`, {
     method: 'POST',
-    headers: {
-     'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(formData)
    });
@@ -330,22 +501,15 @@ const Signup = () => {
    if (response.ok) {
     navigate('/verify', { state: { email: formData.email } });
    } else {
-    setError('Signup failed');
+    setError(content.signupFailed);
    }
   } catch (error) {
-   console.error('Signup error:', error);
-   setError('Connection error');
+   setError(content.connectionError);
   } finally {
    setLoading(false);
   }
  };
 
- const handleFormSubmit = (e) => {
-  e.preventDefault();
-  handleContinue();
- };
-
- // Converted from string className builder to StyleX style list
  const getStepStyleList = (stepIndex) => {
   if (stepIndex === currentStep && !isTransitioning) {
    return [signupStyles.stepContainer, signupStyles.stepContainerActive];
@@ -369,105 +533,53 @@ const Signup = () => {
   return [signupStyles.stepContainer];
  };
 
- const stepHeaderSpacingStyle = (stepIndex) => {
-  switch (stepIndex) {
-   case 0: return signupStyles.step0_stepHeader;
-   case 1: return signupStyles.step1_stepHeader;
-   case 2: return signupStyles.step2_stepHeader;
-   case 3: return signupStyles.step3_stepHeader;
-   case 4: return signupStyles.step4_stepHeader;
-   default: return null;
+ const selectedLang = LANGUAGES.find(l => l.code === currentLanguage);
+
+ const getStepTitle = () => {
+  switch (currentStep) {
+   case 0: return content.step0Title;
+   case 1: return content.step1Title;
+   case 2: return content.step2Title;
+   case 3: return content.step3Title;
+   case 4: return content.step4Title;
+   default: return '';
   }
  };
 
- const inputGroupSpacingStyle = (stepIndex) => {
-  switch (stepIndex) {
-   case 0: return signupStyles.step0_inputGroup;
-   case 1: return signupStyles.step1_inputGroup;
-   case 2: return signupStyles.step2_inputGroup;
-   case 3: return signupStyles.step3_inputGroup;
-   case 4: return signupStyles.step4_inputGroup;
-   default: return null;
+ const getStepExplanation = () => {
+  switch (currentStep) {
+   case 0: return content.signupStep0Explanation;
+   case 1: return content.signupStep1Explanation;
+   case 2: return content.signupStep2Explanation;
+   case 3: return content.signupStep3Explanation;
+   case 4: return content.signupStep4Explanation;
+   default: return '';
   }
  };
-
- const progressSpacingStyle = (stepIndex) => {
-  switch (stepIndex) {
-   case 0: return signupStyles.step0_progress;
-   case 1: return signupStyles.step1_progress;
-   case 2: return signupStyles.step2_progress;
-   case 3: return signupStyles.step3_progress;
-   case 4: return signupStyles.step4_progress;
-   default: return null;
-  }
- };
-
- const steps = [
-  {
-   title: "What's your email?",
-   subtitle: "You'll use this to sign in",
-   field: 'email',
-   type: 'email',
-   placeholder: 'Enter your email',
-   icon: 'fas fa-envelope'
-  },
-  {
-   title: "What's your username?",
-   subtitle: "This is how others will see you (3-30 characters)",
-   field: 'username',
-   type: 'text',
-   placeholder: 'Enter your username',
-   icon: 'fas fa-user'
-  },
-  {
-   title: "Choose a handle",
-   subtitle: "Your unique identifier (3-15 characters, letters, numbers, underscore)",
-   field: 'handle',
-   type: 'text',
-   placeholder: 'Enter your handle',
-   icon: 'fas fa-hashtag'
-  },
-  {
-   title: "Create a password",
-   subtitle: "Min 8 characters, 1 uppercase, 1 number",
-   field: 'password',
-   type: showPassword ? 'text' : 'password',
-   placeholder: 'Enter password',
-   icon: 'fas fa-lock'
-  },
-  {
-   title: "Confirm your password",
-   subtitle: "Just to make sure",
-   field: 'confirmPassword',
-   type: showConfirmPassword ? 'text' : 'password',
-   placeholder: 'Re-enter your password',
-   icon: 'fas fa-shield-alt'
-  }
- ];
-
- const getActiveErrorText = () => error || validationError;
-
- const activeErrorId = ids.stepError(currentStep);
- const activeSubtitleId = ids.stepSubtitle(currentStep);
- const activeExplainId = ids.stepExplain(currentStep);
-
- const buildDescribedBy = (parts) => parts.filter(Boolean).join(' ') || undefined;
 
  return (
-  <div {...stylex.props(signupStyles.loginContainer)}>
-   <canvas
-    ref={canvasRef}
-    {...stylex.props(signupStyles.starCanvas)}
-    aria-hidden="true"
-    role="presentation"
-   />
+  <div data-signup-page="true" {...stylex.props(signupStyles.signupContainer)}>
+   {isDark ? (
+    <canvas
+     key="bg-dark"
+     ref={canvasRef}
+     {...stylex.props(signupStyles.starCanvas)}
+     aria-hidden="true"
+     data-theme-canvas="dark"
+    />
+   ) : (
+    <canvas
+     key="bg-light"
+     ref={liquidCanvasRef}
+     {...stylex.props(signupStyles.starCanvas)}
+     aria-hidden="true"
+     data-theme-canvas="light"
+    />
+   )}
 
-   <div
-    {...stylex.props(signupStyles.loginCard)}
-    role="main"
-    aria-labelledby={ids.pageTitle}
-   >
-    <div {...stylex.props(signupStyles.loginHeader)}>
+   <div {...stylex.props(signupStyles.signupCard)} role="region" aria-label="Signup form">
+    {/* Left column */}
+    <div {...stylex.props(signupStyles.signupHeader)}>
      <div {...stylex.props(signupStyles.logoContainer)}>
       <Icon
        name="main-logo"
@@ -478,575 +590,495 @@ const Signup = () => {
       />
      </div>
 
-     <h1 id={ids.pageTitle} {...stylex.props(signupStyles.headerTitle)}>
-      <i
-       className="fas fa-user-plus"
-       aria-hidden="true"
-       style={{ marginRight: '12px', color: 'var(--border-focus)' }}
-      />
-      Create your account
+     <h1 {...stylex.props(signupStyles.headerTitle)}>
+      {getStepTitle()}
      </h1>
 
-     {currentStep === 0 && (
-      <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p id={ids.stepExplain(0)} {...stylex.props(signupStyles.stepExplanationP)}>
-        Ah, welcome! This text is here to help you signup. First, let's enter your email address that you own OR you can sign up with Google for instant access. Whichever you prefer.
-       </p>
-      </div>
-     )}
+     <p {...stylex.props(signupStyles.headerSubtitle)}>
+      {getStepExplanation()}
+     </p>
 
-     {currentStep === 1 && (
-      <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p id={ids.stepExplain(1)} {...stylex.props(signupStyles.stepExplanationP)}>
-        Choose how you want to be known on uChat. This is your username that others will see in chats and your profile. Think of it like a nickname.
-       </p>
-      </div>
-     )}
-
-     {currentStep === 2 && (
-      <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p id={ids.stepExplain(2)} {...stylex.props(signupStyles.stepExplanationP)}>
-        Your handle is a unique identifier that ensures your account isn’t duplicated or impersonated. It will appear as "@handle" to other users. For example, if multiple people share the same name, handles help distinguish who is who.
-       </p>
-      </div>
-     )}
-
-     {currentStep === 3 && (
-      <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p id={ids.stepExplain(3)} {...stylex.props(signupStyles.stepExplanationP)}>
-        Create a strong password with at least 8 characters. We recommend using a mix of letters, numbers, and symbols for better security.
-       </p>
-      </div>
-     )}
-
-     {currentStep === 4 && (
-      <div {...stylex.props(signupStyles.stepExplanation)}>
-       <p id={ids.stepExplain(4)} {...stylex.props(signupStyles.stepExplanationP)}>
-        Almost there. Confirm your password and agree to our terms (you should read them—though no one really does). Once you’re done, you’ll be ready. You’ll still need to verify your email! You can skip it, but you probably shouldn’t—you’ll see why later.
-       </p>
+     {showSuggestion && suggestedLanguage && (
+      <div style={{
+       marginTop: '12px',
+       padding: '10px 14px',
+       backgroundColor: 'var(--focus-ring)',
+       border: '1px solid var(--border-focus)',
+       borderRadius: '8px',
+       fontSize: '13px',
+       display: 'flex',
+       alignItems: 'center',
+       justifyContent: 'space-between',
+       gap: '10px'
+      }}>
+       <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+        {content.translatePrompt} {LANGUAGES.find(l => l.code === suggestedLanguage)?.name}?
+       </span>
+       <div style={{ display: 'flex', gap: '8px' }}>
+        <button
+         onClick={acceptSuggestion}
+         style={{
+          padding: '6px 14px',
+          backgroundColor: 'var(--button-primary)',
+          color: 'var(--button-primary-text)',
+          border: 'none',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontWeight: 700,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+         }}
+         onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+         onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+        >
+         {content.translateYes}
+        </button>
+        <button
+         onClick={dismissSuggestion}
+         style={{
+          padding: '6px 14px',
+          backgroundColor: 'transparent',
+          color: 'var(--text-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontWeight: 600,
+          cursor: 'pointer',
+          transition: 'all 0.2s ease'
+         }}
+         onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--back-hover-bg)'}
+         onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+         {content.translateNo}
+        </button>
+       </div>
       </div>
      )}
     </div>
 
-    <form
-     id={ids.form}
-     {...stylex.props(signupStyles.loginForm)}
-     onSubmit={handleFormSubmit}
-     noValidate
-     aria-busy={loading ? 'true' : 'false'}
-     aria-describedby={buildDescribedBy([
-      activeSubtitleId,
-      activeExplainId,
-      getActiveErrorText() ? activeErrorId : null
-     ])}
-    >
-     <div>
-      <div
-       {...stylex.props(signupStyles.progressIndicator, progressSpacingStyle(currentStep))}
-       aria-label="Signup progress"
-       role="list"
-       id={ids.progress}
-      >
-       {[0, 1, 2, 3, 4].map((step) => (
-        <div
-         key={step}
-         role="listitem"
-         aria-label={`Step ${step + 1} of 5${step === currentStep ? ', current step' : ''}`}
-         aria-current={step === currentStep ? 'step' : undefined}
-         {...stylex.props(
-          signupStyles.progressDot,
-          step === currentStep && signupStyles.progressDotActive,
-          step < currentStep && signupStyles.progressDotCompleted
-         )}
-        />
-       ))}
-      </div>
-     </div>
-
-     <div {...stylex.props(signupStyles.stepsWrapper)}>
-      {/* STEP 0 */}
-      <div {...stylex.props(...getStepStyleList(0))} aria-hidden={currentStep !== 0}>
-       <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(0))}>
-        <h2 id={ids.stepTitle(0)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[0].title}</h2>
-        <p id={ids.stepSubtitle(0)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[0].subtitle}</p>
+    {/* Right column */}
+    <div {...stylex.props(signupStyles.signupForm)}>
+     <div {...stylex.props(signupStyles.formSurface)}>
+      <div {...stylex.props(signupStyles.formTop)}>
+       <div
+        {...stylex.props(signupStyles.progressIndicatorWrapper)}
+        role="progressbar"
+        aria-valuenow={currentStep + 1}
+        aria-valuemin="1"
+        aria-valuemax="5"
+        aria-label={`Step ${currentStep + 1} of 5`}
+       >
+        <div {...stylex.props(signupStyles.progressIndicator)}>
+         {[0, 1, 2, 3, 4].map((step) => (
+          <div
+           key={step}
+           {...stylex.props(
+            signupStyles.progressDot,
+            step === currentStep && signupStyles.progressDotActive,
+            step < currentStep && signupStyles.progressDotCompleted
+           )}
+           aria-current={step === currentStep ? "step" : undefined}
+          />
+         ))}
+        </div>
        </div>
 
-       <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(0))}>
-        {/* Visible label not required visually, but required for accessibility. */}
-        <label htmlFor={ids.field.email} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
-         Email address
-        </label>
-
-        <input
-         {...stylex.props(signupStyles.inputGroupInput)}
-         id={ids.field.email}
-         type={steps[0].type}
-         name={steps[0].field}
-         value={formData[steps[0].field]}
-         onChange={handleInputChange}
-         placeholder={steps[0].placeholder}
-         title="Enter the email address you will use to sign in"
-         autoFocus={currentStep === 0 && !isTransitioning}
-         autoComplete="email"
-         inputMode="email"
-         required
-         aria-required="true"
-         aria-invalid={Boolean((error || validationError) && currentStep === 0) ? 'true' : 'false'}
-         aria-describedby={buildDescribedBy([
-          ids.stepSubtitle(0),
-          ids.stepExplain(0),
-          (error || validationError) ? ids.stepError(0) : null
-         ])}
-        />
-
-        {(error || validationError) && (
-         <div
-          id={ids.stepError(0)}
-          role="alert"
-          aria-live="assertive"
-          style={{
-           fontSize: '12px',
-           color: 'var(--error-text, #c53030)',
-           marginTop: '4px',
-           display: 'flex',
-           alignItems: 'center',
-           gap: '4px'
-          }}
-         >
-          <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
-          {error || validationError}
-         </div>
-        )}
-       </div>
-
-       {/* Divider */}
-       <div {...stylex.props(signupStyles.divider)} aria-hidden="true">
-        <div {...stylex.props(signupStyles.dividerLine)} />
-        <span {...stylex.props(signupStyles.dividerSpan)}>or</span>
-       </div>
-
-       <div {...stylex.props(signupStyles.oauthButtons)}>
-        <button
-         type="button"
-         onClick={handleGoogleSignup}
-         {...stylex.props(signupStyles.oauthBtn)}
-         disabled={loading}
-         aria-disabled={loading ? 'true' : 'false'}
-         title="Sign up with Google"
-        >
-         <Icon
-          name="google_logo"
-          alt=""
-          aria-hidden="true"
-          style={{ width: '16px', height: '16px', marginTop: '-1px' }}
-         />
-         Continue with Google
-        </button>
-       </div>
-
-       <div {...stylex.props(signupStyles.buttonContainer)}>
-        <button
-         type="submit"
-         {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
-         disabled={loading || !!validationError}
-         aria-disabled={(loading || !!validationError) ? 'true' : 'false'}
-         title="Continue to the next step"
-        >
-         <i
-          className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'}
-          aria-hidden="true"
-          style={{ marginRight: '8px' }}
-         />
-         {loading ? 'Loading...' : 'Continue'}
-        </button>
-       </div>
-      </div>
-
-      {/* STEPS 1 - 3 */}
-      {[1, 2, 3].map(stepNum => {
-       const fieldName = steps[stepNum].field;
-       const fieldId = ids.field[fieldName];
-       const hasStepError = Boolean((error || validationError) && currentStep === stepNum);
-
-       const extraDescribedBy = [];
-       if (stepNum === 1) extraDescribedBy.push(ids.counter.username);
-       if (stepNum === 2) extraDescribedBy.push(ids.counter.handle);
-
-       const inputPropsByStep = (() => {
-        if (stepNum === 1) {
-         return {
-          autoComplete: 'username',
-          minLength: 3,
-          maxLength: 30,
-          required: true,
-          spellCheck: 'false'
-         };
-        }
-        if (stepNum === 2) {
-         return {
-          autoComplete: 'nickname',
-          minLength: 3,
-          maxLength: 15,
-          required: true,
-          spellCheck: 'false',
-          pattern: '^[a-zA-Z0-9_]+$'
-         };
-        }
-        // stepNum === 3 password
-        return {
-         autoComplete: 'new-password',
-         minLength: 8,
-         required: true
-        };
-       })();
-
-       const labelText =
-        stepNum === 1 ? 'Username' :
-         stepNum === 2 ? 'Handle' :
-          'Password';
-
-       return (
-        <div
-         key={stepNum}
-         {...stylex.props(...getStepStyleList(stepNum))}
-         aria-hidden={currentStep !== stepNum}
-        >
-         <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(stepNum))}>
-          <h2 id={ids.stepTitle(stepNum)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[stepNum].title}</h2>
-          <p id={ids.stepSubtitle(stepNum)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[stepNum].subtitle}</p>
-         </div>
-
-         <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(stepNum))}>
-          <div style={{ position: 'relative' }}>
-           <label htmlFor={fieldId} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
-            {labelText}
-           </label>
-
+       <div {...stylex.props(signupStyles.stepsWrapper)}>
+        {/* STEP 0: EMAIL */}
+        <div {...stylex.props(...getStepStyleList(0))}>
+         <div {...stylex.props(signupStyles.stepContent)}>
+          <div className="inputGroup" {...stylex.props(signupStyles.inputGroup)}>
            <input
             {...stylex.props(signupStyles.inputGroupInput)}
-            id={fieldId}
-            type={steps[stepNum].type}
-            name={fieldName}
-            value={formData[fieldName]}
+            type="email"
+            name="email"
+            value={formData.email}
             onChange={handleInputChange}
-            placeholder={steps[stepNum].placeholder}
-            title={steps[stepNum].subtitle}
-            autoFocus={currentStep === stepNum && !isTransitioning}
-            aria-required="true"
-            aria-invalid={hasStepError ? 'true' : 'false'}
-            aria-describedby={buildDescribedBy([
-             ids.stepSubtitle(stepNum),
-             ids.stepExplain(stepNum),
-             ...extraDescribedBy,
-             hasStepError ? ids.stepError(stepNum) : null
-            ])}
-            {...inputPropsByStep}
+            placeholder={content.emailPlaceholder}
+            autoFocus
+            autoComplete="email"
+            maxLength={254}
+            aria-invalid={!!(error || validationError)}
+            aria-describedby={error || validationError ? "email-error" : undefined}
            />
 
-           {stepNum === 3 && (
+           <div {...stylex.props(signupStyles.fieldMetaRow)}>
+            <div {...stylex.props(signupStyles.fieldMetaLeft)}>
+             {(error || validationError) && (
+              <div id="email-error" role="alert" {...stylex.props(signupStyles.inlineErrorCompact)}>
+               <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
+               {error || validationError}
+              </div>
+             )}
+            </div>
+            <div {...stylex.props(signupStyles.fieldMetaRight, signupStyles.charCounter)}>
+             {formData.email.length}/254 {content.charactersCount}
+            </div>
+           </div>
+          </div>
+
+          <div {...stylex.props(signupStyles.divider)}>
+           <div {...stylex.props(signupStyles.dividerLine)} />
+           <span {...stylex.props(signupStyles.dividerSpan)}>{content.orDivider}</span>
+          </div>
+
+          <button
+           onClick={handleGoogleSignup}
+           className="oauthBtn"
+           {...stylex.props(signupStyles.oauthBtn)}
+           disabled={loading}
+           aria-label="Sign up with Google"
+          >
+           <Icon name="google_logo" alt="" aria-hidden="true" style={{ width: '16px', height: '16px', marginTop: '-1px' }} />
+           {content.signupWithGoogle}
+          </button>
+         </div>
+        </div>
+
+        {/* STEP 1: USERNAME */}
+        <div {...stylex.props(...getStepStyleList(1))}>
+         <div {...stylex.props(signupStyles.stepContent)}>
+          <div className="inputGroup" {...stylex.props(signupStyles.inputGroup)}>
+           <input
+            {...stylex.props(signupStyles.inputGroupInput)}
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleInputChange}
+            placeholder={content.usernamePlaceholder}
+            autoFocus={currentStep === 1}
+            autoComplete="username"
+            maxLength={30}
+            aria-invalid={!!(error || validationError)}
+            aria-describedby={error || validationError ? "username-error" : undefined}
+           />
+
+           <div {...stylex.props(signupStyles.fieldMetaRow)}>
+            <div {...stylex.props(signupStyles.fieldMetaLeft)}>
+             {(error || validationError) && (
+              <div id="username-error" role="alert" {...stylex.props(signupStyles.inlineErrorCompact)}>
+               <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
+               {error || validationError}
+              </div>
+             )}
+            </div>
+            <div {...stylex.props(signupStyles.fieldMetaRight, signupStyles.charCounter)}>
+             {formData.username.length}/30 {content.charactersCount}
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+
+        {/* STEP 2: HANDLE */}
+        <div {...stylex.props(...getStepStyleList(2))}>
+         <div {...stylex.props(signupStyles.stepContent)}>
+          <div className="inputGroup" {...stylex.props(signupStyles.inputGroup)}>
+           <input
+            {...stylex.props(signupStyles.inputGroupInput)}
+            type="text"
+            name="handle"
+            value={formData.handle}
+            onChange={handleInputChange}
+            placeholder={content.handlePlaceholder}
+            autoFocus={currentStep === 2}
+            maxLength={15}
+            aria-invalid={!!(error || validationError)}
+            aria-describedby={error || validationError ? "handle-error" : undefined}
+           />
+
+           <div {...stylex.props(signupStyles.fieldMetaRow)}>
+            <div {...stylex.props(signupStyles.fieldMetaLeft)}>
+             {(error || validationError) && (
+              <div id="handle-error" role="alert" {...stylex.props(signupStyles.inlineErrorCompact)}>
+               <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
+               {error || validationError}
+              </div>
+             )}
+            </div>
+            <div {...stylex.props(signupStyles.fieldMetaRight, signupStyles.charCounter)}>
+             {formData.handle.length}/15 {content.charactersCount}
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+
+        {/* STEP 3: PASSWORD */}
+        <div {...stylex.props(...getStepStyleList(3))}>
+         <div {...stylex.props(signupStyles.stepContent)}>
+          <div className="inputGroup" {...stylex.props(signupStyles.inputGroup)}>
+           <div style={{ position: 'relative' }}>
+            <input
+             {...stylex.props(signupStyles.inputGroupInput)}
+             type={showPassword ? 'text' : 'password'}
+             name="password"
+             value={formData.password}
+             onChange={handleInputChange}
+             placeholder={content.passwordPlaceholder}
+             autoFocus={currentStep === 3}
+             autoComplete="new-password"
+             aria-invalid={!!(error || validationError)}
+             aria-describedby={error || validationError ? "password-error" : undefined}
+            />
             <button
              type="button"
              onClick={() => setShowPassword(!showPassword)}
-             aria-label={showPassword ? 'Hide password' : 'Show password'}
-             aria-pressed={showPassword ? 'true' : 'false'}
-             title={showPassword ? 'Hide password' : 'Show password'}
-             style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-secondary, #666)',
-              fontSize: '14px'
-             }}
+             aria-label={showPassword ? "Hide password" : "Show password"}
+             {...stylex.props(signupStyles.passwordToggle)}
             >
-             <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true" />
+             <i className={showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true"></i>
             </button>
-           )}
-
-           {stepNum === 1 && (
-            <div
-             id={ids.counter.username}
-             aria-live="polite"
-             style={{
-              fontSize: '12px',
-              color: formData.username.length > 30 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
-              marginTop: '4px',
-              textAlign: 'right'
-             }}
-            >
-             {formData.username.length}/30 characters
+           </div>
+           {(error || validationError) && (
+            <div id="password-error" role="alert" {...stylex.props(signupStyles.inlineError)}>
+             <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
+             {error || validationError}
             </div>
            )}
+          </div>
+         </div>
+        </div>
 
-           {stepNum === 2 && (
-            <div
-             id={ids.counter.handle}
-             aria-live="polite"
-             style={{
-              fontSize: '12px',
-              color: formData.handle.length > 15 ? 'var(--error-text, #c53030)' : 'var(--text-secondary, #666)',
-              marginTop: '4px',
-              textAlign: 'right'
-             }}
+        {/* STEP 4: CONFIRM PASSWORD + TERMS */}
+        <div {...stylex.props(...getStepStyleList(4))}>
+         <div {...stylex.props(signupStyles.stepContent)}>
+          <div className="inputGroup" {...stylex.props(signupStyles.inputGroup)}>
+           <div style={{ position: 'relative' }}>
+            <input
+             {...stylex.props(signupStyles.inputGroupInput)}
+             type={showConfirmPassword ? 'text' : 'password'}
+             name="confirmPassword"
+             value={formData.confirmPassword}
+             onChange={handleInputChange}
+             placeholder={content.confirmPasswordPlaceholder}
+             autoFocus={currentStep === 4}
+             autoComplete="new-password"
+             aria-invalid={!!(error || validationError)}
+             aria-describedby={error || validationError ? "confirm-password-error" : undefined}
+            />
+            <button
+             type="button"
+             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+             {...stylex.props(signupStyles.passwordToggle)}
             >
-             {formData.handle.length}/15 characters
+             <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true"></i>
+            </button>
+           </div>
+           {(error || validationError) && (
+            <div id="confirm-password-error" role="alert" {...stylex.props(signupStyles.inlineError)}>
+             <i className="fas fa-exclamation-circle" style={{ fontSize: '11px' }} aria-hidden="true"></i>
+             {error || validationError}
             </div>
            )}
           </div>
 
-          {(stepNum === 1 || stepNum === 2) && (error || validationError) && (
-           <div
-            id={ids.stepError(stepNum)}
-            role="alert"
-            aria-live="assertive"
-            style={{
-             fontSize: '12px',
-             color: 'var(--error-text, #c53030)',
-             marginTop: '-12.5px',
-             display: 'flex',
-             alignItems: 'center',
-             gap: '4px'
-            }}
-           >
-            <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
-            {error || validationError}
-           </div>
-          )}
-
-          {stepNum === 3 && (error || validationError) && (
-           <div
-            id={ids.stepError(stepNum)}
-            role="alert"
-            aria-live="assertive"
-            style={{
-             fontSize: '12px',
-             color: 'var(--error-text, #c53030)',
-             marginTop: '4px',
-             display: 'flex',
-             alignItems: 'center',
-             gap: '4px'
-            }}
-           >
-            <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
-            {error || validationError}
-           </div>
-          )}
-         </div>
-
-         <div {...stylex.props(signupStyles.buttonContainer)}>
-          <button
-           type="button"
-           onClick={handleBack}
-           {...stylex.props(signupStyles.backBtn)}
-           disabled={loading}
-           aria-disabled={loading ? 'true' : 'false'}
-           title="Go back to the previous step"
-          >
-           <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
-           Back
-          </button>
-
-          <button
-           type="submit"
-           {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
-           disabled={loading || !!validationError}
-           aria-disabled={(loading || !!validationError) ? 'true' : 'false'}
-           title="Continue to the next step"
-          >
-           <i
-            className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'}
-            aria-hidden="true"
-            style={{ marginRight: '8px' }}
-           />
-           {loading ? 'Loading...' : 'Continue'}
-          </button>
+          <div {...stylex.props(signupStyles.termsCheckbox)}>
+           <label {...stylex.props(signupStyles.checkboxLabel)}>
+            <input
+             type="checkbox"
+             checked={agreedToTerms}
+             onChange={(e) => setAgreedToTerms(e.target.checked)}
+             {...stylex.props(signupStyles.checkboxInput)}
+            />
+            <span {...stylex.props(signupStyles.checkboxCustom, agreedToTerms && signupStyles.checkboxCustomChecked)} aria-hidden="true">
+             {agreedToTerms && <span {...stylex.props(signupStyles.checkboxCheckmark)} />}
+            </span>
+            <span {...stylex.props(signupStyles.checkboxText)}>
+             {content.agreeToTerms}{' '}
+             <a href="/terms" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
+              {content.termsOfUse}
+             </a>
+             {' '}{content.and}{' '}
+             <a href="/privacy" target="_blank" rel="noreferrer" {...stylex.props(signupStyles.termsLink)}>
+              {content.privacyPolicy}
+             </a>
+            </span>
+           </label>
+          </div>
          </div>
         </div>
-       );
-      })}
-
-      {/* STEP 4 */}
-      <div {...stylex.props(...getStepStyleList(4))} aria-hidden={currentStep !== 4}>
-       <div {...stylex.props(signupStyles.stepHeader, stepHeaderSpacingStyle(4))}>
-        <h2 id={ids.stepTitle(4)} {...stylex.props(signupStyles.stepHeaderH2)}>{steps[4].title}</h2>
-        <p id={ids.stepSubtitle(4)} {...stylex.props(signupStyles.stepHeaderP)}>{steps[4].subtitle}</p>
        </div>
+      </div>
 
-       <div {...stylex.props(signupStyles.inputGroup, inputGroupSpacingStyle(4))}>
-        <div style={{ position: 'relative' }}>
-         <label htmlFor={ids.field.confirmPassword} style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
-          Confirm password
-         </label>
-
-         <input
-          {...stylex.props(signupStyles.inputGroupInput)}
-          id={ids.field.confirmPassword}
-          type={steps[4].type}
-          name={steps[4].field}
-          value={formData[steps[4].field]}
-          onChange={handleInputChange}
-          placeholder={steps[4].placeholder}
-          title="Re-enter your password to confirm"
-          autoFocus={currentStep === 4 && !isTransitioning}
-          autoComplete="new-password"
-          required
-          aria-required="true"
-          aria-invalid={Boolean((error || validationError) && currentStep === 4) ? 'true' : 'false'}
-          aria-describedby={buildDescribedBy([
-           ids.stepSubtitle(4),
-           ids.stepExplain(4),
-           (error || validationError) ? ids.stepError(4) : null
-          ])}
-         />
+      <div {...stylex.props(signupStyles.formActions)}>
+       {currentStep === 0 ? (
+        <>
+         <a href="/login" {...stylex.props(signupStyles.secondaryAction)}>
+          {content.alreadyHaveAccount}
+         </a>
 
          <button
           type="button"
-          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-          aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-          aria-pressed={showConfirmPassword ? 'true' : 'false'}
-          title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-          style={{
-           position: 'absolute',
-           right: '12px',
-           top: '50%',
-           transform: 'translateY(-50%)',
-           background: 'none',
-           border: 'none',
-           cursor: 'pointer',
-           color: 'var(--text-secondary, #666)',
-           fontSize: '14px'
-          }}
+          onClick={handleContinue}
+          {...stylex.props(signupStyles.primaryButton)}
+          disabled={loading || !!validationError}
          >
-          <i className={showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'} aria-hidden="true" />
+          <i className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'} style={{ marginRight: '8px' }} aria-hidden="true"></i>
+          {loading ? content.loading : content.continueButton}
          </button>
-        </div>
-
-        {(error || validationError) && (
-         <div
-          id={ids.stepError(4)}
-          role="alert"
-          aria-live="assertive"
-          style={{
-           fontSize: '12px',
-           color: 'var(--error-text, #c53030)',
-           marginTop: '4px',
-           display: 'flex',
-           alignItems: 'center',
-           gap: '4px'
-          }}
+        </>
+       ) : (
+        <>
+         <button
+          type="button"
+          onClick={handleBack}
+          {...stylex.props(signupStyles.secondaryButton)}
+          disabled={loading}
          >
-          <i className="fas fa-exclamation-circle" aria-hidden="true" style={{ fontSize: '11px' }} />
-          {error || validationError}
+          {content.backButton}
+         </button>
+
+         <button
+          type="button"
+          onClick={handleContinue}
+          {...stylex.props(signupStyles.primaryButton)}
+          disabled={loading || !!validationError || (currentStep === 4 && !agreedToTerms)}
+         >
+          <i className={loading ? 'fas fa-spinner fa-spin' : (currentStep === 4 ? 'fas fa-check' : 'fas fa-arrow-right')} style={{ marginRight: '8px' }} aria-hidden="true"></i>
+          {loading ? (currentStep === 4 ? content.creating : content.loading) : (currentStep === 4 ? content.createAccountButton : content.continueButton)}
+         </button>
+        </>
+       )}
+      </div>
+     </div>
+
+     <div {...stylex.props(signupStyles.floatingMenu)}>
+      <span {...stylex.props(signupStyles.copyrightText)}>{content.copyright}</span>
+
+      <div {...stylex.props(signupStyles.floatingMenuLinks)} role="navigation" aria-label="Legal and help links">
+       <div ref={dropdownRef} {...stylex.props(signupStyles.languageDropdownWrapper)}>
+        <a
+         onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+         {...stylex.props(signupStyles.floatingMenuItem, signupStyles.languageMenuButton)}
+         style={{ cursor: 'pointer' }}
+        >
+         {selectedLang?.name || 'English'}
+         <i className="fas fa-chevron-down" style={{ fontSize: '9px' }} />
+        </a>
+
+        {showLanguageDropdown && (
+         <div style={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '0',
+          marginBottom: '8px',
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px var(--shadow)',
+          minWidth: '220px',
+          maxHeight: '340px',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 10000,
+         }}>
+          <div style={{
+           padding: '10px',
+           borderBottom: '1px solid var(--border)',
+           position: 'sticky',
+           top: 0,
+           backgroundColor: 'var(--bg-secondary)',
+           zIndex: 1
+          }}>
+           <input
+            type="text"
+            placeholder={content.searchLanguages}
+            value={languageSearch}
+            onChange={(e) => setLanguageSearch(e.target.value)}
+            autoFocus
+            style={{
+             width: '100%',
+             padding: '8px 12px',
+             border: '1px solid var(--border)',
+             borderRadius: '6px',
+             fontSize: '13px',
+             backgroundColor: 'var(--bg-secondary)',
+             color: 'var(--text-primary)',
+             outline: 'none'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--border-focus)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+           />
+          </div>
+
+          <div style={{
+           overflowY: 'auto',
+           maxHeight: '280px'
+          }}>
+           {filteredLanguages.length > 0 ? (
+            filteredLanguages.map((lang) => (
+             <button
+              key={lang.code}
+              onClick={() => handleLanguageChange(lang.code)}
+              style={{
+               width: '100%',
+               padding: '10px 16px',
+               textAlign: 'left',
+               background: currentLanguage === lang.code ? 'var(--focus-ring)' : 'none',
+               border: 'none',
+               color: 'var(--text-primary)',
+               fontSize: '13px',
+               cursor: 'pointer',
+               transition: 'background 0.2s ease',
+              }}
+              onMouseOver={(e) => {
+               if (currentLanguage !== lang.code) e.currentTarget.style.backgroundColor = 'var(--focus-ring)';
+              }}
+              onMouseOut={(e) => {
+               if (currentLanguage !== lang.code) e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+             >
+              {lang.name}
+             </button>
+            ))
+           ) : (
+            <div style={{
+             padding: '20px',
+             textAlign: 'center',
+             color: 'var(--text-secondary)',
+             fontSize: '13px'
+            }}>
+             No languages found
+            </div>
+           )}
+          </div>
          </div>
         )}
        </div>
 
-       <div {...stylex.props(signupStyles.termsCheckbox)}>
-        <label
-         {...stylex.props(signupStyles.checkboxLabel)}
-         htmlFor={ids.field.terms}
-         onMouseEnter={() => setIsCheckboxHovered(true)}
-         onMouseLeave={() => setIsCheckboxHovered(false)}
-        >
-         <input
-          id={ids.field.terms}
-          type="checkbox"
-          checked={agreedToTerms}
-          onChange={(e) => {
-           setAgreedToTerms(e.target.checked);
-           if (e.target.checked && validationError.toLowerCase().includes('terms')) {
-            setValidationError('');
-           }
-          }}
-          {...stylex.props(signupStyles.checkboxInput)}
-          aria-describedby={buildDescribedBy([
-           ids.stepExplain(4),
-           (error || validationError) ? ids.stepError(4) : null
-          ])}
-         />
+       <a
+        href="/terms"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...stylex.props(signupStyles.floatingMenuItem)}
+        title="View Terms and Conditions"
+       >
+        {content.termsOfUse}
+       </a>
 
-         <span
-          {...stylex.props(
-           signupStyles.checkboxCustom,
-           isCheckboxHovered && signupStyles.checkboxCustomHovered,
-           agreedToTerms && signupStyles.checkboxCustomChecked
-          )}
-          aria-hidden="true"
-         >
-          {agreedToTerms && <span {...stylex.props(signupStyles.checkboxCheckmark)} />}
-         </span>
+       <a
+        href="/privacy"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...stylex.props(signupStyles.floatingMenuItem)}
+        title="View Privacy Policy"
+       >
+        {content.privacyPolicy}
+       </a>
 
-         <span {...stylex.props(signupStyles.checkboxText)}>
-          I agree to the{' '}
-          <a
-           href="/terms"
-           target="_blank"
-           rel="noreferrer"
-           {...stylex.props(signupStyles.termsLink)}
-           aria-label="Terms and Conditions (opens in a new tab)"
-           title="Open Terms and Conditions in a new tab"
-          >
-           Terms & Conditions
-          </a>
-          {' '}and{' '}
-          <a
-           href="/privacy"
-           target="_blank"
-           rel="noreferrer"
-           {...stylex.props(signupStyles.termsLink)}
-           aria-label="Privacy Policy (opens in a new tab)"
-           title="Open Privacy Policy in a new tab"
-          >
-           Privacy Policy
-          </a>
-         </span>
-        </label>
-       </div>
-
-       <div {...stylex.props(signupStyles.buttonContainer)}>
-        <button
-         type="button"
-         onClick={handleBack}
-         {...stylex.props(signupStyles.backBtn)}
-         disabled={loading}
-         aria-disabled={loading ? 'true' : 'false'}
-         title="Go back to the previous step"
-        >
-         <Icon name="return" alt="Back" {...stylex.props(signupStyles.backBtnImg)} />
-         Back
-        </button>
-
-        <button
-         type="submit"
-         {...stylex.props(signupStyles.loginBtn, signupStyles.loginBtnPrimary)}
-         disabled={loading || !!validationError || !agreedToTerms}
-         aria-disabled={(loading || !!validationError || !agreedToTerms) ? 'true' : 'false'}
-         title="Create your account"
-        >
-         <i
-          className={loading ? 'fas fa-spinner fa-spin' : 'fas fa-check'}
-          aria-hidden="true"
-          style={{ marginRight: '8px' }}
-         />
-         {loading ? 'Creating...' : 'Create Account'}
-        </button>
-       </div>
+       <a
+        href="/help"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...stylex.props(signupStyles.floatingMenuItem)}
+        title="Get help"
+       >
+        {content.help}
+       </a>
       </div>
      </div>
-    </form>
-
-    {/* Footer stays EXACTLY here (outside loginForm) */}
-    <div {...stylex.props(signupStyles.loginFooter)}>
-     <p {...stylex.props(signupStyles.footerP)}>
-      Already have an account?
-      <a href="/login" {...stylex.props(signupStyles.footerA)} title="Go to sign in">
-       <i className="fas fa-sign-in-alt" aria-hidden="true" style={{ marginLeft: '8px', marginRight: '4px' }} />
-       Sign in!
-      </a>
-     </p>
     </div>
    </div>
   </div>
