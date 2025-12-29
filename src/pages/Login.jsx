@@ -10,8 +10,7 @@ import { getDeviceIdentity } from '../utils/deviceFingerprint';
 import { useTranslation } from '../hooks/useTranslations';
 import { useLanguage } from '../hooks/useLanguage';
 
-const LANGUAG
-ES = [
+const LANGUAGES = [
  // Core
  { code: 'en', name: 'English' },
  { code: 'en-US', name: 'English (United States)' },
@@ -116,7 +115,7 @@ const ORIGINAL_CONTENT = {
  welcomeBack0: 'Sign in',
  welcomeBack1: 'Welcome back!',
 
- // Step explanations (RENAMED ONLY)
+ // Step explanations
  loginStep0Explanation: 'by entering your email first right there in that little box!',
  loginStep1Explanation: 'Now enter your password to continue chatting on uChat.',
 
@@ -136,12 +135,10 @@ const ORIGINAL_CONTENT = {
  forgotPassword: "Forgot your password?",
 
  // OAuth
+ orDivider: "or",
  continueWithGoogle: "Continue with Google",
 
- // Divider
- orDivider: "or",
-
- // Footer link (RENAMED ONLY)
+ // Footer
  footerLinkSignup: "Create account",
 
  // Footer/links
