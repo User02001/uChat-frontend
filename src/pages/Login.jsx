@@ -7,7 +7,6 @@ import useStars from "../hooks/useStars";
 import useLiquidLayers from "../hooks/useLiquidLayers";
 import Icon from '../components/Icon';
 import { getDeviceIdentity } from '../utils/deviceFingerprint';
-import { useTranslation } from '../hooks/useTranslations';
 import { useLanguage } from '../hooks/useLanguage';
 
 const LANGUAGES = [
@@ -115,7 +114,7 @@ const ORIGINAL_CONTENT = {
  welcomeBack0: 'Sign in',
  welcomeBack1: 'Welcome back!',
 
- // Step explanations
+ // Step explanations (renamed to match generator)
  loginStep0Explanation: 'by entering your email first right there in that little box!',
  loginStep1Explanation: 'Now enter your password to continue chatting on uChat.',
 
@@ -125,8 +124,8 @@ const ORIGINAL_CONTENT = {
 
  // Buttons
  continueButton: "Continue",
- backButton: "Back",
  loginButton: "Login",
+ backButton: "Back",
  loading: "Loading...",
  loggingIn: "Logging in...",
 
@@ -138,7 +137,7 @@ const ORIGINAL_CONTENT = {
  orDivider: "or",
  continueWithGoogle: "Continue with Google",
 
- // Footer
+ // Footer (renamed to match generator)
  footerLinkSignup: "Create account",
 
  // Footer/links
@@ -147,33 +146,25 @@ const ORIGINAL_CONTENT = {
  help: "Get help",
  copyright: "© 2025 UFOnic LLC. All rights reserved.",
 
- // Language suggestion banner
- translatePrompt: "Would you like to translate to",
- translateYes: "Yes",
- translateNo: "No",
- searchLanguages: "Search languages...",
-
  // Errors
  enterEmail: "Enter your email!",
  enterPassword: "Enter your password!",
  wrongPassword: "Wrong password. Please try again!",
  connectionError: "Having server errors, try again!",
  emailNotFound: "We could not find an account with this email, try again!",
- couldNotVerify: "Could not verify email."
+ couldNotVerify: "Could not verify email.",
+
+ // Language suggestion banner
+ translatePrompt: "Would you like to translate to",
+ translateYes: "Yes",
+ translateNo: "No",
+
+ // Search
+ searchLanguages: "Search languages..."
 };
 
 const Login = () => {
  const navigate = useNavigate();
- const { t, getTranslations } = useTranslation();
- const {
-  currentLanguage,
-  changeLanguage,
-  suggestedLanguage,
-  showSuggestion,
-  acceptSuggestion,
-  dismissSuggestion
- } = useLanguage();
-
  const [currentStep, setCurrentStep] = useState(0);
  const [formData, setFormData] = useState({ email: '', password: '' });
  const [error, setError] = useState('');
@@ -186,14 +177,15 @@ const Login = () => {
 
  const [validationError, setValidationError] = useState('');
  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
- const [languageSearch, setLanguageSearch] = useState('');
-
  const [content, setContent] = useState(ORIGINAL_CONTENT);
+ const [languageSearch, setLanguageSearch] = useState('');
+ const { currentLanguage, changeLanguage, suggestedLanguage, showSuggestion, acceptSuggestion, dismissSuggestion } = useLanguage();
 
  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
  const canvasRef = useStars({ enabled: isDark });
  const liquidCanvasRef = useLiquidLayers({ enabled: !isDark });
  const dropdownRef = useRef(null);
+ const translationsCacheRef = useRef(new Map());
 
  useEffect(() => {
   document.title = 'uChat - Login';
@@ -217,22 +209,6 @@ const Login = () => {
  }, []);
 
  useEffect(() => {
-  const loadTranslations = async () => {
-   try {
-    const translations = await getTranslations(currentLanguage);
-    setContent({
-     ...ORIGINAL_CONTENT,
-     ...translations
-    });
-   } catch (error) {
-    setContent(ORIGINAL_CONTENT);
-   }
-  };
-
-  loadTranslations();
- }, [currentLanguage, getTranslations]);
-
- useEffect(() => {
   const timeoutId = setTimeout(() => {
    if (isTransitioning) return;
    setValidationError('');
@@ -251,6 +227,29 @@ const Login = () => {
   document.addEventListener('mousedown', handleClickOutside);
   return () => document.removeEventListener('mousedown', handleClickOutside);
  }, []);
+
+ const getTranslation = (langCode) => {
+  const translationPath = `/src/translations/${langCode}.json`;
+  const allTranslations = import.meta.glob('/src/translations/*.json', { eager: true, import: 'default' });
+  return allTranslations[translationPath] || ORIGINAL_CONTENT;
+ };
+
+ useEffect(() => {
+  if (currentLanguage.startsWith('en')) {
+   setContent(ORIGINAL_CONTENT);
+   return;
+  }
+
+  const cached = translationsCacheRef.current.get(currentLanguage);
+  if (cached) {
+   setContent(cached);
+   return;
+  }
+
+  const translation = getTranslation(currentLanguage);
+  translationsCacheRef.current.set(currentLanguage, translation);
+  setContent(translation);
+ }, [currentLanguage]);
 
  const handleLanguageChange = (langCode) => {
   changeLanguage(langCode);
@@ -770,7 +769,10 @@ const Login = () => {
            />
           </div>
 
-          <div style={{ overflowY: 'auto', maxHeight: '280px' }}>
+          <div style={{
+           overflowY: 'auto',
+           maxHeight: '280px'
+          }}>
            {filteredLanguages.length > 0 ? (
             filteredLanguages.map((lang) => (
              <button
