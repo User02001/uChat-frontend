@@ -7,7 +7,6 @@ import useStars from "../hooks/useStars";
 import useLiquidLayers from "../hooks/useLiquidLayers";
 import Icon from '../components/Icon';
 import { getDeviceIdentity } from '../utils/deviceFingerprint';
-import { useTranslation } from '../hooks/useTranslations';
 import { useLanguage } from '../hooks/useLanguage';
 
 const LANGUAGES = [
@@ -111,61 +110,55 @@ const LANGUAGES = [
 ];
 
 const ORIGINAL_CONTENT = {
- // Header
- welcomeBack0: 'Sign in',
- welcomeBack1: 'Welcome back!',
-
- // Step explanations
- step0Explanation: 'by entering your email first right there in that little box!',
- step1Explanation: 'Now enter your password to continue chatting on uChat.',
-
- // Placeholders
- emailPlaceholder: "Enter your email",
- passwordPlaceholder: "Enter your password",
-
- // Buttons
+ // === COMMON (subset used on Login) ===
  continueButton: "Continue",
- loginButton: "Login",
  backButton: "Back",
  loading: "Loading...",
- loggingIn: "Logging in...",
 
- // Small actions
- forgotEmail: "Forgot your email?",
- forgotPassword: "Forgot your password?",
-
- // OAuth
  orDivider: "or",
- continueWithGoogle: "Continue with Google",
 
- // Footer
- footerLink: "Create account",
-
- // Footer/links
  termsOfUse: "Terms of use",
  privacyPolicy: "Privacy Policy",
  help: "Get help",
  copyright: "© 2025 UFOnic LLC. All rights reserved.",
 
- // Errors
- enterEmail: "Enter your email!",
- enterPassword: "Enter your password!",
- wrongPassword: "Wrong password. Please try again!",
- connectionError: "Having server errors, try again!",
- emailNotFound: "We could not find an account with this email, try again!",
- couldNotVerify: "Could not verify email.",
-
- // Language suggestion banner
  translatePrompt: "Would you like to translate to",
  translateYes: "Yes",
  translateNo: "No",
+ searchLanguages: "Search languages...",
 
- // Search
- searchLanguages: "Search languages..."
+ emailPlaceholder: "Enter your email",
+ passwordPlaceholder: "Enter your password",
+
+ enterEmail: "Enter your email!",
+ enterPassword: "Enter your password!",
+ connectionError: "Having server errors, try again!",
+ couldNotVerify: "Could not verify email.",
+
+ // === LOGIN PAGE (updated keys) ===
+ welcomeBack0: 'Sign in',
+ welcomeBack1: 'Welcome back!',
+
+ loginStep0Explanation: 'by entering your email first right there in that little box!',
+ loginStep1Explanation: 'Now enter your password to continue chatting on uChat.',
+
+ loginButton: "Login",
+ loggingIn: "Logging in...",
+
+ forgotEmail: "Forgot your email?",
+ forgotPassword: "Forgot your password?",
+
+ continueWithGoogle: "Continue with Google",
+
+ footerLinkSignup: "Create account",
+
+ wrongPassword: "Wrong password. Please try again!",
+ emailNotFound: "We could not find an account with this email, try again!",
 };
 
 const Login = () => {
  const navigate = useNavigate();
+
  const [currentStep, setCurrentStep] = useState(0);
  const [formData, setFormData] = useState({ email: '', password: '' });
  const [error, setError] = useState('');
@@ -180,12 +173,22 @@ const Login = () => {
  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
  const [content, setContent] = useState(ORIGINAL_CONTENT);
  const [languageSearch, setLanguageSearch] = useState('');
- const { currentLanguage, changeLanguage, suggestedLanguage, showSuggestion, acceptSuggestion, dismissSuggestion } = useLanguage();
+
+ const {
+  currentLanguage,
+  changeLanguage,
+  suggestedLanguage,
+  showSuggestion,
+  acceptSuggestion,
+  dismissSuggestion
+ } = useLanguage();
 
  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
  const canvasRef = useStars({ enabled: isDark });
  const liquidCanvasRef = useLiquidLayers({ enabled: !isDark });
  const dropdownRef = useRef(null);
+
+ // Cache loaded translations (from /public/translations)
  const translationsCacheRef = useRef(new Map());
 
  useEffect(() => {
@@ -229,27 +232,36 @@ const Login = () => {
   return () => document.removeEventListener('mousedown', handleClickOutside);
  }, []);
 
- const getTranslation = (langCode) => {
-  const translationPath = `/src/translations/${langCode}.json`;
-  const allTranslations = import.meta.glob('/src/translations/*.json', { eager: true, import: 'default' });
-  return allTranslations[translationPath] || ORIGINAL_CONTENT;
+ const loadTranslation = async (langCode) => {
+  if (langCode === 'en') return ORIGINAL_CONTENT;
+
+  const cached = translationsCacheRef.current.get(langCode);
+  if (cached) return cached;
+
+  try {
+   const res = await fetch(`/translations/${langCode}.json`, { cache: 'force-cache' });
+   if (!res.ok) throw new Error(`Failed to load translation ${langCode}`);
+   const json = await res.json();
+
+   // Light safety: if file is malformed, fall back
+   if (!json || typeof json !== 'object') return ORIGINAL_CONTENT;
+
+   translationsCacheRef.current.set(langCode, json);
+   return json;
+  } catch {
+   return ORIGINAL_CONTENT;
+  }
  };
 
  useEffect(() => {
-  if (currentLanguage.startsWith('en')) {
-   setContent(ORIGINAL_CONTENT);
-   return;
-  }
+  let cancelled = false;
 
-  const cached = translationsCacheRef.current.get(currentLanguage);
-  if (cached) {
-   setContent(cached);
-   return;
-  }
+  (async () => {
+   const next = await loadTranslation(currentLanguage);
+   if (!cancelled) setContent(next);
+  })();
 
-  const translation = getTranslation(currentLanguage);
-  translationsCacheRef.current.set(currentLanguage, translation);
-  setContent(translation);
+  return () => { cancelled = true; };
  }, [currentLanguage]);
 
  const handleLanguageChange = (langCode) => {
@@ -467,7 +479,7 @@ const Login = () => {
      </h1>
 
      <p {...stylex.props(loginStyles.headerSubtitle)}>
-      {currentStep === 0 ? content.step0Explanation : content.step1Explanation}
+      {currentStep === 0 ? content.loginStep0Explanation : content.loginStep1Explanation}
      </p>
 
      {showSuggestion && suggestedLanguage && (
@@ -673,7 +685,7 @@ const Login = () => {
        {currentStep === 0 ? (
         <>
          <a href="/signup" {...stylex.props(loginStyles.secondaryAction)}>
-          {content.footerLink}
+          {content.footerLinkSignup}
          </a>
 
          <button
@@ -770,10 +782,7 @@ const Login = () => {
            />
           </div>
 
-          <div style={{
-           overflowY: 'auto',
-           maxHeight: '280px'
-          }}>
+          <div style={{ overflowY: 'auto', maxHeight: '280px' }}>
            {filteredLanguages.length > 0 ? (
             filteredLanguages.map((lang) => (
              <button
