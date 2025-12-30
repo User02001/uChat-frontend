@@ -120,15 +120,15 @@ const LANGUAGES = [
 
 const ORIGINAL_CONTENT = {
  // === COMMON ===
- // Buttons
+ // Buttons (use nouns or simple imperatives)
  continueButton: "Continue",
  backButton: "Back",
- loading: "Loading...",
+ loading: "Loading",
 
- // OAuth
+ // OAuth (noun phrases, not verb commands)
  orDivider: "or",
 
- // Footer/links
+ // Footer/links (nouns only)
  termsOfUse: "Terms of use",
  privacyPolicy: "Privacy Policy",
  help: "Get help",
@@ -138,110 +138,110 @@ const ORIGINAL_CONTENT = {
  translatePrompt: "Would you like to translate to",
  translateYes: "Yes",
  translateNo: "No",
- searchLanguages: "Search languages...",
+ searchLanguages: "Search languages",
 
- // Placeholders (shared)
- emailPlaceholder: "Enter your email",
- passwordPlaceholder: "Enter your password",
+ // Placeholders (direct, simple)
+ emailPlaceholder: "Your email address",
+ passwordPlaceholder: "Your password",
 
- // Errors (shared)
- enterEmail: "Enter your email!",
- enterPassword: "Enter your password!",
- connectionError: "Having server errors, try again!",
- couldNotVerify: "Could not verify email.",
+ // Errors (short, declarative)
+ enterEmail: "Email is required",
+ enterPassword: "Password is required",
+ connectionError: "Server error. Please try again.",
+ couldNotVerify: "Email verification failed",
 
  // === LOGIN PAGE ===
- // Header
+ // Header (keep separate)
  welcomeBack0: 'Sign in',
- welcomeBack1: 'Welcome back!',
+ welcomeBack1: 'Welcome back',
 
- // Step explanations
- loginStep0Explanation: 'by entering your email first right there in that little box!',
- loginStep1Explanation: 'Now enter your password to continue chatting on uChat.',
+ // Step explanations (short standalone sentences)
+ loginStep0Explanation: 'Enter your email address to begin.',
+ loginStep1Explanation: 'Enter your password to access your account.',
 
- // Buttons
- loginButton: "Login",
- loggingIn: "Logging in...",
+ // Buttons (nouns)
+ loginButton: "Sign in",
+ loggingIn: "Signing in",
 
- // Small actions
+ // Small actions (questions or nouns)
  forgotEmail: "Forgot your email?",
  forgotPassword: "Forgot your password?",
 
- // OAuth
- continueWithGoogle: "Continue with Google",
+ // OAuth (noun phrase - "with Google" is modifier)
+ continueWithGoogle: "Google sign in",
 
  // Footer
  footerLinkSignup: "Create account",
 
- // Errors (login-specific)
- wrongPassword: "Wrong password. Please try again!",
- emailNotFound: "We could not find an account with this email, try again!",
+ // Errors (short, direct)
+ wrongPassword: "Incorrect password",
+ emailNotFound: "Email not found",
 
  // === SIGNUP PAGE ===
  // Header
  pageTitle: 'Create your account',
 
- // Step titles
- step0Title: "Signing up!",
- step1Title: "Username...",
- step2Title: "Handle time!",
- step3Title: "Password eh?",
- step4Title: "Confirm that!",
+ // Step titles (nouns or short phrases)
+ step0Title: "Email address",
+ step1Title: "Display name",
+ step2Title: "Username tag",
+ step3Title: "Password",
+ step4Title: "Confirm password",
 
- // Step subtitles
- step0Subtitle: "You'll use this to sign in",
- step1Subtitle: "This is how others will see you (3-30 characters)",
- step2Subtitle: "Your unique identifier (3-15 characters)",
- step3Subtitle: "Min 8 characters, 1 uppercase, 1 number",
- step4Subtitle: "Just to make sure",
+ // Step subtitles (descriptive, no verbs)
+ step0Subtitle: "Used for signing in",
+ step1Subtitle: "How others see you (3-30 characters)",
+ step2Subtitle: "Your unique @tag (3-15 characters)",
+ step3Subtitle: "Minimum 8 characters, 1 uppercase, 1 number",
+ step4Subtitle: "Enter your password again",
 
- // Step explanations
- signupStep0Explanation: "Welcome! Let's get started by entering your email address OR you can sign up with Google for instant access.",
- signupStep1Explanation: "Choose how you want to be known on uChat. This is your display name that others will see. It is like a nickname!",
- signupStep2Explanation: "Your handle is like your identifier - it's completely unique to you and helps others find you. No one can copy your handle!",
- signupStep3Explanation: "Create a strong password to keep your account secure, please make it secure like seriously! 🥺",
- signupStep4Explanation: "Almost there! Confirm your password and agree to our terms to finish creating your account.",
+ // Step explanations (separate simple sentences, no conjunctions)
+ signupStep0Explanation: "Enter your email address to create your account. You can also use Google sign in for faster access.",
+ signupStep1Explanation: "Choose your display name. This is how other users will see you on uChat.",
+ signupStep2Explanation: "Your username tag starts with @ symbol. This unique identifier helps others find you. No other user can have the same tag.",
+ signupStep3Explanation: "Create a strong password to protect your account.",
+ signupStep4Explanation: "Confirm your password and accept the terms to complete signup.",
 
- // Placeholders
- usernamePlaceholder: "Enter your username",
- handlePlaceholder: "Enter your handle",
- confirmPasswordPlaceholder: "Enter your password again",
+ // Placeholders (simple nouns)
+ usernamePlaceholder: "Your display name",
+ handlePlaceholder: "Your username tag",
+ confirmPasswordPlaceholder: "Confirm your password",
 
- // Buttons
- createAccountButton: "Create Account",
- creating: "Creating...",
+ // Buttons (nouns)
+ createAccountButton: "Create account",
+ creating: "Creating account",
 
- // OAuth
- signupWithGoogle: "Sign up with Google",
+ // OAuth (noun phrase)
+ signupWithGoogle: "Google sign up",
 
- // Terms
+ // Terms (keep separate)
  agreeToTerms: "I agree to the",
  and: "and",
 
- // Footer
+ // Footer (nouns)
  alreadyHaveAccount: "Already have an account?",
- signIn: "Sign in!",
+ signIn: "Sign in",
 
- // Errors (signup-specific)
- enterUsername: "Username is required",
- usernameTooShort: "Username must be at least 3 characters",
- usernameTooLong: "Username cannot exceed 30 characters",
- enterHandle: "Handle is required",
- handleTooShort: "Handle must be at least 3 characters",
- handleTooLong: "Handle cannot exceed 15 characters",
- handleInvalid: "Handle can only contain letters, numbers, and underscores",
- handleNoAt: "Don't include \"@\" because it will be added automatically",
+ // Errors (short declarative)
+ enterUsername: "Display name is required",
+ usernameTooShort: "Display name must be at least 3 characters",
+ usernameTooLong: "Display name cannot exceed 30 characters",
+ enterHandle: "Username tag is required",
+ handleTooShort: "Username tag must be at least 3 characters",
+ handleTooLong: "Username tag cannot exceed 15 characters",
+ handleInvalid: "Username tag can only contain letters, numbers, and underscores",
+ handleNoAt: "Do not include @ symbol. It will be added automatically.",
  passwordTooShort: "Password must be at least 8 characters",
  passwordNoUppercase: "Password must contain at least one uppercase letter",
  passwordNoNumber: "Password must contain at least one number",
  passwordsNotMatch: "Passwords do not match",
- mustAgreeToTerms: "Please agree to the terms and conditions",
- emailTaken: "This email is already taken. Try again!",
- handleTaken: "This handle is already taken. Try again!",
- unableToVerify: "Unable to verify",
- signupFailed: "Signup failed",
+ mustAgreeToTerms: "You must accept the terms and conditions",
+ emailTaken: "This email is already registered",
+ handleTaken: "This username tag is already taken",
+ unableToVerify: "Verification failed",
+ signupFailed: "Account creation failed",
 
- // Character counter
+ // Character counter (noun)
  charactersCount: "characters",
 };
 

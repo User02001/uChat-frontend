@@ -175,6 +175,7 @@ const slideOutRight = stylex.keyframes({
 export const signupStyles = stylex.create({
  signupContainer: {
   minHeight: '100vh',
+  minHeight: '100dvh',
   background: 'var(--bg-primary)',
   color: 'var(--text-primary)',
   display: 'flex',
@@ -185,9 +186,8 @@ export const signupStyles = stylex.create({
   width: '100%',
   '@media (max-width: 900px)': {
    padding: '16px',
-   alignItems: 'center',
-   paddingTop: '16px',
-   paddingBottom: '16px',
+   paddingTop: 'max(16px, env(safe-area-inset-top))',
+   paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
   },
  },
 

@@ -566,7 +566,6 @@ const Login = () => {
             value={formData.email}
             onChange={handleInputChange}
             placeholder={content.emailPlaceholder}
-            autoFocus
             autoComplete="email"
             aria-invalid={!!(error || validationError)}
             aria-describedby={error || validationError ? "email-error" : undefined}
@@ -753,7 +752,6 @@ const Login = () => {
             placeholder={content.searchLanguages}
             value={languageSearch}
             onChange={(e) => setLanguageSearch(e.target.value)}
-            autoFocus
             style={{
              width: '100%',
              padding: '8px 12px',

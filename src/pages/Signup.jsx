@@ -695,7 +695,6 @@ const Signup = () => {
             value={formData.email}
             onChange={handleInputChange}
             placeholder={content.emailPlaceholder}
-            autoFocus
             autoComplete="email"
             maxLength={254}
             aria-invalid={!!(error || validationError)}
@@ -987,7 +986,6 @@ const Signup = () => {
             placeholder={content.searchLanguages}
             value={languageSearch}
             onChange={(e) => setLanguageSearch(e.target.value)}
-            autoFocus
             style={{
              width: '100%',
              padding: '8px 12px',
