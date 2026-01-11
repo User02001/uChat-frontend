@@ -42,6 +42,8 @@ import ActiveScreenshare from "./components/calls/ActiveScreenshare";
 import { styles as callHeaderStyles } from './styles/call_header_buttons';
 import { DownloadRecommendationNotificationStyles as downloadStyles } from './styles/download_recommendation';
 import './utils/secureApiFetch';
+import MessageRequestsSidebar from "./components/MessageRequestsSidebar";
+import MessageRequestChatView from "./components/MessageRequestChatView";
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -102,6 +104,21 @@ const App = () => {
   userForcedStatus, setUserForcedStatus,
   showReportMessageModal, setShowReportMessageModal,
   showModerationCustomWarningForMessageModal, setShowModerationCustomWarningForMessageModal,
+  showRequestsView,
+  setShowRequestsView,
+  messageRequests,
+  setMessageRequests,
+  activeRequest,
+  setActiveRequest,
+  requestsCount,
+  setRequestsCount,
+  requestsLoading,
+  setRequestsLoading,
+  loadMessageRequests,
+  handleAcceptRequest,
+  handleBlockRequest,
+  handleOpenRequests,
+  handleCloseRequests,
 
   // Refs
   socketRef,
@@ -119,7 +136,6 @@ const App = () => {
   loadContacts,
   loadMessages,
   searchUsers,
-  addContact,
   selectContact,
   handleBackToContacts,
   sendMessage,
@@ -744,47 +760,202 @@ const App = () => {
       onSelectContact={selectContact}
       activeContact={activeContact}
       API_BASE_URL={API_BASE_URL}
+      onRequestsClick={handleOpenRequests}
+      requestsCount={requestsCount}
      />
 
-     <div className={styles.sidebar}>
-      <div className={styles.sidebarHeader}>
-       <div className={styles.userProfile}>
-        <div className={styles.contactAvatarContainer}>
-         <img
-          src={
-           user?.avatar_url
-            ? `${CDN_BASE_URL}${user.avatar_url}`
-            : "/resources/default_avatar.png"
-          }
-          alt="Profile"
-          className={styles.profileAvatar}
-          onClick={() => setShowQuickProfileModal(user)}
-          style={{ cursor: 'pointer' }}
+     {showRequestsView ? (
+      <MessageRequestsSidebar
+       requests={messageRequests}
+       onBack={handleCloseRequests}
+       onSelectRequest={setActiveRequest}
+       activeRequest={activeRequest}
+       loading={requestsLoading}
+      />
+     ) : (
+      <div className={styles.sidebar}>
+       <div className={styles.sidebarHeader}>
+        <div className={styles.userProfile}>
+         <div className={styles.contactAvatarContainer}>
+          <img
+           src={
+            user?.avatar_url
+             ? `${CDN_BASE_URL}${user.avatar_url}`
+             : "/resources/default_avatar.png"
+           }
+           alt="Profile"
+           className={styles.profileAvatar}
+           onClick={() => setShowQuickProfileModal(user)}
+           style={{ cursor: 'pointer' }}
+           draggable="false"
+           title="View Your Own Profile"
+          />
+          <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
+           user?.forced_status === 'away' ? 'away' :
+            userStatuses[user?.id] === 'away' ? 'away' : 'online'
+           }`}></div>
+         </div>
+         <div className={styles.userInfo}>
+          <span className={styles.username}>
+           {user?.username}
+          </span>
+          <span className={styles.handle}>@{user?.handle}</span>
+         </div>
+         <button
+          className={styles.userMenuBtn}
+          onClick={(e) => {
+           e.stopPropagation();
+           setShowUserMenu(!showUserMenu);
+          }}
+         >
+          <i className="fas fa-chevron-down"></i>
+         </button>
+         {showUserMenu && (
+          <div className={styles.userMenu}>
+           <button onClick={() => {
+            setShowQuickProfileModal(user);
+            setShowUserMenu(false);
+           }}>
+            <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+            My Profile
+           </button>
+           <button onClick={() => {
+            setShowChangeOwnStatusModal(true);
+            setShowUserMenu(false);
+           }}>
+            {userStatuses[user?.id] === 'away' ? (
+             <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Icon
+               name="away_icon"
+               alt="Status"
+               style={{ width: '18px', height: '18px' }}
+              />
+             </span>
+            ) : (
+             <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+              <i className="fas fa-circle" style={{ fontSize: '14px', color: '#4caf50' }}></i>
+             </span>
+            )}
+            Set Status
+           </button>
+           <button onClick={handleLogout} style={{ color: '#ff4757' }}>
+            <i className="fas fa-sign-out-alt" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
+            Logout
+           </button>
+          </div>
+         )}
+        </div>
+
+        <div className={styles.searchSection}>
+         <div className={styles.searchInputContainer}>
+          <input
+           type="text"
+           placeholder="Search for people..."
+           value={searchQuery}
+           onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setShowSearch(true);
+           }}
+           onFocus={() => setShowSearch(true)}
+           {...stylex.props(chatStyles.searchInput)}
+          />
+          {showSearch && (
+           <button
+            {...stylex.props(chatStyles.searchClose)}
+            onClick={() => {
+             setSearchExiting(true);
+             setTimeout(() => {
+              setShowMobileSearch(false);
+              setSearchExiting(false);
+              setSearchQuery("");
+              setSearchResults([]);
+             }, 200);
+            }}
+           >
+            ×
+           </button>
+          )}
+         </div>
+
+         {showSearch && searchResults.length > 0 && (
+          <div className={styles.searchResults}>
+           {searchResults.map((result) => (
+            <div key={result.id} className={styles.searchResult}>
+             <img
+              src={
+               result.avatar_url
+                ? `${CDN_BASE_URL}${result.avatar_url}`
+                : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
+              }
+              alt={result.username}
+              className={styles.searchAvatar}
+             />
+             <div className={styles.searchUserInfo}>
+              <span className={styles.searchUsername}>
+               {result.username}
+              </span>
+              <span className={styles.searchHandle}>
+               @{result.handle}
+              </span>
+             </div>
+             <button
+              {...stylex.props(chatStyles.addContactBtn)}
+              onClick={() => {
+               selectContact(result);
+               setShowSearch(false);
+               setSearchQuery("");
+               setSearchResults([]);
+              }}
+             >
+              Message
+             </button>
+            </div>
+           ))}
+          </div>
+         )}
+        </div>
+       </div>
+
+       <div className={styles.mobileHeader}>
+        <div className={styles.mobileLogo}>
+         <Icon
+          name="main-logo"
           draggable="false"
-          title="View Your Own Profile"
+          alt="uChat Logo"
+          className={styles.mobileLogoIcon}
          />
-         <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
-          user?.forced_status === 'away' ? 'away' :
-           userStatuses[user?.id] === 'away' ? 'away' : 'online'
-          }`}></div>
+         <span className={styles.mobileLogoText}>uChat</span>
         </div>
-        <div className={styles.userInfo}>
-         <span className={styles.username}>
-          {user?.username}
-         </span>
-         <span className={styles.handle}>@{user?.handle}</span>
+        <div className={styles.mobileHeaderActions}>
+         <button
+          className={styles.userMenuBtn}
+          onClick={(e) => {
+           e.stopPropagation();
+           setShowUserMenu(!showUserMenu);
+          }}
+          style={{ background: 'transparent', border: 'none', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+         >
+          <div className={styles.contactAvatarContainer}>
+           <img
+            src={
+             user?.avatar_url
+              ? `${CDN_BASE_URL}${user.avatar_url}`
+              : "/resources/default_avatar.png"
+            }
+            alt="Profile"
+            draggable="false"
+            className={styles.mobileAvatar}
+           />
+           <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
+            user?.forced_status === 'away' ? 'away' :
+             userStatuses[user?.id] === 'away' ? 'away' : 'online'
+            }`}></div>
+          </div>
+          <i className="fas fa-chevron-down" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}></i>
+         </button>
         </div>
-        <button
-         className={styles.userMenuBtn}
-         onClick={(e) => {
-          e.stopPropagation();
-          setShowUserMenu(!showUserMenu);
-         }}
-        >
-         <i className="fas fa-chevron-down"></i>
-        </button>
         {showUserMenu && (
-         <div className={styles.userMenu}>
+         <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
           <button onClick={() => {
            setShowQuickProfileModal(user);
            setShowUserMenu(false);
@@ -811,7 +982,10 @@ const App = () => {
            )}
            Set Status
           </button>
-          <button onClick={handleLogout} style={{ color: '#ff4757' }}>
+          <button onClick={() => {
+           handleLogout();
+           setShowUserMenu(false);
+          }} style={{ color: '#ff4757' }}>
            <i className="fas fa-sign-out-alt" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
            Logout
           </button>
@@ -819,342 +993,242 @@ const App = () => {
         )}
        </div>
 
-       <div className={styles.searchSection}>
-        <div className={styles.searchInputContainer}>
-         <input
-          type="text"
-          placeholder="Search for people..."
-          value={searchQuery}
-          onChange={(e) => {
-           setSearchQuery(e.target.value);
-           setShowSearch(true);
-          }}
-          onFocus={() => setShowSearch(true)}
-          {...stylex.props(chatStyles.searchInput)}
-         />
-         {showSearch && (
-          <button
-           {...stylex.props(chatStyles.searchClose)}
-           onClick={() => {
-            setSearchExiting(true);
-            setTimeout(() => {
-             setShowMobileSearch(false);
-             setSearchExiting(false);
-             setSearchQuery("");
-             setSearchResults([]);
-            }, 200);
-           }}
-          >
-           ×
-          </button>
-         )}
-        </div>
+       <div className={styles.mobileSearchTrigger}>
+        <button
+         type="button"
+         onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowMobileSearch(true);
+         }}
+         style={{
+          width: "100%",
+          padding: "8px 16px",
+          borderRadius: "20px",
+          border: "1px solid var(--border)",
+          background: "var(--bg-tertiary)",
+          fontSize: "14px",
+          color: "var(--text-secondary)",
+          cursor: "pointer",
+          textAlign: "left",
+          fontFamily: "inherit",
+          WebkitAppearance: "none",
+          appearance: "none",
+         }}
+        >
+         Search...
+        </button>
+       </div>
 
-        {showSearch && searchResults.length > 0 && (
-         <div className={styles.searchResults}>
-          {searchResults.map((result) => (
-           <div key={result.id} className={styles.searchResult}>
+       {showMobileSearch && (
+        <div
+         className={`${styles.mobileSearchOverlay} ${searchExiting ? "exiting" : "entering"}`}
+        >
+         <div className={styles.mobileSearchHeader}>
+          <button
+           className={styles.mobileSearchBack}
+           onClick={closeMobileSearch}
+          ></button>
+          <div className={styles.searchInputContainer}>
+           <input
+            type="text"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={styles.mobileSearchInput}
+            autoFocus
+           />
+          </div>
+         </div>
+         <div className={styles.mobileSearchContent}>
+          {searchResults.length > 0 ? (
+           <div className={styles.searchResults}>
+            {searchResults.map((result) => (
+             <div key={result.id} className={styles.searchResult}>
+              <img
+               draggable="false"
+               src={
+                result.avatar_url
+                 ? `${CDN_BASE_URL}${result.avatar_url}`
+                 : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
+               }
+               alt={result.username}
+               className={styles.searchAvatar}
+              />
+              <div className={styles.searchUserInfo}>
+               <span className={styles.searchUsername}>
+                {result.username}
+               </span>
+               <span className={styles.searchHandle}>
+                @{result.handle}
+               </span>
+              </div>
+              <button
+               {...stylex.props(chatStyles.addContactBtn)}
+               onClick={() => {
+                selectContact(result);
+                setShowMobileSearch(false);
+                setSearchQuery("");
+                setSearchResults([]);
+               }}
+              >
+               Message
+              </button>
+             </div>
+            ))}
+           </div>
+          ) : searchQuery.trim() ? (
+           <div className={styles.noSearchResults}>
+            <p>No users found</p>
+           </div>
+          ) : (
+           <div className={styles.searchPlaceholder}>
+            <p>Start typing to search for users...</p>
+           </div>
+          )}
+         </div>
+        </div>
+       )}
+
+       <div className={styles.contactsList}>
+        {contactsLoading ? (
+         <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          color: 'var(--text-secondary)'
+         }}>
+          <div className={styles.loadingSpinner}></div>
+         </div>
+        ) : contacts.length === 0 ? (
+         <div className={styles.emptyContacts}>
+          <p>No contacts yet</p>
+          <p>Search for users to start chatting</p>
+         </div>
+        ) : (
+         contacts.map((contact) => (
+          <div
+           key={contact.id}
+           className={`${styles.contactItem} ${activeContact?.id === contact.id ? styles.contactItemActive : ""}`}
+           onClick={() => selectContact(contact)}
+          >
+           <div className={styles.contactAvatarContainer}>
             <img
              src={
-              result.avatar_url
-               ? `${CDN_BASE_URL}${result.avatar_url}`
-               : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
+              contact.avatar_url
+               ? `${CDN_BASE_URL}${contact.avatar_url}`
+               : "/resources/default_avatar.png"
              }
-             alt={result.username}
-             className={styles.searchAvatar}
+             alt={contact.username}
+             onClick={(e) => {
+              e.stopPropagation();
+              setShowQuickProfileModal(contact);
+             }}
+             style={{ cursor: 'pointer' }}
+             className={styles.contactAvatar}
+             draggable="false"
+             title={`View ${contact.username}'s Profile`}
             />
-            <div className={styles.searchUserInfo}>
-             <span className={styles.searchUsername}>
-              {result.username}
+            <div
+             className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
+              onlineUsers.includes(contact.id) ? "online" : "offline"
+              }`}
+            ></div>
+           </div>
+           <div className={styles.contactInfo}>
+            <div className={styles.contactMain}>
+             <span className={styles.contactName}>
+              {contact.username}
+              {contact.pending_request && contact.request_status === 'pending_outgoing' && (
+               <span style={{
+                marginLeft: '6px',
+                padding: '2px 6px',
+                background: 'rgba(255, 165, 0, 0.15)',
+                color: '#ff9500',
+                fontSize: '10px',
+                borderRadius: '4px',
+                fontWeight: '600'
+               }}>
+                Pending
+               </span>
+              )}
+              {!contact.is_verified && (
+               <Icon
+                name="unverified"
+                alt="Unverified"
+                className={styles.unverifiedIcon}
+                onClick={(e) => {
+                 e.stopPropagation();
+                 setShowUnverifiedUserWarningModal(contact.username);
+                }}
+                title="Unverified user"
+               />
+              )}
              </span>
-             <span className={styles.searchHandle}>
-              @{result.handle}
+             <span className={styles.contactTime}>
+              {formatContactTime(contact.lastMessageTime, isMobile)}
              </span>
             </div>
-            <button
-             {...stylex.props(chatStyles.addContactBtn)}
-             onClick={() => addContact(result.id)}
+            <span
+             className={`${styles.contactPreview} ${contact.unread && activeContact?.id !== contact.id
+              ? styles.contactPreviewUnread
+              : ""
+              }`}
             >
-             Add
-            </button>
+             {contact.lastMessage
+              ? `${contact.lastSenderId === user?.id ? "You: " : ""
+              }${contact.lastMessage.length > 15
+               ? contact.lastMessage.substring(0, 15) + "..."
+               : contact.lastMessage
+              } · ${contact.lastMessageTime
+               ? formatTimeAgo(contact.lastMessageTime)
+               : ""
+              }`
+              : "There are no messages yet"}
+            </span>
            </div>
-          ))}
-         </div>
+          </div>
+         ))
         )}
        </div>
       </div>
-
-      <div className={styles.mobileHeader}>
-       <div className={styles.mobileLogo}>
-        <Icon
-         name="main-logo"
-         draggable="false"
-         alt="uChat Logo"
-         className={styles.mobileLogoIcon}
-        />
-        <span className={styles.mobileLogoText}>uChat</span>
-       </div>
-       <div className={styles.mobileHeaderActions}>
-        <button
-         className={styles.userMenuBtn}
-         onClick={(e) => {
-          e.stopPropagation();
-          setShowUserMenu(!showUserMenu);
-         }}
-         style={{ background: 'transparent', border: 'none', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-         <div className={styles.contactAvatarContainer}>
-          <img
-           src={
-            user?.avatar_url
-             ? `${CDN_BASE_URL}${user.avatar_url}`
-             : "/resources/default_avatar.png"
-           }
-           alt="Profile"
-           draggable="false"
-           className={styles.mobileAvatar}
-          />
-          <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
-           user?.forced_status === 'away' ? 'away' :
-            userStatuses[user?.id] === 'away' ? 'away' : 'online'
-           }`}></div>
-         </div>
-         <i className="fas fa-chevron-down" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}></i>
-        </button>
-       </div>
-       {showUserMenu && (
-        <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
-         <button onClick={() => {
-          setShowQuickProfileModal(user);
-          setShowUserMenu(false);
-         }}>
-          <i className="fas fa-user" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
-          My Profile
-         </button>
-         <button onClick={() => {
-          setShowChangeOwnStatusModal(true);
-          setShowUserMenu(false);
-         }}>
-          {userStatuses[user?.id] === 'away' ? (
-           <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-            <Icon
-             name="away_icon"
-             alt="Status"
-             style={{ width: '18px', height: '18px' }}
-            />
-           </span>
-          ) : (
-           <span style={{ width: '14px', marginRight: '8px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
-            <i className="fas fa-circle" style={{ fontSize: '14px', color: '#4caf50' }}></i>
-           </span>
-          )}
-          Set Status
-         </button>
-         <button onClick={() => {
-          handleLogout();
-          setShowUserMenu(false);
-         }} style={{ color: '#ff4757' }}>
-          <i className="fas fa-sign-out-alt" style={{ marginRight: '8px', width: '14px', display: 'inline-flex', justifyContent: 'center' }}></i>
-          Logout
-         </button>
-        </div>
-       )}
-      </div>
-
-      <div className={styles.mobileSearchTrigger}>
-       <button
-        type="button"
-        onClick={(e) => {
-         e.preventDefault();
-         e.stopPropagation();
-         setShowMobileSearch(true);
-        }}
-        style={{
-         width: "100%",
-         padding: "8px 16px",
-         borderRadius: "20px",
-         border: "1px solid var(--border)",
-         background: "var(--bg-tertiary)",
-         fontSize: "14px",
-         color: "var(--text-secondary)",
-         cursor: "pointer",
-         textAlign: "left",
-         fontFamily: "inherit",
-         WebkitAppearance: "none",
-         appearance: "none",
-        }}
-       >
-        Search...
-       </button>
-      </div>
-
-      {showMobileSearch && (
-       <div
-        className={`${styles.mobileSearchOverlay} ${searchExiting ? "exiting" : "entering"}`}
-       >
-        <div className={styles.mobileSearchHeader}>
-         <button
-          className={styles.mobileSearchBack}
-          onClick={closeMobileSearch}
-         ></button>
-         <div className={styles.searchInputContainer}>
-          <input
-           type="text"
-           placeholder="Search users..."
-           value={searchQuery}
-           onChange={(e) => setSearchQuery(e.target.value)}
-           className={styles.mobileSearchInput}
-           autoFocus
-          />
-         </div>
-        </div>
-        <div className={styles.mobileSearchContent}>
-         {searchResults.length > 0 ? (
-          <div className={styles.searchResults}>
-           {searchResults.map((result) => (
-            <div key={result.id} className={styles.searchResult}>
-             <img
-              draggable="false"
-              src={
-               result.avatar_url
-                ? `${CDN_BASE_URL}${result.avatar_url}`
-                : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
-              }
-              alt={result.username}
-              className={styles.searchAvatar}
-             />
-             <div className={styles.searchUserInfo}>
-              <span className={styles.searchUsername}>
-               {result.username}
-              </span>
-              <span className={styles.searchHandle}>
-               @{result.handle}
-              </span>
-             </div>
-             <button
-              className={styles.addContactBtn}
-              onClick={() => {
-               addContact(result.id);
-               setShowMobileSearch(false);
-               setSearchQuery("");
-               setSearchResults([]);
-              }}
-             >
-              Add
-             </button>
-            </div>
-           ))}
-          </div>
-         ) : searchQuery.trim() ? (
-          <div className={styles.noSearchResults}>
-           <p>No users found</p>
-          </div>
-         ) : (
-          <div className={styles.searchPlaceholder}>
-           <p>Start typing to search for users...</p>
-          </div>
-         )}
-        </div>
-       </div>
-      )}
-
-      <div className={styles.contactsList}>
-       {contactsLoading ? (
-        <div style={{
-         display: 'flex',
-         alignItems: 'center',
-         justifyContent: 'center',
-         height: '100%',
-         color: 'var(--text-secondary)'
-        }}>
-         <div className={styles.loadingSpinner}></div>
-        </div>
-       ) : contacts.length === 0 ? (
-        <div className={styles.emptyContacts}>
-         <p>No contacts yet</p>
-         <p>Search for users to start chatting</p>
-        </div>
-       ) : (
-        contacts.map((contact) => (
-         <div
-          key={contact.id}
-          className={`${styles.contactItem} ${activeContact?.id === contact.id ? styles.contactItemActive : ""}`}
-          onClick={() => selectContact(contact)}
-         >
-          <div className={styles.contactAvatarContainer}>
-           <img
-            src={
-             contact.avatar_url
-              ? `${CDN_BASE_URL}${contact.avatar_url}`
-              : "/resources/default_avatar.png"
-            }
-            alt={contact.username}
-            onClick={(e) => {
-             e.stopPropagation();
-             setShowQuickProfileModal(contact);
-            }}
-            style={{ cursor: 'pointer' }}
-            className={styles.contactAvatar}
-            draggable="false"
-            title={`View ${contact.username}'s Profile`}
-           />
-           <div
-            className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
-             onlineUsers.includes(contact.id) ? "online" : "offline"
-             }`}
-           ></div>
-          </div>
-          <div className={styles.contactInfo}>
-           <div className={styles.contactMain}>
-            <span className={styles.contactName}>
-             {contact.username}
-             {!contact.is_verified && (
-              <Icon
-               name="unverified"
-               alt="Unverified"
-               className={styles.unverifiedIcon}
-               onClick={(e) => {
-                e.stopPropagation();
-                setShowUnverifiedUserWarningModal(contact.username);
-               }}
-               title="Unverified user"
-              />
-             )}
-            </span>
-            <span className={styles.contactTime}>
-             {formatContactTime(contact.lastMessageTime, isMobile)}
-            </span>
-           </div>
-           <span
-            className={`${styles.contactPreview} ${contact.unread && activeContact?.id !== contact.id
-             ? styles.contactPreviewUnread
-             : ""
-             }`}
-           >
-            {contact.lastMessage
-             ? `${contact.lastSenderId === user?.id ? "You: " : ""
-             }${contact.lastMessage.length > 15
-              ? contact.lastMessage.substring(0, 15) + "..."
-              : contact.lastMessage
-             } · ${contact.lastMessageTime
-              ? formatTimeAgo(contact.lastMessageTime)
-              : ""
-             }`
-             : "There are no messages yet"}
-           </span>
-          </div>
-         </div>
-        ))
-       )}
-      </div>
-     </div>
-
+     )}
      <div className={styles.chatContainer}>
-      {activeContact ? (
+      {showRequestsView && activeRequest ? (
+       <MessageRequestChatView
+        request={activeRequest}
+        user={user}
+        onAccept={handleAcceptRequest}
+        onBlock={handleBlockRequest}
+        onBack={() => setActiveRequest(null)}
+       />
+      ) : activeContact ? (
        <>
-        <div
-         {...stylex.props(chatStyles.chatHeader)}
-        >
+         <div
+          {...stylex.props(chatStyles.chatHeader)}
+         >
+          {activeContact?.pending_request && activeContact?.request_status === 'pending_outgoing' && (
+           <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: 'linear-gradient(135deg, #ff9500 0%, #ff6b00 100%)',
+            color: 'white',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: '500',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            zIndex: 10,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+           }}>
+            <i className="fas fa-clock" style={{ fontSize: '12px' }}></i>
+            <span>Message request pending — They haven't accepted yet</span>
+           </div>
+          )}
          {isMobile && (
           <button
            className={styles.mobileBackBtn}
@@ -1529,7 +1603,7 @@ const App = () => {
          </form>
         </div>
        </>
-      ) : !isMobile ? (
+      ) : !isMobile && !showRequestsView ? (
        <div {...stylex.props(chatStyles.noChatSelected)}>
         <h2>Hello there, {user?.username}!</h2>
         <p>Select a contact to start chatting now :D</p>

@@ -4,7 +4,7 @@ import { SidebarStyles as styles } from '../styles/sidebar';
 import { useSidebarLogic } from '../hooks/useSidebarLogic';
 import Icon from './Icon';
 
-const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL }) => {
+const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, contacts = [], onSelectContact, activeContact, API_BASE_URL, onRequestsClick, requestsCount = 0 }) => {
  const [activeTab, setActiveTab] = useState('chats');
  const [showMore, setShowMore] = useState(false);
  const [clickedButtons, setClickedButtons] = useState(new Set());
@@ -121,23 +121,43 @@ const Sidebar = ({ showMobileChat = false, showMobileSearch = false, onLogout, c
     <button
      {...stylex.props(
       styles.navBtn,
-      activeTab === 'help' && styles.active,
+      activeTab === 'requests' && styles.active,
      )}
      onClick={() => {
-      handleButtonClick('help');
-      handleTabClick('help');
+      handleButtonClick('requests');
+      if (onRequestsClick) onRequestsClick();
      }}
-     onMouseEnter={() => !clickedButtons.has('help') && setHoveredButton('help')}
+     onMouseEnter={() => !clickedButtons.has('requests') && setHoveredButton('requests')}
      onMouseLeave={() => {
-      handleButtonMouseLeave('help');
+      handleButtonMouseLeave('requests');
       setHoveredButton(null);
      }}
+     style={{ position: 'relative' }}
     >
-     <i className="fas fa-question-circle"></i>
+     <Icon name="message_requests" alt="Requests" draggable="false" style={{ width: '20px', height: '20px' }} />
+     {requestsCount > 0 && (
+      <span style={{
+       position: 'absolute',
+       top: '-4px',
+       right: '-4px',
+       background: '#f44336',
+       color: 'white',
+       borderRadius: '10px',
+       padding: '2px 6px',
+       fontSize: '11px',
+       fontWeight: 'bold',
+       minWidth: '18px',
+       textAlign: 'center',
+       border: '2px solid var(--bg-secondary)',
+       zIndex: 1,
+      }}>
+       {requestsCount > 99 ? '99+' : requestsCount}
+      </span>
+     )}
      <span {...stylex.props(
       styles.navTooltip,
-      hoveredButton === 'help' && !clickedButtons.has('help') && styles.navTooltipVisible
-     )}>Help Center</span>
+      hoveredButton === 'requests' && !clickedButtons.has('requests') && styles.navTooltipVisible
+     )}>Message Requests</span>
     </button>
 
     {!isElectron && (

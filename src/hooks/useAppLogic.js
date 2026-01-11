@@ -64,6 +64,11 @@ export const useAppLogic = () => {
  const [userForcedStatus, setUserForcedStatus] = useState(null);
  const [showReportMessageModal, setShowReportMessageModal] = useState(null);
  const [showModerationCustomWarningForMessageModal, setShowModerationCustomWarningForMessageModal] = useState(false);
+ const [showRequestsView, setShowRequestsView] = useState(false);
+ const [messageRequests, setMessageRequests] = useState([]);
+ const [activeRequest, setActiveRequest] = useState(null);
+ const [requestsCount, setRequestsCount] = useState(0);
+ const [requestsLoading, setRequestsLoading] = useState(false);
  const [showNewDeviceBanner, setShowNewDeviceBanner] = useState(null);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
@@ -437,6 +442,16 @@ export const useAppLogic = () => {
    setShowModerationCustomWarningForMessageModal(true);
   });
 
+  socket.on('new_message_request', (data) => {
+   setMessageRequests((prev) => [data.request, ...prev]);
+   setRequestsCount((prev) => prev + 1);
+  });
+
+  socket.on('message_request_accepted', (data) => {
+   // Reload contacts when someone accepts your request
+   loadContacts();
+  });
+
   socket.on("account_banned", (data) => {
    setError(`Your account has been banned: ${data.reason}`);
    setTimeout(() => {
@@ -653,35 +668,6 @@ export const useAppLogic = () => {
     }
    } catch (err) {
     // no-op
-   }
-  },
-  [navigate]
- );
-
- const addContact = useCallback(
-  async (userId) => {
-   try {
-    const response = await fetch(`${API_BASE_URL}/api/add_contact/${userId}`, {
-     method: "POST",
-     credentials: "include",
-    });
-
-    if (response.ok) {
-     const data = await response.json();
-     const contact = data.contact;
-
-     // Contact data is already decrypted by server
-     setContacts((prev) => [...prev, contact]);
-     setSearchResults([]);
-     setSearchQuery("");
-    } else if (response.status === 401) {
-     navigate("/login", { replace: true });
-    } else {
-     const errorData = await response.json();
-     setError(errorData.error);
-    }
-   } catch (err) {
-    setError("Failed to add contact");
    }
   },
   [navigate]
@@ -1378,6 +1364,96 @@ export const useAppLogic = () => {
   }
  }, [user, loading, checkForWarnings]);
 
+ const loadMessageRequests = useCallback(async () => {
+  setRequestsLoading(true);
+  try {
+   const response = await fetch(`${API_BASE_URL}/api/message-requests`, {
+    credentials: 'include',
+   });
+
+   if (response.ok) {
+    const data = await response.json();
+    setMessageRequests(data.requests);
+    setRequestsCount(data.requests.length);
+   }
+  } catch (error) {
+   console.error('Failed to load message requests:', error);
+  } finally {
+   setRequestsLoading(false);
+  }
+ }, []);
+
+ const handleAcceptRequest = useCallback(async (requestId) => {
+  try {
+   const response = await fetch(
+    `${API_BASE_URL}/api/message-requests/${requestId}/accept`,
+    {
+     method: 'POST',
+     credentials: 'include',
+    }
+   );
+
+   if (response.ok) {
+    const data = await response.json();
+
+    // Remove from requests
+    setMessageRequests((prev) => prev.filter((req) => req.id !== requestId));
+    setRequestsCount((prev) => prev - 1);
+
+    // Add to contacts
+    setContacts((prev) => [...prev, data.contact]);
+
+    // Close requests view and select the new contact
+    setShowRequestsView(false);
+    setActiveRequest(null);
+    selectContact(data.contact);
+
+    // Reload contacts to sync
+    loadContacts();
+   }
+  } catch (error) {
+   setError('Failed to accept request');
+  }
+ }, [selectContact, loadContacts]);
+
+ const handleBlockRequest = useCallback(async (requestId) => {
+  try {
+   const response = await fetch(
+    `${API_BASE_URL}/api/message-requests/${requestId}/block`,
+    {
+     method: 'POST',
+     credentials: 'include',
+    }
+   );
+
+   if (response.ok) {
+    // Remove from requests
+    setMessageRequests((prev) => prev.filter((req) => req.id !== requestId));
+    setRequestsCount((prev) => prev - 1);
+    setActiveRequest(null);
+
+    // If no more requests, go back
+    if (messageRequests.length <= 1) {
+     setShowRequestsView(false);
+    }
+   }
+  } catch (error) {
+   setError('Failed to block request');
+  }
+ }, [messageRequests.length]);
+
+ const handleOpenRequests = useCallback(() => {
+  setShowRequestsView(true);
+  setActiveContact(null);
+  setMessages([]);
+  loadMessageRequests();
+ }, [loadMessageRequests]);
+
+ const handleCloseRequests = useCallback(() => {
+  setShowRequestsView(false);
+  setActiveRequest(null);
+ }, []);
+
  return {
   // State
   user,
@@ -1491,6 +1567,16 @@ export const useAppLogic = () => {
   handleAcknowledgeDevice,
   handleRevokeDevice,
   checkForNewDeviceSession,
+  showRequestsView,
+  setShowRequestsView,
+  messageRequests,
+  setMessageRequests,
+  activeRequest,
+  setActiveRequest,
+  requestsCount,
+  setRequestsCount,
+  requestsLoading,
+  setRequestsLoading,
 
   // Refs
   socketRef,
@@ -1509,7 +1595,6 @@ export const useAppLogic = () => {
   loadContacts,
   loadMessages,
   searchUsers,
-  addContact,
   selectContact,
   handleBackToContacts,
   sendMessage,
@@ -1523,5 +1608,10 @@ export const useAppLogic = () => {
   handleReportMessage,
   handleSubmitReport,
   checkForWarnings,
+  loadMessageRequests,
+  handleAcceptRequest,
+  handleBlockRequest,
+  handleOpenRequests,
+  handleCloseRequests,
  };
 };
