@@ -83,7 +83,6 @@ const MessageRequestChatView = ({
       {...stylex.props(chatStyles.chatAvatar)}
       draggable="false"
      />
-     <div className="status-indicator offline"></div>
     </div>
     <div {...stylex.props(chatStyles.chatUserInfo)}>
      <div {...stylex.props(chatStyles.chatUsernameContainer)}>
@@ -122,6 +121,7 @@ const MessageRequestChatView = ({
 
        return (
         <Message
+         disableActions={true}
          key={message.id}
          message={message}
          user={user}

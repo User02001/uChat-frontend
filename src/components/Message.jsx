@@ -28,7 +28,8 @@ const Message = ({
  children,
  onMediaExpand,
  formatFileSize,
- getFileIcon
+ getFileIcon,
+ disableActions = false
 }) => {
  const isSent = message.sender_id === user.id;
  const senderData = isSent ? user : activeContact;
@@ -39,6 +40,7 @@ const Message = ({
 
  const handleTouchStart = (e) => {
   if (!isMobile) return;
+  if (disableActions) return;
   setPressing(true);
   longPressTimerRef.current = setTimeout(() => {
    if (onLongPress) {
@@ -86,15 +88,20 @@ const Message = ({
    onTouchStart={handleTouchStart}
    onTouchEnd={handleTouchEnd}
    onTouchMove={handleTouchMove}
-   onMouseEnter={() => setIsHovered(true)}
-   onMouseLeave={() => setIsHovered(false)}
+   onMouseEnter={() => {
+    if (!disableActions) setIsHovered(true);
+   }}
+   onMouseLeave={() => {
+    if (!disableActions) setIsHovered(false);
+   }}
    style={pressing ? { background: 'var(--bg-tertiary)' } : {}}
   >
    <div {...stylex.props(styles.avatarColumn)}>
     {showHeader && (
      <div
       {...stylex.props(styles.avatarContainer)}
-      onClick={() => onProfileClick(senderData)}
+      onClick={disableActions ? undefined : () => onProfileClick(senderData)}
+      style={disableActions ? { pointerEvents: "none" } : undefined}
      >
       <img
        src={
@@ -106,14 +113,16 @@ const Message = ({
        {...stylex.props(styles.avatar)}
        draggable="false"
       />
-      <div
-       className={`status-indicator ${userStatuses[senderData.id] === "away"
-        ? "away"
-        : onlineUsers.includes(senderData.id)
-         ? "online"
-         : "offline"
-        }`}
-      ></div>
+      {!disableActions && (
+       <div
+        className={`status-indicator ${userStatuses[senderData.id] === "away"
+         ? "away"
+         : onlineUsers.includes(senderData.id)
+          ? "online"
+          : "offline"
+         }`}
+       ></div>
+      )}
      </div>
     )}
    </div>
@@ -165,16 +174,18 @@ const Message = ({
       );
      })()}
      {children}
-     <ReactionBadge
-      messageId={message.id}
-      reactions={messageReactions?.[message.id] || {}}
-      onAddReaction={onAddReaction}
-      onRemoveReaction={onRemoveReaction}
-      currentUserId={user.id}
-     />
+     {!disableActions && (
+      <ReactionBadge
+       messageId={message.id}
+       reactions={messageReactions?.[message.id] || {}}
+       onAddReaction={onAddReaction}
+       onRemoveReaction={onRemoveReaction}
+       currentUserId={user.id}
+      />
+     )}
     </div>
    </div>
-   {!message.deleted && !isTouchDevice && (
+   {!disableActions && !message.deleted && !isTouchDevice && (
     <div {...stylex.props(
      styles.reactionPopup,
      isHovered && styles.reactionPopupVisible

@@ -131,6 +131,7 @@ export const useAppLogic = () => {
      // Load contacts after animation
      setTimeout(() => {
       loadContacts();
+      loadMessageRequests();
       checkForNewDeviceSession();  // CHECK FOR NEW DEVICE
      }, 100);
     }, 2000);
@@ -802,23 +803,45 @@ export const useAppLogic = () => {
   }
  }, [activeContact]);
 
- // Send message
  const sendMessage = useCallback(() => {
-  if (!socketRef.current || !activeContact || !messageText.trim()) {
-   return;
+  const socket = socketRef.current;
+
+  if (socket && messageText.trim() && activeContact) {
+   const trimmed = messageText.trim();
+   const nowIso = new Date().toISOString();
+
+   socket.emit("send_message", {
+    receiver_id: activeContact.id,
+    content: trimmed,
+    reply_to: replyingTo ? replyingTo.id : null,
+   });
+
+   // Ensure the conversation does NOT disappear from the sidebar when backing out
+   setContacts((prev) => {
+    const exists = prev.some((c) => c.id === activeContact.id);
+
+    const updatedContact = {
+     ...(exists ? prev.find((c) => c.id === activeContact.id) : activeContact),
+     pending_request: exists ? prev.find((c) => c.id === activeContact.id)?.pending_request : true,
+     request_status: exists ? prev.find((c) => c.id === activeContact.id)?.request_status : "pending_outgoing",
+     lastMessage: trimmed,
+     lastMessageTime: nowIso,
+    };
+
+    const next = exists
+     ? prev.map((c) => (c.id === activeContact.id ? updatedContact : c))
+     : [updatedContact, ...prev];
+
+    return next.sort((a, b) => {
+     const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+     const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+     return timeB - timeA;
+    });
+   });
+
+   setReplyingTo(null);
+   setMessageText("");
   }
-
-  const content = messageText.trim();
-
-  // Server will handle encryption - just send plaintext
-  socketRef.current.emit("send_message", {
-   receiver_id: activeContact.id,
-   content: content,
-   reply_to: replyingTo?.id || null,
-  });
-
-  setMessageText("");
-  setReplyingTo(null);
  }, [socketRef, activeContact, messageText, replyingTo]);
 
  // Handle typing indicator with debouncing
