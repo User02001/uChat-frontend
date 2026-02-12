@@ -234,6 +234,8 @@ const App = () => {
    window.__messageRefs = messageRefsMap.current;
 
    window.quickReply = async (receiverId, message) => {
+    if (!receiverId || !message) return false;
+
     if (!socketRef.current || !socketRef.current.connected) {
      initializeSocket();
      await new Promise(r => setTimeout(r, 600));
@@ -281,8 +283,7 @@ const App = () => {
   socketRef.current.on('force_contacts_refresh', loadContacts);
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  if (setupCallListeners) {
-   console.log('[APP] Setting up call listeners from App.jsx');
+  if (setupCallListeners && typeof setupCallListeners === 'function') {
    setupCallListeners();
   }
 
@@ -483,7 +484,18 @@ const App = () => {
   document.head.appendChild(favicon);
  }, [activeContact]);
 
+ const isPendingOutgoing =
+  !!(activeContact?.pending_request && activeContact?.request_status === "pending_outgoing");
+
+ const pendingMediaError =
+  "Message request pending — you can only send text until they accept.";
+
  const uploadFile = async (file, receiverId) => {
+  if (isPendingOutgoing) {
+   setError(pendingMediaError);
+   return;
+  }
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("receiver_id", receiverId);
@@ -501,23 +513,43 @@ const App = () => {
    }
   } catch (error) {
    setError("Upload failed");
+   if (fileInputRef.current) fileInputRef.current.value = "";
   }
  };
 
  const handleFileSelect = (files) => {
   if (!activeContact) return;
 
+  if (isPendingOutgoing) {
+   setError(pendingMediaError);
+   if (fileInputRef.current) fileInputRef.current.value = "";
+   return;
+  }
+
   Array.from(files).forEach((file) => {
    uploadFile(file, activeContact.id);
   });
+
+  if (fileInputRef.current) fileInputRef.current.value = "";
  };
 
  const handlePaste = (e) => {
-  const items = e.clipboardData.items;
+  const items = e.clipboardData?.items || [];
 
   for (let i = 0; i < items.length; i++) {
    if (items[i].type.indexOf("image") !== -1) {
     e.preventDefault();
+
+    if (isPendingOutgoing) {
+     setError(pendingMediaError);
+     return;
+    }
+
+    if (!socketRef.current?.connected) {
+     setError("Not connected to server");
+     return;
+    }
+
     const file = items[i].getAsFile();
     if (file && activeContact) {
      uploadFile(file, activeContact.id);
@@ -529,6 +561,12 @@ const App = () => {
 
  const handleDragOver = (e) => {
   e.preventDefault();
+
+  if (isPendingOutgoing) {
+   setDragOver(false);
+   return;
+  }
+
   setDragOver(true);
  };
 
@@ -540,6 +578,11 @@ const App = () => {
  const handleDrop = (e) => {
   e.preventDefault();
   setDragOver(false);
+
+  if (isPendingOutgoing) {
+   setError(pendingMediaError);
+   return;
+  }
 
   const files = e.dataTransfer.files;
   if (files.length > 0) {
@@ -1123,12 +1166,22 @@ const App = () => {
              alt={contact.username}
              onClick={(e) => {
               e.stopPropagation();
+              if (contact.pending_request && contact.request_status === "pending_outgoing") return;
               setShowQuickProfileModal(contact);
              }}
-             style={{ cursor: 'pointer' }}
+             style={{
+              cursor:
+               contact.pending_request && contact.request_status === "pending_outgoing"
+                ? "default"
+                : "pointer"
+             }}
              className={styles.contactAvatar}
              draggable="false"
-             title={`View ${contact.username}'s Profile`}
+             title={
+              contact.pending_request && contact.request_status === "pending_outgoing"
+               ? "Profile hidden until they accept"
+               : `View ${contact.username}'s Profile`
+             }
             />
             <div
              className={`status-indicator ${userStatuses[contact.id] === "away" ? "away" :
@@ -1141,15 +1194,7 @@ const App = () => {
              <span className={styles.contactName}>
               {contact.username}
               {contact.pending_request && contact.request_status === 'pending_outgoing' && (
-               <span style={{
-                marginLeft: '6px',
-                padding: '2px 6px',
-                background: 'rgba(255, 165, 0, 0.15)',
-                color: '#ff9500',
-                fontSize: '10px',
-                borderRadius: '4px',
-                fontWeight: '600'
-               }}>
+               <span {...stylex.props(chatStyles.pendingPill)}>
                 Pending
                </span>
               )}
@@ -1205,30 +1250,9 @@ const App = () => {
        />
       ) : activeContact ? (
        <>
-         <div
-          {...stylex.props(chatStyles.chatHeader)}
-         >
-          {activeContact?.pending_request && activeContact?.request_status === 'pending_outgoing' && (
-           <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            background: 'linear-gradient(135deg, #ff9500 0%, #ff6b00 100%)',
-            color: 'white',
-            padding: '8px 16px',
-            fontSize: '13px',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            zIndex: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-           }}>
-            <i className="fas fa-clock" style={{ fontSize: '12px' }}></i>
-            <span>Message request pending — They haven't accepted yet</span>
-           </div>
-          )}
+        <div
+         {...stylex.props(chatStyles.chatHeader)}
+        >
          {isMobile && (
           <button
            className={styles.mobileBackBtn}
@@ -1244,16 +1268,25 @@ const App = () => {
              : "/resources/default_avatar.png"
            }
            alt={activeContact.username}
-           onClick={() => setShowQuickProfileModal(activeContact)}
-           style={{ cursor: 'pointer' }}
+           onClick={() => {
+            if (isPendingOutgoing) return;
+            setShowQuickProfileModal(activeContact);
+           }}
+           style={{ cursor: isPendingOutgoing ? 'default' : 'pointer' }}
            {...stylex.props(chatStyles.chatAvatar)}
-           title={`View ${activeContact.username}'s Profile`}
+           title={
+            isPendingOutgoing
+             ? "Profile hidden until they accept"
+             : `View ${activeContact.username}'s Profile`
+           }
           />
-          <div
-           className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
-            onlineUsers.includes(activeContact.id) ? "online" : "offline"
-            }`}
-          ></div>
+          {!isPendingOutgoing && (
+           <div
+            className={`status-indicator ${userStatuses[activeContact.id] === "away" ? "away" :
+             onlineUsers.includes(activeContact.id) ? "online" : "offline"
+             }`}
+           ></div>
+          )}
          </div>
          <div {...stylex.props(chatStyles.chatUserInfo)}>
           <div {...stylex.props(chatStyles.chatUsernameContainer)}>
@@ -1310,11 +1343,13 @@ const App = () => {
             }}
             {...stylex.props(chatStyles.chatStatusText)}
            >
-            {userStatuses[activeContact.id] === "online"
-             ? "Available Now"
-             : userStatuses[activeContact.id] === "away"
-              ? formatInactiveTime(activeContact.last_seen)
-              : formatLastSeen(activeContact.last_seen)}
+            {activeContact?.pending_request && activeContact?.request_status === "pending_outgoing"
+             ? "Message request pending"
+             : userStatuses[activeContact.id] === "online"
+              ? "Available Now"
+              : userStatuses[activeContact.id] === "away"
+               ? formatInactiveTime(activeContact.last_seen)
+               : formatLastSeen(activeContact.last_seen)}
            </span>
           </span>
          </div>
@@ -1420,7 +1455,11 @@ const App = () => {
              userStatuses={userStatuses}
              isGrouped={isSameSenderAsPrev}
              showHeader={showHeader}
-             onProfileClick={(userData) => setShowQuickProfileModal(userData)}
+             disableProfileClick={isPendingOutgoing}
+             onProfileClick={(userData) => {
+              if (isPendingOutgoing) return;
+              setShowQuickProfileModal(userData);
+             }}
              onAddReaction={handleAddReaction}
              onRemoveReaction={handleRemoveReaction}
              messageReactions={messageReactions}
@@ -1531,7 +1570,7 @@ const App = () => {
         >
          {typingUsers.has(activeContact?.id) && (
           <div {...stylex.props(chatStyles.typingIndicatorFloating)}>
-           <span>{activeContact.username} is typing...</span>
+           <span><span className="typingDots"><span>●</span><span>●</span><span>●</span></span> {activeContact.username} is typing...</span>
           </div>
          )}
          <Reply
@@ -1554,24 +1593,40 @@ const App = () => {
            multiple
            accept="*/*"
           />
-          <button
-           type="button"
-           {...stylex.props(inputStyles.attachmentButton)}
-           onClick={() => fileInputRef.current?.click()}
-           title={isOffline ? "Offline - can't send files" : "Attach file"}
-           disabled={isOffline}
-          >
-           <Icon name="attachment" alt="Attach" draggable={false} style={{ width: '24px', height: '24px' }} />
-          </button>
-          <button
-           type="button"
-           {...stylex.props(inputStyles.gifButton)}
-           onClick={() => setShowGifsPickerModal(true)}
-           title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
-           disabled={isOffline}
-          >
-           <Icon name="gif" alt="GIF" draggable={false} style={{ width: '24px', height: '24px' }} />
-          </button>
+
+          {!isPendingOutgoing && (
+           <>
+            <button
+             type="button"
+             {...stylex.props(inputStyles.attachmentButton)}
+             onClick={() => fileInputRef.current?.click()}
+             title={isOffline ? "Offline - can't send files" : "Attach file"}
+             disabled={isOffline}
+            >
+             <Icon
+              name="attachment"
+              alt="Attach"
+              draggable={false}
+              style={{ width: "24px", height: "24px" }}
+             />
+            </button>
+
+            <button
+             type="button"
+             {...stylex.props(inputStyles.gifButton)}
+             onClick={() => setShowGifsPickerModal(true)}
+             title={isOffline ? "Offline - can't send GIFs" : "Send GIF"}
+             disabled={isOffline}
+            >
+             <Icon
+              name="gif"
+              alt="GIF"
+              draggable={false}
+              style={{ width: "24px", height: "24px" }}
+             />
+            </button>
+           </>
+          )}
           <input
            type="text"
            value={messageText}
@@ -1580,7 +1635,9 @@ const App = () => {
            placeholder={
             isOffline
              ? "You're offline - can't send messages"
-             : "What u thinkin?"
+             : !!(activeContact?.pending_request && activeContact?.request_status === "pending_outgoing")
+              ? "Say something..."
+              : "What u thinkin?"
            }
            {...stylex.props(inputStyles.messageInput)}
            autoComplete="off"
@@ -1811,6 +1868,15 @@ const App = () => {
    {showGifsPickerModal && (
     <GifsPickerModal
      onSelectGif={(gifUrl) => {
+      const isPendingOutgoing =
+       !!(activeContact?.pending_request && activeContact?.request_status === "pending_outgoing");
+
+      if (isPendingOutgoing) {
+       setError("Message request pending — you can only send text until they accept.");
+       setShowGifsPickerModal(false);
+       return;
+      }
+
       if (socketRef.current && activeContact) {
        socketRef.current.emit("send_message", {
         receiver_id: activeContact.id,
@@ -1819,6 +1885,8 @@ const App = () => {
        });
        setReplyingTo(null);
       }
+
+      setShowGifsPickerModal(false);
      }}
      onClose={() => setShowGifsPickerModal(false)}
     />

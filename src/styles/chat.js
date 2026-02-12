@@ -111,7 +111,7 @@ export const styles = stylex.create({
  messagesContainer: {
   flex: 1,
   overflowY: 'auto',
-  padding: '20px 10px',
+  padding: '20px 10px 28px 10px',
   display: 'flex',
   flexDirection: 'column',
   backgroundColor: 'var(--bg-primary)',
@@ -125,6 +125,7 @@ export const styles = stylex.create({
 
   '@media (max-width: 768px)': {
    padding: '10px 0px',
+   paddingBottom: '28px',
   },
  },
 
@@ -138,16 +139,24 @@ export const styles = stylex.create({
  },
 
  typingIndicatorFloating: {
-  padding: '6px 12px',
-  margin: '0 24px 4px 24px',
-  backgroundColor: 'transparent',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '6px',
-  opacity: 0,
-  transform: 'translateY(10px)',
-  animation: 'typingFloatIn 0.3s ease forwards',
-  transition: 'opacity 0.3s ease-out, transform 0.3s ease-out',
+  position: 'absolute',
+  bottom: '100%',
+  left: '0',
+  right: '0',
+  paddingLeft: '40px',
+
+  '@media (max-width: 768px)': {
+   paddingLeft: '16px',
+  },
+  paddingBottom: '4px',
+  fontSize: '14px',
+  color: 'var(--text-secondary)',
+  pointerEvents: 'none',
+  zIndex: 10,
+  animationName: 'typingSlideUp',
+  animationDuration: '0.2s',
+  animationTimingFunction: 'ease-out',
+  animationFillMode: 'both',
  },
 
  noChatSelected: {
@@ -162,6 +171,7 @@ export const styles = stylex.create({
   backgroundColor: 'var(--bg-primary)',
   animation: 'fadeIn 0.5s ease',
  },
+
  addContactBtn: {
   padding: '8px 16px',
   borderWidth: '1px',
@@ -184,8 +194,9 @@ export const styles = stylex.create({
   },
   ':active': {
    transform: 'scale(0.95)',
-  }
+  },
  },
+
  searchInput: {
   width: '100%',
   padding: '14px 20px',
@@ -204,8 +215,9 @@ export const styles = stylex.create({
   },
   '::placeholder': {
    color: 'var(--text-secondary)',
-  }
+  },
  },
+
  searchClose: {
   position: 'absolute',
   right: '12px',
@@ -220,14 +232,55 @@ export const styles = stylex.create({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: '18px',
-  ':hover': {
-   backgroundColor: 'var(--border)',
-   color: 'var(--text-primary)',
-   transform: 'scale(1.1)',
-  },
-  ':active': {
-   transform: 'scale(0.9)',
-  }
- }
+ },
+
+ chatAvatarWrapper: {
+  position: 'relative',
+  flexShrink: 0,
+ },
+
+ pendingPill: {
+  marginLeft: '6px',
+  padding: '2px 6px',
+  background: 'rgba(255, 165, 0, 0.15)',
+  color: '#ff9500',
+  fontSize: '10px',
+  borderRadius: '4px',
+  fontWeight: '600',
+  display: 'inline-flex',
+  alignItems: 'center',
+  lineHeight: 1.2,
+ },
+
+ deletedRequestMessage: {
+  fontStyle: 'italic',
+  color: 'var(--text-muted)',
+  padding: '8px 0',
+ },
 });
+
+if (typeof document !== 'undefined') {
+ const styleSheet = document.createElement('style');
+ styleSheet.textContent = `
+  @keyframes typingSlideUp {
+   0% {
+    opacity: 0;
+    transform: translateY(6px);
+   }
+   100% {
+    opacity: 1;
+    transform: translateY(0);
+   }
+  }
+  @keyframes typingDot {
+   0%, 60%, 100% { opacity: 0; }
+   30% { opacity: 1; }
+  }
+  .typingDots { margin-right: 8px; }
+  @media (max-width: 768px) { .typingDots { margin-right: 6px; } }
+  .typingDots span:nth-child(1) { animation: typingDot 1.2s infinite 0s; }
+  .typingDots span:nth-child(2) { animation: typingDot 1.2s infinite 0.2s; }
+  .typingDots span:nth-child(3) { animation: typingDot 1.2s infinite 0.4s; }
+ `;
+ document.head.appendChild(styleSheet);
+}

@@ -244,7 +244,7 @@ export const useAppLogic = () => {
      (message.sender_id === currentUser.id && message.receiver_id === currentActiveContact.id))
    ) {
     setMessages((prev) => {
-     const exists = prev.some((m) => m.id === message.id);
+     const exists = prev.some((m) => m.id === message.id && m.timestamp === message.timestamp);
      if (exists) return prev;
      const updated = [...prev, message];
      if (currentActiveContact) {
@@ -504,6 +504,10 @@ export const useAppLogic = () => {
     });
    } else {
     const onConnectOnce = () => {
+     if (activeContactRef.current?.id !== contactId) {
+      socketRef.current.off("connect", onConnectOnce);
+      return;
+     }
      socketRef.current.emit("mark_as_read", { contact_id: contactId });
      socketRef.current.emit("load_messages", {
       contact_id: contactId,
@@ -512,6 +516,7 @@ export const useAppLogic = () => {
      });
      socketRef.current.off("connect", onConnectOnce);
     };
+    socketRef.current.off("connect", onConnectOnce);
     socketRef.current.on("connect", onConnectOnce);
    }
    return;
@@ -540,6 +545,10 @@ export const useAppLogic = () => {
    });
   } else {
    const onConnectOnce = () => {
+    if (activeContactRef.current?.id !== contactId) {
+     socketRef.current.off("connect", onConnectOnce);
+     return;
+    }
     if (!beforeId) {
      socketRef.current.emit("mark_as_read", { contact_id: contactId });
     }
@@ -550,6 +559,7 @@ export const useAppLogic = () => {
     });
     socketRef.current.off("connect", onConnectOnce);
    };
+   socketRef.current.off("connect", onConnectOnce);
    socketRef.current.on("connect", onConnectOnce);
   }
  }, []);
@@ -707,9 +717,10 @@ export const useAppLogic = () => {
 
     setContacts((prev) => prev.map((c) => (c.id === contact.id ? { ...c, unread: false } : c)));
 
-    // CLEAR MESSAGES FIRST - IMPORTANT!
     setMessages([]);
     setHasMoreMessages(true);
+    setMessageText("");
+    setReplyingTo(null);
 
     if (isMobile) {
      setActiveContact(null);
@@ -816,29 +827,6 @@ export const useAppLogic = () => {
     reply_to: replyingTo ? replyingTo.id : null,
    });
 
-   // Ensure the conversation does NOT disappear from the sidebar when backing out
-   setContacts((prev) => {
-    const exists = prev.some((c) => c.id === activeContact.id);
-
-    const updatedContact = {
-     ...(exists ? prev.find((c) => c.id === activeContact.id) : activeContact),
-     pending_request: exists ? prev.find((c) => c.id === activeContact.id)?.pending_request : true,
-     request_status: exists ? prev.find((c) => c.id === activeContact.id)?.request_status : "pending_outgoing",
-     lastMessage: trimmed,
-     lastMessageTime: nowIso,
-    };
-
-    const next = exists
-     ? prev.map((c) => (c.id === activeContact.id ? updatedContact : c))
-     : [updatedContact, ...prev];
-
-    return next.sort((a, b) => {
-     const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
-     const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
-     return timeB - timeA;
-    });
-   });
-
    setReplyingTo(null);
    setMessageText("");
   }
@@ -875,7 +863,7 @@ export const useAppLogic = () => {
 
     typingTimeoutRef.current = setTimeout(() => {
      setIsTyping(false);
-     if (socketRef.current && socketRef.current.connected) {
+     if (socketRef.current && socketRef.current.connected && activeContactRef.current?.id === activeContact.id) {
       socketRef.current.emit("typing", {
        receiver_id: activeContact.id,
        is_typing: false,
@@ -1065,29 +1053,47 @@ export const useAppLogic = () => {
 
         ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
 
-        canvas.toBlob((blob) => {
-         const roundedIconUrl = URL.createObjectURL(blob);
+        try {
+         canvas.toBlob((blob) => {
+          if (!blob) {
+           const notification = new Notification(notificationTitle, {
+            body: notificationBody,
+            icon: "/resources/default_avatar.png",
+            tag: `message-${message.id}`,
+            requireInteraction: false,
+           });
+           return;
+          }
+          const roundedIconUrl = URL.createObjectURL(blob);
 
+          const notification = new Notification(notificationTitle, {
+           body: notificationBody,
+           icon: roundedIconUrl,
+           tag: `message-${message.id}`,
+           requireInteraction: false,
+          });
+
+          notification.onclick = () => {
+           window.focus();
+           notification.close();
+          };
+
+          notification.onclose = () => {
+           URL.revokeObjectURL(roundedIconUrl);
+          };
+
+          setTimeout(() => {
+           URL.revokeObjectURL(roundedIconUrl);
+          }, 30000);
+         });
+        } catch (err) {
          const notification = new Notification(notificationTitle, {
           body: notificationBody,
-          icon: roundedIconUrl,
+          icon: "/resources/default_avatar.png",
           tag: `message-${message.id}`,
           requireInteraction: false,
          });
-
-         notification.onclick = () => {
-          window.focus();
-          notification.close();
-         };
-
-         notification.onclose = () => {
-          URL.revokeObjectURL(roundedIconUrl);
-         };
-
-         setTimeout(() => {
-          URL.revokeObjectURL(roundedIconUrl);
-         }, 30000);
-        });
+        }
        };
        logo.src = "/resources/favicon.png";
       };
@@ -1376,6 +1382,9 @@ export const useAppLogic = () => {
    }
    if (typingTimeoutRef.current) {
     clearTimeout(typingTimeoutRef.current);
+   }
+   if (activityTimeoutRef.current) {
+    clearTimeout(activityTimeoutRef.current);
    }
   };
  }, []);

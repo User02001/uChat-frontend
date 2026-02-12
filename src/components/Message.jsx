@@ -29,7 +29,8 @@ const Message = ({
  onMediaExpand,
  formatFileSize,
  getFileIcon,
- disableActions = false
+ disableActions = false,
+ disableProfileClick = false
 }) => {
  const isSent = message.sender_id === user.id;
  const senderData = isSent ? user : activeContact;
@@ -100,8 +101,8 @@ const Message = ({
     {showHeader && (
      <div
       {...stylex.props(styles.avatarContainer)}
-      onClick={disableActions ? undefined : () => onProfileClick(senderData)}
-      style={disableActions ? { pointerEvents: "none" } : undefined}
+      onClick={disableActions || disableProfileClick ? undefined : () => onProfileClick(senderData)}
+      style={disableActions || disableProfileClick ? { pointerEvents: "none" } : undefined}
      >
       <img
        src={

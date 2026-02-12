@@ -72,7 +72,7 @@ const MessageRequestChatView = ({
     >
      <i className="fas fa-arrow-left"></i>
     </button>
-    <div style={{ position: 'relative', flexShrink: 0 }}>
+    <div {...stylex.props(chatStyles.chatAvatarWrapper)}>
      <img
       src={
        request.sender?.avatar_url
@@ -144,11 +144,7 @@ const MessageRequestChatView = ({
          allMessages={messages}
         >
          {message.deleted ? (
-          <div style={{
-           fontStyle: 'italic',
-           color: 'var(--text-muted)',
-           padding: '8px 0'
-          }}>
+          <div {...stylex.props(chatStyles.deletedRequestMessage)}>
            <em>
             {message.sender_id === user.id
              ? 'You have deleted this message.'
