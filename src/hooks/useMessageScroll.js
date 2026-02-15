@@ -99,7 +99,10 @@ export const useMessageScroll = ({
     clearTimeout(mediaLoadTimeoutRef.current);
    }
 
+   const expectedContactId = activeContact?.id;
+
    const performInitialScroll = () => {
+    if (activeContact?.id !== expectedContactId) return;
     container.style.visibility = 'hidden';
     container.offsetHeight; // Force reflow
 
@@ -108,6 +111,7 @@ export const useMessageScroll = ({
 
     // Make visible on next frame
     requestAnimationFrame(() => {
+     if (activeContact?.id !== expectedContactId) return;
      container.style.visibility = 'visible';
      setMessagesContainerVisible(true);
      hasScrolledInitiallyRef.current = true;

@@ -11,6 +11,33 @@
     box-sizing: border-box;
 }
 
+[data-login-page="true"] *,
+[data-signup-page="true"] *,
+[data-verify-page="true"] * {
+    font-family: "Google Sans Flex", system-ui, sans-serif !important;
+    font-optical-sizing: auto;
+    font-weight: 600 !important; /* bolder */
+    font-style: normal;
+    font-variation-settings: "slnt" 0, "wdth" 100, "GRAD" 25, /* adds stroke thickness without layout shift */
+    "opsz" 14;
+}
+
+[data-login-page="true"] .fa,
+[data-login-page="true"] .fas,
+[data-login-page="true"] .far,
+[data-login-page="true"] .fab,
+[data-signup-page="true"] .fa,
+[data-signup-page="true"] .fas,
+[data-signup-page="true"] .far,
+[data-signup-page="true"] .fab,
+[data-verify-page="true"] .fa,
+[data-verify-page="true"] .fas,
+[data-verify-page="true"] .far,
+[data-verify-page="true"] .fab {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important;
+    font-weight: 900 !important;
+}
+
 body, html {
     margin: 0;
     padding: 0;

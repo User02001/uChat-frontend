@@ -173,10 +173,22 @@ const App = () => {
   endScreenshare,
   isMicMuted,
   isCameraOff,
+  isScreensharing,
   toggleMic,
   toggleCamera,
-  setupCallListeners
- } = useCalls(socketRef, setError, callMinimized, screenshareMinimized);
+  toggleScreenshare,
+ } = useCalls(socketRef, setError, callMinimized);
+
+ const [callUiVisible, setCallUiVisible] = useState(true);
+
+ useEffect(() => {
+  if (!callState.isActive || callState.isIncoming || callMinimized) {
+   setCallUiVisible(true);
+   return;
+  }
+  const timer = setTimeout(() => setCallUiVisible(false), 4000);
+  return () => clearTimeout(timer);
+ }, [callState.isActive, callState.isIncoming, callMinimized]);
 
  const handleDragStart = (e) => {
   const isTouchEvent = e.type === 'touchstart';
@@ -283,10 +295,6 @@ const App = () => {
   socketRef.current.on('force_contacts_refresh', loadContacts);
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  if (setupCallListeners && typeof setupCallListeners === 'function') {
-   setupCallListeners();
-  }
-
   return () => {
    if (socketRef.current) {
     socketRef.current.off('reconnect', handleReconnect);
@@ -295,26 +303,7 @@ const App = () => {
    }
    document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
- }, [activeContact, loadMessages, loadContacts, setupCallListeners]);
-
- // Auto-hide call UI after 4 seconds
- useEffect(() => {
-  if (callState.isActive && !callState.isIncoming && !callMinimized) {
-   const timer = setTimeout(() => {
-    const header = document.querySelector('.modern-call-header');
-    const controls = document.querySelector('.modern-call-controls-wrapper');
-    const localVideo = document.querySelector('.modern-local-video');
-
-    if (header && controls) {
-     header.classList.add('hidden');
-     controls.classList.add('hidden');
-     if (localVideo) localVideo.classList.add('ui-hidden');
-    }
-   }, 4000);
-
-   return () => clearTimeout(timer);
-  }
- }, [callState.isActive, callState.isIncoming, callMinimized]);
+ }, [activeContact, loadMessages, loadContacts]);
 
  // Intersection Observer for lazy loading images
  const [visibleMessages, setVisibleMessages] = useState(new Set());
@@ -448,24 +437,7 @@ const App = () => {
    }
   }
  };
-
- // Handle video stream setup for calls
- useEffect(() => {
-  if (callState.localStream && localVideoRef.current) {
-   localVideoRef.current.srcObject = callState.localStream;
-   localVideoRef.current.muted = true;
-   localVideoRef.current.autoplay = true;
-   localVideoRef.current.playsInline = true;
-   localVideoRef.current.style.transform = "scaleX(-1)";
-   localVideoRef.current.play().catch(console.error);
-  }
-
-  if (callState.remoteStream && remoteVideoRef.current) {
-   remoteVideoRef.current.srcObject = callState.remoteStream;
-   remoteVideoRef.current.muted = false;
-   remoteVideoRef.current.play().catch(console.error);
-  }
- }, [callState.localStream, callState.remoteStream, callState.isActive, callState.isIncoming, callMinimized]);
+ // Video streams are attached in useCalls.js hook - don't re-attach here to avoid flickering
 
  // Update document title and favicon based on active contact
  useEffect(() => {
@@ -1387,8 +1359,14 @@ const App = () => {
             callHeaderStyles.callBtnActive,
             callHeaderStyles.callBtnDisabled
            )}
-           onClick={() => startScreenshare(activeContact)}
-           disabled={screenshareState.isActive || screenshareState.isSharing}
+           onClick={() => {
+            if (callState.isActive) {
+             toggleScreenshare();
+            } else {
+             startCall(activeContact, 'audio');
+            }
+           }}
+           disabled={false}
            title="Share screen"
           >
            <i className="fas fa-desktop"></i>
@@ -1696,41 +1674,6 @@ const App = () => {
       />
      )}
 
-     {(screenshareState.isActive || screenshareState.isSharing) && (
-      <>
-       {screenshareMinimized ? (
-        <MinimizedScreenshare
-         screenshareState={screenshareState}
-         callPosition={callPosition}
-         isDragging={isDragging}
-         screenshareLocalVideoRef={screenshareLocalVideoRef}
-         screenshareRemoteVideoRef={screenshareRemoteVideoRef}
-         onDragStart={handleDragStart}
-         onMaximize={() => setScreenshareMinimized(false)}
-         onEnd={endScreenshare}
-        />
-       ) : (
-        <ActiveScreenshare
-         screenshareState={screenshareState}
-         screenshareLocalVideoRef={screenshareLocalVideoRef}
-         screenshareRemoteVideoRef={screenshareRemoteVideoRef}
-         onMinimize={() => setScreenshareMinimized(true)}
-         onEnd={endScreenshare}
-         onOverlayClick={() => {
-          const controls = document.querySelector('.modern-screenshare-controls-wrapper');
-          if (controls) {
-           controls.classList.toggle('visible');
-           setTimeout(() => {
-            if (controls.classList.contains('visible')) {
-             controls.classList.remove('visible');
-            }
-           }, 3000);
-          }
-         }}
-        />
-       )}
-      </>
-     )}
      {(callState.isOutgoing || callState.isActive) &&
       !callState.isIncoming && (
        <>
@@ -1761,42 +1704,16 @@ const App = () => {
           remoteVideoRef={remoteVideoRef}
           isMicMuted={isMicMuted}
           isCameraOff={isCameraOff}
+          isScreensharing={isScreensharing}
+          uiVisible={callUiVisible}
           onToggleMic={toggleMic}
           onToggleCamera={toggleCamera}
-          onMinimize={() => setCallMinimized(true)}
+          onToggleScreenshare={toggleScreenshare}
+          onMinimize={() => { setCallMinimized(true); setCallUiVisible(true); }}
           onEnd={endCall}
           onOverlayClick={(e) => {
            if (e.target.closest('button')) return;
-
-           const header = document.querySelector('.modern-call-header');
-           const controls = document.querySelector('.modern-call-controls-wrapper');
-           const localVideo = document.querySelector('.modern-local-video');
-
-           if (header && controls) {
-            const isCurrentlyHidden = header.classList.contains('hidden');
-
-            if (isCurrentlyHidden) {
-             header.classList.remove('hidden');
-             controls.classList.remove('hidden');
-             if (localVideo) localVideo.classList.remove('ui-hidden');
-
-             const hideTime = Date.now() + 4000;
-             header.setAttribute('data-hide-time', hideTime);
-
-             setTimeout(() => {
-              const currentHideTime = parseInt(header.getAttribute('data-hide-time'));
-              if (currentHideTime && Date.now() >= currentHideTime) {
-               header.classList.add('hidden');
-               controls.classList.add('hidden');
-               if (localVideo) localVideo.classList.add('ui-hidden');
-              }
-             }, 4000);
-            } else {
-             header.classList.add('hidden');
-             controls.classList.add('hidden');
-             if (localVideo) localVideo.classList.add('ui-hidden');
-            }
-           }
+           setCallUiVisible(prev => !prev);
           }}
          />
         )}
@@ -1868,9 +1785,6 @@ const App = () => {
    {showGifsPickerModal && (
     <GifsPickerModal
      onSelectGif={(gifUrl) => {
-      const isPendingOutgoing =
-       !!(activeContact?.pending_request && activeContact?.request_status === "pending_outgoing");
-
       if (isPendingOutgoing) {
        setError("Message request pending — you can only send text until they accept.");
        setShowGifsPickerModal(false);

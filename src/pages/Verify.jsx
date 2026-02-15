@@ -157,7 +157,7 @@ const Verify = () => {
  };
 
  return (
-  <div {...stylex.props(verifyStyles.container)}>
+  <div data-verify-page="true" {...stylex.props(verifyStyles.container)}>
    <canvas ref={canvasRef} {...stylex.props(verifyStyles.starCanvas)} aria-hidden="true" />
    <div {...stylex.props(verifyStyles.card)} role="region" aria-label="Email verification form">
     <div {...stylex.props(verifyStyles.header)}>
