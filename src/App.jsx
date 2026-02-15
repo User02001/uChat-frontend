@@ -159,7 +159,9 @@ const App = () => {
   callState,
   localVideoRef,
   remoteVideoRef,
+  remoteScreenStreamRef,
   ringtoneRef,
+  outgoingRingtoneRef,
   startCall,
   answerCall,
   endCall,
@@ -1352,25 +1354,6 @@ const App = () => {
           >
            <i className="fas fa-video"></i>
           </button>
-          <button
-           {...stylex.props(
-            callHeaderStyles.callBtn,
-            callHeaderStyles.callBtnHover,
-            callHeaderStyles.callBtnActive,
-            callHeaderStyles.callBtnDisabled
-           )}
-           onClick={() => {
-            if (callState.isActive) {
-             toggleScreenshare();
-            } else {
-             startCall(activeContact, 'audio');
-            }
-           }}
-           disabled={false}
-           title="Share screen"
-          >
-           <i className="fas fa-desktop"></i>
-          </button>
          </div>
         </div>
 
@@ -1662,6 +1645,7 @@ const App = () => {
        API_BASE_URL={API_BASE_URL}
        onAnswer={() => answerCall(true)}
        onDecline={() => answerCall(false)}
+       ringtoneRef={ringtoneRef}
       />
      )}
 
@@ -1686,6 +1670,7 @@ const App = () => {
           isMobile={isMobile}
           localVideoRef={localVideoRef}
           remoteVideoRef={remoteVideoRef}
+          remoteScreenStreamRef={remoteScreenStreamRef}
           onDragStart={handleDragStart}
           onMaximize={() => setCallMinimized(false)}
           onEnd={endCall}
@@ -1702,6 +1687,7 @@ const App = () => {
           API_BASE_URL={API_BASE_URL}
           localVideoRef={localVideoRef}
           remoteVideoRef={remoteVideoRef}
+          remoteScreenStreamRef={remoteScreenStreamRef}
           isMicMuted={isMicMuted}
           isCameraOff={isCameraOff}
           isScreensharing={isScreensharing}
@@ -1777,6 +1763,16 @@ const App = () => {
       />
       <source
        src="/resources/ringtones/default_ringtone.wav"
+       type="audio/wav"
+      />
+     </audio>
+     <audio ref={outgoingRingtoneRef} preload="none">
+      <source
+       src="/resources/ringtones/outgoing_ringtone.mp3"
+       type="audio/mpeg"
+      />
+      <source
+       src="/resources/ringtones/outgoing_ringtone.wav"
        type="audio/wav"
       />
      </audio>

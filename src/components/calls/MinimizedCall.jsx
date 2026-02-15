@@ -1,6 +1,53 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { GeneralCallsStyles as styles } from "../../styles/general_calls";
+
+const DOTS = ["", ".", "..", "..."];
+
+const CallingText = ({ isMobile }) => {
+ const [step, setStep] = useState(0);
+ useEffect(() => {
+  const t = setInterval(() => setStep(s => (s + 1) % 4), 400);
+  return () => clearInterval(t);
+ }, []);
+ return (
+  <p {...stylex.props(styles.callingOverlayText, isMobile && styles.callingOverlayTextMobile)}>
+   Calling{DOTS[step]}
+  </p>
+ );
+};
+
+const PulsingAvatar = ({ src, alt, isMobile }) => (
+ <div {...stylex.props(styles.pulseWrapper, isMobile && styles.pulseWrapperMobile)}>
+  <div {...stylex.props(styles.pulseRing2, isMobile && styles.pulseRing2Mobile)} />
+  <div {...stylex.props(styles.pulseRing1, isMobile && styles.pulseRing1Mobile)} />
+  <img
+   src={src}
+   alt={alt}
+   draggable="false"
+   {...stylex.props(styles.pulseAvatar, isMobile && styles.pulseAvatarMobile)}
+  />
+ </div>
+);
+
+const CallingOverlay = ({ callState, API_BASE_URL, isMobile }) => (
+ <div {...stylex.props(styles.callingOverlay)}>
+  <PulsingAvatar
+   src={callState.contact?.avatar_url
+    ? `${API_BASE_URL}${callState.contact.avatar_url}`
+    : "/resources/default_avatar.png"}
+   alt={callState.contact?.username}
+   isMobile={isMobile}
+  />
+  <p {...stylex.props(styles.callingOverlayUsername, isMobile && styles.callingOverlayUsernameMobile)}>
+   {callState.contact?.username}
+  </p>
+  {callState.isOutgoing
+   ? <CallingText isMobile={isMobile} />
+   : <p {...stylex.props(styles.callingOverlayText, isMobile && styles.callingOverlayTextMobile)}>Their camera is off</p>
+  }
+ </div>
+);
 
 const MinimizedCall = ({
  callState,
@@ -10,16 +57,13 @@ const MinimizedCall = ({
  isMobile,
  localVideoRef,
  remoteVideoRef,
+ remoteScreenStreamRef,
  onDragStart,
  onMaximize,
  onEnd,
  onClick,
 }) => {
- // CRITICAL: Re-attach streams when component mounts (after minimize/maximize)
  useEffect(() => {
-  console.log('🎬 MinimizedCall mounted - attaching streams');
-
-  // Attach local stream
   if (callState.localStream && localVideoRef.current) {
    if (localVideoRef.current.srcObject !== callState.localStream) {
     localVideoRef.current.srcObject = callState.localStream;
@@ -27,24 +71,31 @@ const MinimizedCall = ({
     localVideoRef.current.autoplay = true;
     localVideoRef.current.playsInline = true;
     localVideoRef.current.style.transform = "scaleX(-1)";
-    localVideoRef.current.play().catch(console.error);
+    localVideoRef.current.play().catch(() => { });
    }
   }
-
-  // Attach remote stream
-  if (callState.remoteStream && remoteVideoRef.current) {
-   if (remoteVideoRef.current.srcObject !== callState.remoteStream) {
-    remoteVideoRef.current.srcObject = callState.remoteStream;
+  if (remoteVideoRef.current) {
+   const streamToShow = callState.remoteHasScreenshare
+    ? (remoteScreenStreamRef.current || callState.remoteStream)
+    : callState.remoteStream;
+   if (streamToShow) {
+    remoteVideoRef.current.srcObject = null;
+    remoteVideoRef.current.srcObject = streamToShow;
     remoteVideoRef.current.muted = false;
-    remoteVideoRef.current.play().catch(console.error);
+    remoteVideoRef.current.load();
+    remoteVideoRef.current.play().catch(() => { });
    }
   }
- }, []); // Run on mount only
+ }, [callState.remoteHasScreenshare, callState.remoteStream]);
 
  const showVideo = callState.hasVideo || callState.hasScreenshare
   || callState.remoteHasVideo || callState.remoteHasScreenshare;
 
+ const showCallingOverlay = callState.isOutgoing
+  || (!callState.remoteHasVideo && !callState.remoteHasScreenshare && callState.isActive);
+
  const callLabel = () => {
+  if (callState.isOutgoing) return "Calling...";
   const parts = [];
   if (callState.hasVideo) parts.push("Video");
   if (callState.hasScreenshare) parts.push("Screen");
@@ -77,7 +128,6 @@ const MinimizedCall = ({
     </div>
    </div>
 
-   {/* Remote video - NEVER re-attach, just display */}
    <div {...stylex.props(styles.modernMinimizedVideo)} style={{ display: showVideo ? 'block' : 'none' }}>
     <video
      ref={remoteVideoRef}
@@ -85,12 +135,18 @@ const MinimizedCall = ({
      autoPlay
      playsInline
      muted={false}
+     style={{ objectFit: callState.remoteHasScreenshare ? 'contain' : 'cover' }}
     />
+    {showCallingOverlay && (
+     <CallingOverlay callState={callState} API_BASE_URL={API_BASE_URL} isMobile={isMobile} />
+    )}
    </div>
 
-   {/* Audio indicator when no video */}
-   <div {...stylex.props(styles.modernMinimizedAudio)} style={{ display: !showVideo ? 'flex' : 'none' }}>
-    <div {...stylex.props(styles.modernMinimizedAudioWave, styles.modernMinimizedAudioWaveBefore)}></div>
+   <div {...stylex.props(styles.modernMinimizedAudio)} style={{ display: !showVideo ? 'flex' : 'none', position: 'relative' }}>
+    {showCallingOverlay
+     ? <CallingOverlay callState={callState} API_BASE_URL={API_BASE_URL} isMobile={isMobile} />
+     : <div {...stylex.props(styles.modernMinimizedAudioWave, styles.modernMinimizedAudioWaveBefore)} />
+    }
    </div>
 
    <div {...stylex.props(styles.modernMinimizedControls)}>
