@@ -20,7 +20,7 @@ const IncomingCallNotification = ({ callState, API_BASE_URL, onAnswer, onDecline
      <div {...stylex.props(styles.incomingCallText)}>
       <h4 {...stylex.props(styles.incomingCallTextH4)}>{callState.contact?.username}</h4>
       <p {...stylex.props(styles.incomingCallTextP)}>
-       Incoming {callState.type === "video" ? "video" : "audio"} call
+       is calling you!!
       </p>
      </div>
     </div>

@@ -19,7 +19,7 @@ const IncomingScreenshareNotification = ({ screenshareState, API_BASE_URL, onAns
      />
      <div {...stylex.props(styles.incomingCallText)}>
       <h4 {...stylex.props(styles.incomingCallTextH4)}>{screenshareState.contact?.username}</h4>
-      <p {...stylex.props(styles.incomingCallTextP)}>Wants to share their screen</p>
+      <p {...stylex.props(styles.incomingCallTextP)}>is calling you!!</p>
      </div>
     </div>
     <div {...stylex.props(styles.incomingCallActions)}>
