@@ -19,18 +19,27 @@ const IncomingCallNotification = ({ callState, API_BASE_URL, onAnswer, onDecline
     return;
    }
 
-   const currentTimeMs = audio.currentTime * 1000;
+   const currentTimeMs = (audio.currentTime * 1000) + 170;
 
-   const currentBeat = RINGTONE_BEATS.find(beatTime => {
-    return Math.abs(currentTimeMs - beatTime) < 50;
-   });
+   const activeBeat = RINGTONE_BEATS.find(([beatTime, duration]) =>
+    currentTimeMs >= beatTime && currentTimeMs <= beatTime + duration
+   );
 
-   if (currentBeat && Date.now() - lastBeatTimeRef.current > 100) {
+   const isBeatStart = RINGTONE_BEATS.find(([beatTime]) =>
+    Math.abs(currentTimeMs - beatTime) < 50 && Date.now() - lastBeatTimeRef.current > 100
+   );
+
+   if (isBeatStart) {
     intensityRef.current = 1.5;
     lastBeatTimeRef.current = Date.now();
    }
 
-   intensityRef.current *= 0.65;
+   if (!activeBeat) {
+    intensityRef.current *= 0.65;
+   } else {
+    intensityRef.current = Math.max(intensityRef.current, 1.0);
+   }
+
    setPulseIntensity(intensityRef.current);
 
    animationFrame = requestAnimationFrame(syncBeats);
@@ -96,13 +105,7 @@ const IncomingCallNotification = ({ callState, API_BASE_URL, onAnswer, onDecline
        transition: 'transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
       }}
      >
-      <i
-       className="fas fa-phone"
-       style={{
-        fontSize: `${iconSize}px`,
-        transition: 'font-size 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)',
-       }}
-      ></i>
+      <i className="fas fa-phone"></i>
      </button>
     </div>
    </div>

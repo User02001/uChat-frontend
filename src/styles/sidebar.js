@@ -218,7 +218,7 @@ export const SidebarStyles = stylex.create({
   opacity: 0,
   visibility: 'hidden',
   transition: 'opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease',
-  border: '2px solid var(--border-tooltip)',
+  border: '2px solid var(--text-primary)',
   boxShadow: '0 4px 12px var(--shadow)',
   zIndex: 9999,
   pointerEvents: 'none',

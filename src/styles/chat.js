@@ -105,7 +105,7 @@ export const styles = stylex.create({
  chatHandle: {
   fontSize: '13px',
   fontWeight: 500,
-  color: '#eeb600',
+  color: 'var(--text-primary)',
  },
 
  messagesContainer: {

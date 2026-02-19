@@ -18,7 +18,7 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  const headerTimeoutRef = useRef(null);
  const videoPlayerRef = useRef(null);
 
- const mediaUrl = media.url.startsWith("http") ? media.url : `${API_BASE_URL}${media.url}`;
+ const mediaUrl = media.isBlob || media.url.startsWith("blob:") || media.url.startsWith("http") ? media.url : `${API_BASE_URL}${media.url}`;
  const isVideo = media.type === "video" || /\.(mp4|webm|ogg|mov)$/i.test(media.url);
  const isAudio = media.type === "audio" || /\.(mp3|wav|ogg|m4a|aac)$/i.test(media.url);
  const isImage = !isVideo && !isAudio;
@@ -133,7 +133,11 @@ const MediaViewer = ({ media, onClose, initialTime = 0, autoplay = false }) => {
  const handleDownload = async () => {
   setIsDownloading(true);
   try {
-   const response = await fetch(mediaUrl);
+   const { generateDeviceFingerprint } = await import('../../utils/deviceFingerprint');
+   const response = await fetch(mediaUrl, {
+    credentials: 'include',
+    headers: { 'X-Device-Fingerprint': generateDeviceFingerprint() }
+   });
    const blob = await response.blob();
    const url = window.URL.createObjectURL(blob);
    const a = document.createElement("a");

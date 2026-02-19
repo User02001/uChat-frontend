@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { API_BASE_URL, CDN_BASE_URL, SOCKET_URL } from "../config";
+import { generateDeviceFingerprint } from "../utils/deviceFingerprint";
 
 export const useAppLogic = () => {
  const navigate = useNavigate();
@@ -31,8 +32,6 @@ export const useAppLogic = () => {
  const [isMobile, setIsMobile] = useState(false);
  const [showMobileChat, setShowMobileChat] = useState(false);
  const [replyingTo, setReplyingTo] = useState(null);
- const [isTransitioning, setIsTransitioning] = useState(false);
- const [showChatContent, setShowChatContent] = useState(false);
  const [contactsLoading, setContactsLoading] = useState(true);
  const [isTyping, setIsTyping] = useState(false);
  const [messageReactions, setMessageReactions] = useState({});
@@ -44,7 +43,6 @@ export const useAppLogic = () => {
  const [dragOver, setDragOver] = useState(false);
  const [deleteConfirm, setDeleteConfirm] = useState(null);
  const [showDownloadRecommendation, setShowDownloadRecommendation] = useState(false);
- const [sessionDismissed, setSessionDismissed] = useState(false);
  const [showModalForUnverifiedUsers, setShowModalForUnverifiedUsers] = useState(false);
  const [showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal] = useState(null);
  const [isOffline, setIsOffline] = useState(false);
@@ -70,8 +68,92 @@ export const useAppLogic = () => {
  const [requestsCount, setRequestsCount] = useState(0);
  const [requestsLoading, setRequestsLoading] = useState(false);
  const [showNewDeviceBanner, setShowNewDeviceBanner] = useState(null);
+ const [pendingFiles, setPendingFiles] = useState([]);
  const messageCacheRef = useRef({});
  const activityTimeoutRef = useRef(null);
+
+ const handleFileSelect = useCallback((files, activeContact, fileInputRef) => {
+  if (!activeContact) return;
+  if (activeContact?.pending_request && activeContact?.request_status === 'pending_outgoing') {
+   setError("Message request pending — you can only send text until they accept.");
+   if (fileInputRef.current) fileInputRef.current.value = "";
+   return;
+  }
+  const newFiles = Array.from(files).map(file => ({
+   id: `${Date.now()}_${Math.random()}`,
+   file,
+   previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+   progress: 0,
+   status: 'pending',
+  }));
+  setPendingFiles(prev => [...prev, ...newFiles]);
+  if (fileInputRef.current) fileInputRef.current.value = "";
+ }, []);
+
+ const handleCancelPendingFile = useCallback((id) => {
+  setPendingFiles(prev => {
+   const file = prev.find(pf => pf.id === id);
+   if (file?.previewUrl) URL.revokeObjectURL(file.previewUrl);
+   return prev.filter(pf => pf.id !== id);
+  });
+ }, []);
+
+ const uploadFileWithProgress = useCallback((pendingFileId, file, receiverId) => {
+  return new Promise((resolve, reject) => {
+   const formData = new FormData();
+   formData.append("file", file);
+   formData.append("receiver_id", receiverId);
+   const xhr = new XMLHttpRequest();
+   xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+     const pct = Math.round((e.loaded / e.total) * 100);
+     setPendingFiles(prev => prev.map(pf =>
+      pf.id === pendingFileId ? { ...pf, progress: pct } : pf
+     ));
+    }
+   };
+   xhr.onload = () => {
+    if (xhr.status >= 200 && xhr.status < 300) {
+     resolve();
+    } else {
+     try {
+      const err = JSON.parse(xhr.responseText);
+      reject(err.error || 'Upload failed');
+     } catch {
+      reject('Upload failed');
+     }
+    }
+   };
+   xhr.onerror = () => reject('Upload failed');
+   xhr.open('POST', `${API_BASE_URL}/api/upload-file`);
+   xhr.withCredentials = true;
+   try { xhr.setRequestHeader('X-Device-Fingerprint', generateDeviceFingerprint()); } catch (e) { }
+   xhr.send(formData);
+  });
+ }, []);
+
+ const handleSendWithAttachments = useCallback(async (messageText, activeContact, pendingFiles, sendMessage, isOffline) => {
+  if (isOffline) return;
+  if (pendingFiles.length > 0) {
+   const filesToUpload = [...pendingFiles];
+   for (const pf of filesToUpload) {
+    setPendingFiles(prev => prev.map(p =>
+     p.id === pf.id ? { ...p, status: 'uploading' } : p
+    ));
+    try {
+     await uploadFileWithProgress(pf.id, pf.file, activeContact.id);
+     if (pf.previewUrl) URL.revokeObjectURL(pf.previewUrl);
+     setPendingFiles(prev => prev.filter(p => p.id !== pf.id));
+    } catch (err) {
+     setError(typeof err === 'string' ? err : 'Upload failed');
+     setPendingFiles(prev => prev.map(p =>
+      p.id === pf.id ? { ...p, status: 'error' } : p
+     ));
+    }
+   }
+  }
+  if (messageText.trim()) sendMessage();
+ }, [uploadFileWithProgress]);
 
  // Refs for keeping state in sync
  const activeContactRef = useRef(null);
@@ -724,7 +806,6 @@ export const useAppLogic = () => {
 
     if (isMobile) {
      setActiveContact(null);
-     setShowChatContent(false);
      setShowMobileChat(true);
 
      setTimeout(() => {
@@ -758,11 +839,6 @@ export const useAppLogic = () => {
         }
        }, 500);
       }
-
-      setTimeout(() => {
-       setShowChatContent(true);
-      }, 100);
-
       loadMessages(contact.id, null);
      }, 350);
     } else {
@@ -807,7 +883,6 @@ export const useAppLogic = () => {
   setActiveContact(null);
   setMessages([]);
   setTypingUsers(new Set());
-  setShowChatContent(false);
 
   if (activeContact && socketRef.current) {
    socketRef.current.emit("leave_chat", { contact_id: activeContact.id });
@@ -1524,10 +1599,6 @@ export const useAppLogic = () => {
   setShowMobileChat,
   replyingTo,
   setReplyingTo,
-  isTransitioning,
-  setIsTransitioning,
-  showChatContent,
-  setShowChatContent,
   contactsLoading,
   setContactsLoading,
   isTyping,
@@ -1550,8 +1621,6 @@ export const useAppLogic = () => {
   setDeleteConfirm,
   showDownloadRecommendation,
   setShowDownloadRecommendation,
-  sessionDismissed,
-  setSessionDismissed,
   showModalForUnverifiedUsers,
   setShowModalForUnverifiedUsers,
   showUnverifiedUserWarningModal,
@@ -1641,6 +1710,12 @@ export const useAppLogic = () => {
   handleSubmitReport,
   checkForWarnings,
   loadMessageRequests,
+  pendingFiles,
+  setPendingFiles,
+  handleFileSelect,
+  handleCancelPendingFile,
+  handleSendWithAttachments,
+  uploadFileWithProgress,
   handleAcceptRequest,
   handleBlockRequest,
   handleOpenRequests,

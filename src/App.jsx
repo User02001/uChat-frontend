@@ -44,6 +44,10 @@ import { DownloadRecommendationNotificationStyles as downloadStyles } from './st
 import './utils/secureApiFetch';
 import MessageRequestsSidebar from "./components/MessageRequestsSidebar";
 import MessageRequestChatView from "./components/MessageRequestChatView";
+import { styles as splashStyles } from './styles/splash';
+import NewDeviceModal from "./components/NewDeviceModal";
+import AttachmentPreview from "./components/AttachmentPreview";
+import LinkWarningModal from "./components/LinkWarningModal";
 
 const App = () => {
  // Block ALL heavy operations during splash
@@ -71,8 +75,6 @@ const App = () => {
   isMobile, setIsMobile,
   showMobileChat, setShowMobileChat,
   replyingTo, setReplyingTo,
-  isTransitioning, setIsTransitioning,
-  showChatContent, setShowChatContent,
   contactsLoading, setContactsLoading,
   isTyping, setIsTyping,
   messageReactions, setMessageReactions,
@@ -84,7 +86,6 @@ const App = () => {
   dragOver, setDragOver,
   deleteConfirm, setDeleteConfirm,
   showDownloadRecommendation, setShowDownloadRecommendation,
-  sessionDismissed, setSessionDismissed,
   showModalForUnverifiedUsers, setShowModalForUnverifiedUsers,
   showUnverifiedUserWarningModal, setShowUnverifiedUserWarningModal,
   isOffline, setIsOffline,
@@ -120,9 +121,17 @@ const App = () => {
   handleOpenRequests,
   handleCloseRequests,
 
+  pendingFiles,
+  setPendingFiles,
+  handleFileSelect,
+  handleCancelPendingFile,
+  handleSendWithAttachments,
+  uploadFileWithProgress,
+
   // Refs
   socketRef,
   messagesEndRef,
+  messagesContainerRef,
   typingTimeoutRef,
   reconnectTimeoutRef,
   fileInputRef,
@@ -149,6 +158,7 @@ const App = () => {
   handleSubmitReport,
   checkForWarnings,
   showNewDeviceBanner,
+  setShowNewDeviceBanner,
   handleAcknowledgeDevice,
   handleRevokeDevice,
  } = useAppLogic();
@@ -464,49 +474,6 @@ const App = () => {
  const pendingMediaError =
   "Message request pending — you can only send text until they accept.";
 
- const uploadFile = async (file, receiverId) => {
-  if (isPendingOutgoing) {
-   setError(pendingMediaError);
-   return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("receiver_id", receiverId);
-
-  try {
-   const response = await fetch(`${API_BASE_URL}/api/upload-file`, {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-   });
-
-   if (!response.ok) {
-    const error = await response.json();
-    setError(error.error || "Upload failed");
-   }
-  } catch (error) {
-   setError("Upload failed");
-   if (fileInputRef.current) fileInputRef.current.value = "";
-  }
- };
-
- const handleFileSelect = (files) => {
-  if (!activeContact) return;
-
-  if (isPendingOutgoing) {
-   setError(pendingMediaError);
-   if (fileInputRef.current) fileInputRef.current.value = "";
-   return;
-  }
-
-  Array.from(files).forEach((file) => {
-   uploadFile(file, activeContact.id);
-  });
-
-  if (fileInputRef.current) fileInputRef.current.value = "";
- };
-
  const handlePaste = (e) => {
   const items = e.clipboardData?.items || [];
 
@@ -616,7 +583,6 @@ const App = () => {
   }, 200);
  };
 
- const messagesContainerRef = useRef(null);
  const messageRefsMap = useRef({});
 
  const { handleScroll, userScrollLockRef } = useMessageScroll({
@@ -677,85 +643,30 @@ const App = () => {
  return (
   <>
    {loading && (
-    <div className={styles.appLoading} style={{
-     position: 'fixed',
-     top: 0,
-     left: 0,
-     right: 0,
-     bottom: 0,
-     zIndex: 999999,
-     pointerEvents: 'all'
-    }}>
-     <div ref={splashRef} className={styles.loadingSpinner}></div>
-     <div className={styles.splashBranding}>
-      <div className={styles.splashBrandingLogo}>
+    <div
+     className={styles.appLoading}
+     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999999, pointerEvents: 'all' }}
+    >
+     <div ref={splashRef} {...stylex.props(splashStyles.loadingSpinner)} />
+     <div {...stylex.props(splashStyles.splashBranding)}>
+      <div {...stylex.props(splashStyles.splashBrandingLogo)}>
        <Icon
         name="ufonic"
         alt="UFOnic"
-        className={styles.splashBrandingIcon}
+        {...stylex.props(splashStyles.splashBrandingIcon)}
         draggable={false}
        />
-       <span className={styles.splashBrandingName}>UFOnic</span>
+       <span {...stylex.props(splashStyles.splashBrandingName)}>Made for Dariya :3</span>
       </div>
      </div>
     </div>
    )}
    {showNewDeviceBanner && (
-    <div style={{
-     position: 'fixed',
-     top: 0,
-     left: 0,
-     right: 0,
-     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-     color: 'white',
-     padding: '16px',
-     zIndex: 999998,
-     display: 'flex',
-     alignItems: 'center',
-     justifyContent: 'space-between',
-     boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-    }}>
-     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      <i className="fas fa-shield-alt" style={{ fontSize: '20px' }}></i>
-      <div>
-       <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>⚠️ New device detected</div>
-       <div style={{ fontSize: '13px', opacity: 0.9 }}>
-        Someone logged into your account from {showNewDeviceBanner.user_agent || 'Unknown Device'}
-        {showNewDeviceBanner.ip_address && ` (${showNewDeviceBanner.ip_address})`}
-       </div>
-      </div>
-     </div>
-     <div style={{ display: 'flex', gap: '8px' }}>
-      <button
-       onClick={() => handleAcknowledgeDevice(showNewDeviceBanner.id)}
-       style={{
-        background: 'rgba(255,255,255,0.2)',
-        border: '1px solid rgba(255,255,255,0.3)',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: '500'
-       }}
-      >
-       ✓ Yes, it was me
-      </button>
-      <button
-       onClick={() => handleRevokeDevice(showNewDeviceBanner.id)}
-       style={{
-        background: '#dc2626',
-        border: 'none',
-        color: 'white',
-        padding: '8px 16px',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        fontWeight: '500'
-       }}
-      >
-       ✕ NO - Log them out!
-      </button>
-     </div>
-    </div>
+    <NewDeviceModal
+     session={showNewDeviceBanner}
+     onAcknowledge={handleAcknowledgeDevice}
+     onRevoke={handleRevokeDevice}
+    />
    )}
    {showModalForUnverifiedUsers && (
     <ModalForUnverifiedUsers
@@ -1382,23 +1293,9 @@ const App = () => {
           />
          )}
          {loadingMoreMessages && (
-          <div style={{
-           position: 'absolute',
-           top: '10px',
-           left: '50%',
-           transform: 'translateX(-50%)',
-           zIndex: 10,
-           pointerEvents: 'none'
-          }}>
-           <div className={styles.loadingSpinner} style={{
-            width: '20px',
-            height: '20px',
-            border: '2px solid var(--border)',
-            borderTop: '2px solid var(--button-primary)',
-            marginBottom: '0',
-            borderRadius: '50%'
-           }}></div>
-          </div>
+           <div {...stylex.props(splashStyles.paginationSpinnerWrapper)}>
+             <div {...stylex.props(splashStyles.paginationSpinner)} />
+           </div>
          )}
          {messages.length > 0 && (
           messages.map((message, index) => {
@@ -1475,7 +1372,7 @@ const App = () => {
                onOpenViewer={setShowMediaViewer}
               />
              ) : (
-              <div>{message.content}</div>
+              <div>{linkify(message.content)}</div>
              )}
             </Message>
            );
@@ -1534,22 +1431,27 @@ const App = () => {
            <span><span className="typingDots"><span>●</span><span>●</span><span>●</span></span> {activeContact.username} is typing...</span>
           </div>
          )}
+         <AttachmentPreview
+           pendingFiles={pendingFiles}
+           onCancel={handleCancelPendingFile}
+           onOpenViewer={setShowMediaViewer}
+         />
          <Reply
-          replyingTo={replyingTo}
-          onCancelReply={handleCancelReply}
-          activeContact={activeContact}
+           replyingTo={replyingTo}
+           onCancelReply={handleCancelReply}
+           activeContact={activeContact}
          />
          <form
           onSubmit={(e) => {
-           e.preventDefault();
-           if (!isOffline) sendMessage();
+            e.preventDefault();
+            handleSendWithAttachments(messageText, activeContact, pendingFiles, sendMessage, isOffline);
           }}
           {...stylex.props(inputStyles.messageInputContainer)}
          >
           <input
            type="file"
            ref={fileInputRef}
-           onChange={(e) => handleFileSelect(e.target.files)}
+            onChange={(e) => handleFileSelect(e.target.files, activeContact, fileInputRef)}
            style={{ display: "none" }}
            multiple
            accept="*/*"
@@ -1614,7 +1516,7 @@ const App = () => {
           <button
            type="submit"
            {...stylex.props(inputStyles.sendButton)}
-           disabled={!messageText.trim() || isOffline}
+           disabled={(!messageText.trim() && pendingFiles.length === 0) || isOffline}
           >
            <Icon name="send" alt="Send" draggable={false} style={{ width: '24px', height: '24px' }} />
           </button>
@@ -1898,6 +1800,7 @@ const App = () => {
    {showModerationCustomWarningForMessageModal && (
     <ModerationCustomWarningForMessageModal onClose={() => setShowModerationCustomWarningForMessageModal(false)} />
    )}
+   <LinkWarningModal />
   </>
  );
 };
