@@ -71,6 +71,7 @@ const ReactionBadge = ({
     <div {...stylex.props(styles.messageReactions)}>
      {activeReactions.map(([reactionType, data]) => {
       const reaction = REACTIONS.find((r) => r.type === reactionType);
+      const displayEmoji = reaction?.emoji ?? reactionType;
       const userReacted = data.users.includes(currentUserId);
 
       return (
@@ -86,7 +87,7 @@ const ReactionBadge = ({
         <span
          {...stylex.props(styles.reactionIcon, iconStyleByType[reactionType])}
         >
-         {reaction?.emoji}
+         {displayEmoji}
         </span>
         <span {...stylex.props(styles.reactionCount)}>{data.count}</span>
        </div>

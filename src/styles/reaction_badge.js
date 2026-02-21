@@ -14,7 +14,7 @@ export const ReactionBadgeStyles = stylex.create({
   backgroundColor: "var(--bg-secondary)",
   borderWidth: 1,
   borderStyle: "solid",
-  borderColor: "var(--border)",
+  borderColor: "rgba(0, 0, 0, 0.15)",
   borderRadius: 12,
   boxShadow: "0 10px 28px rgba(0, 0, 0, 0.18)",
   padding: 8,
@@ -179,54 +179,43 @@ export const ReactionBadgeStyles = stylex.create({
   display: "inline-flex",
   alignItems: "center",
   columnGap: 6,
-  paddingTop: 4,
+  paddingTop: 5,
   paddingRight: 10,
-  paddingBottom: 4,
+  paddingBottom: 5,
   paddingLeft: 10,
-  backgroundColor: "var(--bg-tertiary)",
+  backgroundColor: "var(--bg-secondary)",
   borderWidth: 1,
   borderStyle: "solid",
-  borderColor: "rgba(0, 0, 0, 0.12)",
-  borderRadius: 8,
-  fontSize: 12,
+  borderColor: "var(--border)",
+  borderRadius: 6,
+  fontSize: 13,
   cursor: "pointer",
-  minHeight: 24,
-  transitionProperty: "transform, background-color, border-color",
-  transitionDuration: "0.14s",
+  minHeight: 28,
+  transitionProperty: "background-color, border-color",
+  transitionDuration: "0.1s",
   transitionTimingFunction: "ease",
 
   ":hover": {
-   backgroundColor: "var(--bg-secondary)",
-   transform: "translateY(-1px)",
-   borderColor: "rgba(0, 0, 0, 0.18)",
-  },
-
-  ":global([data-theme='dark']) &": {
-   borderColor: "rgba(255, 255, 255, 0.14)",
+   backgroundColor: "var(--border)",
+   borderColor: "var(--text-muted)",
   },
 
   "@media (max-width: 768px)": {
-   paddingTop: 4,
+   paddingTop: 5,
    paddingRight: 10,
-   paddingBottom: 4,
+   paddingBottom: 5,
    paddingLeft: 10,
-   borderRadius: 8,
-   borderWidth: 1,
+   borderRadius: 6,
   },
  },
 
  reactionDisplayUserReacted: {
-  backgroundColor: "rgba(245, 158, 11, 0.18)",
-  borderColor: "rgba(245, 158, 11, 0.55)",
+  backgroundColor: "rgba(255, 152, 0, 0.2) !important",
+  borderColor: "rgba(255, 152, 0, 0.7) !important",
 
   ":hover": {
-   backgroundColor: "rgba(245, 158, 11, 0.24)",
-   borderColor: "rgba(245, 158, 11, 0.65)",
-  },
-
-  ":global([data-theme='dark']) &": {
-   backgroundColor: "rgba(245, 158, 11, 0.22)",
-   borderColor: "rgba(245, 158, 11, 0.7)",
+   backgroundColor: "rgba(255, 152, 0, 0.3) !important",
+   borderColor: "rgba(255, 152, 0, 0.85) !important",
   },
  },
 
@@ -247,11 +236,11 @@ export const ReactionBadgeStyles = stylex.create({
  },
 
  reactionCount: {
-  fontWeight: 600,
+  fontWeight: 500,
   fontSize: 11,
   minWidth: 10,
   textAlign: "center",
-  color: "var(--text-primary)",
+  color: "var(--text-secondary)",
  },
 
  reactionPopupOverlay: {

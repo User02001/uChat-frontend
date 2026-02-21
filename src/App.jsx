@@ -17,7 +17,6 @@ import linkify from "./hooks/linkify.jsx";
 import GifsPickerModal from "./components/GifsPickerModal";
 import QuickProfileModal from "./components/QuickProfileModal";
 import MessageActionsSheet from "./components/MessageActionsSheet";
-import styles from "./index.module.css";
 import MediaViewer from "./components/media_viewer/MediaViewer";
 import VideoPlayer from "./components/media_viewer/VideoPlayer";
 import Message from "./components/Message";
@@ -135,6 +134,9 @@ const App = () => {
   typingTimeoutRef,
   reconnectTimeoutRef,
   fileInputRef,
+  inputRef,
+  twemojiParsingRef,
+  inputCallbackRef,
   activeContactRef,
   userRef,
   contactsRef,
@@ -239,6 +241,13 @@ const App = () => {
 
  const handleDragEnd = () => {
   setIsDragging(false);
+ };
+
+ const isEmojiOnly = (text) => {
+  if (!text) return false;
+  const emojiRegex = /^[\p{Emoji}\s]+$/u;
+  const emojiMatches = [...(text.match(/\p{Emoji}/gu) || [])];
+  return emojiRegex.test(text) && emojiMatches.length <= 4;
  };
 
  useEffect(() => {
@@ -409,9 +418,9 @@ const App = () => {
 
    if (isInView) {
     const targetElement =
-     messageElement.querySelector(`.${styles.messageBubble}`) ||
-     messageElement.querySelector(`.${styles.deletedMessage}`) ||
-     messageElement.querySelector(`.${styles.messageContent}`);
+     messageElement.querySelector(`.messageBubble`) ||
+     messageElement.querySelector(`.deletedMessage`) ||
+     messageElement.querySelector(`.messageContent`);
 
     if (targetElement) {
      targetElement.classList.add('message-highlighted');
@@ -430,9 +439,9 @@ const App = () => {
      clearTimeout(scrollTimeout);
      scrollTimeout = setTimeout(() => {
       const targetElement =
-       messageElement.querySelector(`.${styles.messageBubble}`) ||
-       messageElement.querySelector(`.${styles.deletedMessage}`) ||
-       messageElement.querySelector(`.${styles.messageContent}`);
+       messageElement.querySelector(`.messageBubble`) ||
+       messageElement.querySelector(`.deletedMessage`) ||
+       messageElement.querySelector(`.messageContent`);
 
       if (targetElement) {
        targetElement.classList.add('message-highlighted');
@@ -644,8 +653,8 @@ const App = () => {
   <>
    {loading && (
     <div
-     className={styles.appLoading}
-     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999999, pointerEvents: 'all' }}
+     className="appLoading"
+     style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999999, pointerEvents: 'all', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}
     >
      <div ref={splashRef} {...stylex.props(splashStyles.loadingSpinner)} />
      <div {...stylex.props(splashStyles.splashBranding)}>
@@ -675,10 +684,10 @@ const App = () => {
    )}
 
    <div
-    className={`${styles.appContainer} ${isMobile && showMobileChat ? "mobile-chat-open" : ""} ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
+    className={`appContainer ${isMobile && showMobileChat ? "mobile-chat-open" : ""} ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
    >
     <div
-     className={`${styles.appContent} ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
+     className={`appContent ${showModalForUnverifiedUsers ? "with-banner" : ""}`}
     >
      <Sidebar
       showMobileChat={showMobileChat}
@@ -701,10 +710,10 @@ const App = () => {
        loading={requestsLoading}
       />
      ) : (
-      <div className={styles.sidebar}>
-       <div className={styles.sidebarHeader}>
-        <div className={styles.userProfile}>
-         <div className={styles.contactAvatarContainer}>
+      <div className="sidebar">
+       <div className="sidebarHeader">
+        <div className="userProfile">
+         <div className="contactAvatarContainer">
           <img
            src={
             user?.avatar_url
@@ -712,7 +721,7 @@ const App = () => {
              : "/resources/default_avatar.png"
            }
            alt="Profile"
-           className={styles.profileAvatar}
+           className="profileAvatar"
            onClick={() => setShowQuickProfileModal(user)}
            style={{ cursor: 'pointer' }}
            draggable="false"
@@ -723,14 +732,14 @@ const App = () => {
             userStatuses[user?.id] === 'away' ? 'away' : 'online'
            }`}></div>
          </div>
-         <div className={styles.userInfo}>
-          <span className={styles.username}>
+         <div className="userInfo">
+          <span className="username">
            {user?.username}
           </span>
-          <span className={styles.handle}>@{user?.handle}</span>
+          <span className="handle">@{user?.handle}</span>
          </div>
          <button
-          className={styles.userMenuBtn}
+          className="userMenuBtn"
           onClick={(e) => {
            e.stopPropagation();
            setShowUserMenu(!showUserMenu);
@@ -739,7 +748,7 @@ const App = () => {
           <i className="fas fa-chevron-down"></i>
          </button>
          {showUserMenu && (
-          <div className={styles.userMenu}>
+          <div className="userMenu">
            <button onClick={() => {
             setShowQuickProfileModal(user);
             setShowUserMenu(false);
@@ -774,8 +783,8 @@ const App = () => {
          )}
         </div>
 
-        <div className={styles.searchSection}>
-         <div className={styles.searchInputContainer}>
+        <div className="searchSection">
+         <div className="searchInputContainer">
           <input
            type="text"
            placeholder="Search for people..."
@@ -806,9 +815,9 @@ const App = () => {
          </div>
 
          {showSearch && searchResults.length > 0 && (
-          <div className={styles.searchResults}>
+          <div className="searchResults">
            {searchResults.map((result) => (
-            <div key={result.id} className={styles.searchResult}>
+            <div key={result.id} className="searchResult">
              <img
               src={
                result.avatar_url
@@ -816,13 +825,13 @@ const App = () => {
                 : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
               }
               alt={result.username}
-              className={styles.searchAvatar}
+              className="searchAvatar"
              />
-             <div className={styles.searchUserInfo}>
-              <span className={styles.searchUsername}>
+             <div className="searchUserInfo">
+              <span className="searchUsername">
                {result.username}
               </span>
-              <span className={styles.searchHandle}>
+              <span className="searchHandle">
                @{result.handle}
               </span>
              </div>
@@ -844,26 +853,26 @@ const App = () => {
         </div>
        </div>
 
-       <div className={styles.mobileHeader}>
-        <div className={styles.mobileLogo}>
+       <div className="mobileHeader">
+        <div className="mobileLogo">
          <Icon
           name="main-logo"
           draggable="false"
           alt="uChat Logo"
-          className={styles.mobileLogoIcon}
+          className="mobileLogoIcon"
          />
-         <span className={styles.mobileLogoText}>uChat</span>
+         <span className="mobileLogoText">uChat</span>
         </div>
-        <div className={styles.mobileHeaderActions}>
+        <div className="mobileHeaderActions">
          <button
-          className={styles.userMenuBtn}
+          className="userMenuBtn"
           onClick={(e) => {
            e.stopPropagation();
            setShowUserMenu(!showUserMenu);
           }}
           style={{ background: 'transparent', border: 'none', padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
          >
-          <div className={styles.contactAvatarContainer}>
+          <div className="contactAvatarContainer">
            <img
             src={
              user?.avatar_url
@@ -872,7 +881,7 @@ const App = () => {
             }
             alt="Profile"
             draggable="false"
-            className={styles.mobileAvatar}
+            className="mobileAvatar"
            />
            <div className={`status-indicator ${user?.forced_status === 'offline' ? 'offline' :
             user?.forced_status === 'away' ? 'away' :
@@ -883,7 +892,7 @@ const App = () => {
          </button>
         </div>
         {showUserMenu && (
-         <div className={`${styles.userMenu} ${styles.mobileUserMenu}`}>
+         <div className="userMenu mobileUserMenu">
           <button onClick={() => {
            setShowQuickProfileModal(user);
            setShowUserMenu(false);
@@ -921,7 +930,7 @@ const App = () => {
         )}
        </div>
 
-       <div className={styles.mobileSearchTrigger}>
+       <div className="mobileSearchTrigger">
         <button
          type="button"
          onClick={(e) => {
@@ -950,29 +959,29 @@ const App = () => {
 
        {showMobileSearch && (
         <div
-         className={`${styles.mobileSearchOverlay} ${searchExiting ? "exiting" : "entering"}`}
+         className={`mobileSearchOverlay ${searchExiting ? "exiting" : "entering"}`}
         >
-         <div className={styles.mobileSearchHeader}>
+         <div className="mobileSearchHeader">
           <button
-           className={styles.mobileSearchBack}
+           className="mobileSearchBack"
            onClick={closeMobileSearch}
           ></button>
-          <div className={styles.searchInputContainer}>
+          <div className="searchInputContainer">
            <input
             type="text"
             placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.mobileSearchInput}
+            className="mobileSearchInput"
             autoFocus
            />
           </div>
          </div>
-         <div className={styles.mobileSearchContent}>
+         <div className="mobileSearchContent"> 
           {searchResults.length > 0 ? (
-           <div className={styles.searchResults}>
+           <div className="searchResults">
             {searchResults.map((result) => (
-             <div key={result.id} className={styles.searchResult}>
+             <div key={result.id} className="searchResult">
               <img
                draggable="false"
                src={
@@ -981,13 +990,13 @@ const App = () => {
                  : `${CDN_BASE_URL}/api/avatars?user=${btoa(`avatar_${result.id}_${result.handle}`)}`
                }
                alt={result.username}
-               className={styles.searchAvatar}
+               className="searchAvatar"
               />
-              <div className={styles.searchUserInfo}>
-               <span className={styles.searchUsername}>
+              <div className="searchUserInfo">
+               <span className="searchUsername">
                 {result.username}
                </span>
-               <span className={styles.searchHandle}>
+               <span className="searchHandle">
                 @{result.handle}
                </span>
               </div>
@@ -1006,11 +1015,11 @@ const App = () => {
             ))}
            </div>
           ) : searchQuery.trim() ? (
-           <div className={styles.noSearchResults}>
+           <div className="noSearchResults">
             <p>No users found</p>
            </div>
           ) : (
-           <div className={styles.searchPlaceholder}>
+           <div className="searchPlaceholder">
             <p>Start typing to search for users...</p>
            </div>
           )}
@@ -1018,7 +1027,7 @@ const App = () => {
         </div>
        )}
 
-       <div className={styles.contactsList}>
+       <div className="contactsList">
         {contactsLoading ? (
          <div style={{
           display: 'flex',
@@ -1027,10 +1036,10 @@ const App = () => {
           height: '100%',
           color: 'var(--text-secondary)'
          }}>
-          <div className={styles.loadingSpinner}></div>
+          <div className="loadingSpinner"></div>
          </div>
         ) : contacts.length === 0 ? (
-         <div className={styles.emptyContacts}>
+         <div className="emptyContacts">
           <p>No contacts yet</p>
           <p>Search for users to start chatting</p>
          </div>
@@ -1038,10 +1047,10 @@ const App = () => {
          contacts.map((contact) => (
           <div
            key={contact.id}
-           className={`${styles.contactItem} ${activeContact?.id === contact.id ? styles.contactItemActive : ""}`}
+           className={`contactItem ${activeContact?.id === contact.id ? "contactItemActive" : ""}`}
            onClick={() => selectContact(contact)}
           >
-           <div className={styles.contactAvatarContainer}>
+           <div className="contactAvatarContainer">
             <img
              src={
               contact.avatar_url
@@ -1060,7 +1069,7 @@ const App = () => {
                 ? "default"
                 : "pointer"
              }}
-             className={styles.contactAvatar}
+             className="contactAvatar"
              draggable="false"
              title={
               contact.pending_request && contact.request_status === "pending_outgoing"
@@ -1074,9 +1083,9 @@ const App = () => {
               }`}
             ></div>
            </div>
-           <div className={styles.contactInfo}>
-            <div className={styles.contactMain}>
-             <span className={styles.contactName}>
+           <div className="contactInfo">
+            <div className="contactMain">
+             <span className="contactName">
               {contact.username}
               {contact.pending_request && contact.request_status === 'pending_outgoing' && (
                <span {...stylex.props(chatStyles.pendingPill)}>
@@ -1087,7 +1096,7 @@ const App = () => {
                <Icon
                 name="unverified"
                 alt="Unverified"
-                className={styles.unverifiedIcon}
+                className="unverifiedIcon"
                 onClick={(e) => {
                  e.stopPropagation();
                  setShowUnverifiedUserWarningModal(contact.username);
@@ -1096,13 +1105,13 @@ const App = () => {
                />
               )}
              </span>
-             <span className={styles.contactTime}>
+             <span className="contactTime">
               {formatContactTime(contact.lastMessageTime, isMobile)}
              </span>
             </div>
             <span
-             className={`${styles.contactPreview} ${contact.unread && activeContact?.id !== contact.id
-              ? styles.contactPreviewUnread
+             className={`contactPreview ${contact.unread && activeContact?.id !== contact.id
+              ? "contactPreviewUnread"
               : ""
               }`}
             >
@@ -1124,7 +1133,7 @@ const App = () => {
        </div>
       </div>
      )}
-     <div className={styles.chatContainer}>
+     <div className="chatContainer">
       {showRequestsView && activeRequest ? (
        <MessageRequestChatView
         request={activeRequest}
@@ -1140,11 +1149,11 @@ const App = () => {
         >
          {isMobile && (
           <button
-           className={styles.mobileBackBtn}
+           className="mobileBackBtn"
            onClick={handleBackToContacts}
           ></button>
          )}
-         <div className={styles.contactAvatarContainer}>
+         <div className="contactAvatarContainer">
           <img
            draggable="false"
            src={
@@ -1269,7 +1278,8 @@ const App = () => {
         </div>
 
         <div
-         {...stylex.props(chatStyles.messagesContainer, isLoadingMessages === true && messages.length === 0 && styles.messagesContainerHidden)}
+         {...stylex.props(chatStyles.messagesContainer)}
+         style={isLoadingMessages === true && messages.length === 0 ? { opacity: 0 } : (isLoadingMessages === false && messages.length === 0 ? { visibility: 'visible', opacity: 1 } : undefined)}
          ref={messagesContainerRef}
          onScroll={handleScroll}
          style={isLoadingMessages === false && messages.length === 0 ? { visibility: 'visible', opacity: 1 } : undefined}
@@ -1282,7 +1292,7 @@ const App = () => {
            height: '100%',
            color: 'var(--text-secondary)'
           }}>
-           <div className={styles.loadingSpinner}></div>
+           <div className="loadingSpinner"></div>
           </div>
          )}
          {((isLoadingMessages === false && messages.length === 0) || (!hasMoreMessages && messages.length > 0 && !loadingMoreMessages)) && (
@@ -1330,18 +1340,14 @@ const App = () => {
              onReport={handleReportMessage}
              allMessages={messages}
             >
-             {message.deleted ? (
-              <div style={{
-               fontStyle: 'italic',
-               color: 'var(--text-muted)',
-               padding: '8px 0'
-              }}>
-               <em>
-                {message.sender_id === user.id
-                 ? "You have deleted this message."
-                 : "This message has been deleted."}
-               </em>
-              </div>
+            {message.deleted ? (
+             <div {...stylex.props(chatStyles.deletedMessage)}>
+              <em>
+               {message.sender_id === user.id
+                ? "You have deleted this message."
+                : "This message has been deleted."}
+              </em>
+             </div>
              ) : message.message_type === "image" ? (
               <ImageMessage
                message={message}
@@ -1372,7 +1378,7 @@ const App = () => {
                onOpenViewer={setShowMediaViewer}
               />
              ) : (
-              <div>{linkify(message.content)}</div>
+              <div style={isEmojiOnly(message.content) ? { fontSize: '36px', lineHeight: 1.2 } : {}}>{linkify(message.content)}</div>
              )}
             </Message>
            );
@@ -1421,7 +1427,9 @@ const App = () => {
         </div>
 
         <div
-         {...stylex.props(inputStyles.messageInputArea, dragOver && styles.dragOver)}
+         {...stylex.props(inputStyles.messageInputArea)}
+         data-skip-twemoji
+         style={dragOver ? { backgroundColor: 'rgba(var(--primary-rgb), 0.1)', border: '2px dashed var(--button-primary)', borderRadius: '8px', padding: '4px' } : undefined}
          onDragOver={handleDragOver}
          onDragLeave={handleDragLeave}
          onDrop={handleDrop}
@@ -1490,12 +1498,18 @@ const App = () => {
             </button>
            </>
           )}
-          <input
-           type="text"
-           value={messageText}
-           onChange={handleMessageInputChange}
-           onPaste={handlePaste}
-           placeholder={
+          <div
+            ref={inputRef}
+            contentEditable={isOffline ? "false" : "true"}
+            onPaste={handlePaste}
+            onKeyDown={(e) => {
+             if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendWithAttachments(messageText, activeContact, pendingFiles, sendMessage, isOffline);
+             }
+            }}
+            onInput={handleMessageInputChange}
+           data-placeholder={
             isOffline
              ? "You're offline - can't send messages"
              : !!(activeContact?.pending_request && activeContact?.request_status === "pending_outgoing")
@@ -1503,15 +1517,10 @@ const App = () => {
               : "What u thinkin?"
            }
            {...stylex.props(inputStyles.messageInput)}
-           autoComplete="off"
-           autoCapitalize="sentences"
-           autoCorrect="on"
-           spellCheck="true"
            data-form-type="other"
-           disabled={isOffline}
-           style={
-            isOffline ? { cursor: "not-allowed", opacity: 0.5 } : {}
-           }
+           data-twemoji-input
+           suppressContentEditableWarning
+           style={isOffline ? { cursor: "not-allowed", opacity: 0.5 } : {}}
           />
           <button
            type="submit"
@@ -1538,7 +1547,7 @@ const App = () => {
        !callState.isActive &&
        (error.toLowerCase().includes("call connection failed") ||
         error.toLowerCase().includes("connection failed")))) && (
-       <div className={styles.errorToast}>{error}</div>
+       <div className="errorToast">{error}</div>
       )}
 
      {callState.isIncoming && (

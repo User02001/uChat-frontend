@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import { API_BASE_URL, CDN_BASE_URL, SOCKET_URL } from "../config";
 import { generateDeviceFingerprint } from "../utils/deviceFingerprint";
+import "../utils/secureApiFetch";
 
 export const useAppLogic = () => {
  const navigate = useNavigate();
@@ -12,6 +13,7 @@ export const useAppLogic = () => {
  const typingTimeoutRef = useRef(null);
  const reconnectTimeoutRef = useRef(null);
  const fileInputRef = useRef(null);
+ const inputRef = useRef(null);
 
  // State definitions
  const [user, setUser] = useState(null);
@@ -803,6 +805,7 @@ export const useAppLogic = () => {
     setHasMoreMessages(true);
     setMessageText("");
     setReplyingTo(null);
+    if (inputRef.current) inputRef.current.innerText = "";
 
     if (isMobile) {
      setActiveContact(null);
@@ -894,7 +897,6 @@ export const useAppLogic = () => {
 
   if (socket && messageText.trim() && activeContact) {
    const trimmed = messageText.trim();
-   const nowIso = new Date().toISOString();
 
    socket.emit("send_message", {
     receiver_id: activeContact.id,
@@ -904,6 +906,9 @@ export const useAppLogic = () => {
 
    setReplyingTo(null);
    setMessageText("");
+   if (inputRef.current) {
+    inputRef.current.innerText = "";
+   }
   }
  }, [socketRef, activeContact, messageText, replyingTo]);
 
@@ -913,7 +918,7 @@ export const useAppLogic = () => {
 
  const handleMessageInputChange = useCallback(
   (e) => {
-   const newValue = e.target.value;
+   const newValue = e.currentTarget.innerText;
    setMessageText(newValue);
 
    if (!activeContact || !socketRef.current || !socketRef.current.connected) return;
@@ -1686,6 +1691,7 @@ export const useAppLogic = () => {
   typingTimeoutRef,
   reconnectTimeoutRef,
   fileInputRef,
+  inputRef,
   activeContactRef,
   userRef,
   contactsRef,

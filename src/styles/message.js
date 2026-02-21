@@ -9,6 +9,7 @@ export const styles = stylex.create({
   gap: '12px',
   padding: '1px 16px',
   transition: 'background-color 0.1s ease',
+  overflow: 'visible',
 
   ':hover': {
    background: 'var(--bg-tertiary)',
@@ -78,6 +79,7 @@ export const styles = stylex.create({
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
+  overflow: 'visible',
  },
 
  // Message Header
@@ -143,6 +145,7 @@ export const styles = stylex.create({
   pointerEvents: 'none',
   transition: 'opacity 0.15s ease',
   zIndex: 1000,
+  overflow: 'visible',
 
   '@media (max-width: 768px)': {
    right: 'auto',

@@ -4,17 +4,14 @@ const fadeIn = stylex.keyframes({
  from: { opacity: 0 },
  to: { opacity: 1 },
 });
-
 const fadeOut = stylex.keyframes({
  from: { opacity: 1 },
  to: { opacity: 0 },
 });
-
 const slideUp = stylex.keyframes({
  from: { transform: "translateY(100%)" },
  to: { transform: "translateY(0)" },
 });
-
 const slideDown = stylex.keyframes({
  from: { transform: "translateY(0)" },
  to: { transform: "translateY(100%)" },
@@ -55,9 +52,9 @@ export const MessageActionsSheetStyles = stylex.create({
   borderBottomLeftRadius: 0,
   borderBottomRightRadius: 0,
   paddingTop: 0,
-  paddingRight: 20,
+  paddingRight: 16,
   paddingBottom: 32,
-  paddingLeft: 20,
+  paddingLeft: 16,
   zIndex: 9999,
   boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.15)",
   animationName: slideUp,
@@ -92,18 +89,15 @@ export const MessageActionsSheetStyles = stylex.create({
   userSelect: "none",
   marginTop: 0,
   marginBottom: 0,
-  marginLeft: -20,
-  marginRight: -20,
-  width: "calc(100% + 40px)",
+  marginLeft: -16,
+  marginRight: -16,
+  width: "calc(100% + 32px)",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
   touchAction: "none",
   WebkitTouchCallout: "none",
-
-  ":active": {
-   cursor: "grabbing",
-  },
+  ":active": { cursor: "grabbing" },
  },
 
  handle: {
@@ -114,66 +108,85 @@ export const MessageActionsSheetStyles = stylex.create({
   opacity: 0.6,
  },
 
+ // ── Reactions ──────────────────────────────────────────────────────────────
+
  reactionsSection: {
+  // Scrollable single row — no wrapping, no squeezing
   display: "flex",
-  justifyContent: "center",
   alignItems: "center",
-  columnGap: "clamp(4px, 1.5vw, 10px)",
-  paddingTop: 12,
-  paddingBottom: 12,
+  overflowX: "auto",
+  overflowY: "hidden",
+  scrollbarWidth: "none",
+  gap: 6,
+  paddingTop: 4,
+  paddingBottom: 16,
+  paddingLeft: 2,
+  paddingRight: 2,
+  marginBottom: 12,
   borderBottomWidth: 1,
   borderBottomStyle: "solid",
   borderBottomColor: "var(--border)",
-  marginBottom: 12,
-
-  "@media (max-width: 360px)": {
-   columnGap: "clamp(3px, 1vw, 8px)",
-  },
+  // hide webkit scrollbar
+  "::-webkit-scrollbar": { display: "none" },
  },
 
  reactionButton: {
-  width: "clamp(38px, 11vw, 48px)",
-  height: "clamp(38px, 11vw, 48px)",
-  minWidth: 38,
-  minHeight: 38,
+  flexShrink: 0,
+  width: 52,
+  height: 52,
   borderWidth: 2,
   borderStyle: "solid",
-  borderColor: "rgba(0, 0, 0, 0.1)",
+  borderColor: "transparent",
   backgroundColor: "var(--bg-tertiary)",
   borderRadius: "50%",
-  fontSize: "clamp(18px, 5vw, 24px)",
+  fontSize: 26,
   cursor: "pointer",
-  transitionProperty: "all",
+  transitionProperty: "transform, background-color, border-color",
   transitionDuration: "0.15s",
   transitionTimingFunction: "ease",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  flexShrink: 0,
-
   ":active": {
-   transform: "scale(1.15)",
+   transform: "scale(1.2)",
    backgroundColor: "var(--border)",
-  },
-
-  "@media (max-width: 360px)": {
-   width: "clamp(34px, 10vw, 44px)",
-   height: "clamp(34px, 10vw, 44px)",
-   minWidth: 34,
-   minHeight: 34,
-   fontSize: "clamp(16px, 4.5vw, 22px)",
   },
  },
 
  reactionActive: {
   borderColor: "var(--button-primary)",
-  backgroundColor: "rgba(255, 152, 0, 0.1)",
-  transform: "scale(1.05)",
+  backgroundColor: "rgba(255, 152, 0, 0.12)",
+  transform: "scale(1.08)",
+  ":active": { transform: "scale(1.2)" },
+ },
 
+ // The "+" more-reactions button — styled consistently with reactionButton
+ // but uses an icon instead of an emoji
+ moreReactionsBtn: {
+  flexShrink: 0,
+  width: 52,
+  height: 52,
+  borderWidth: 2,
+  borderStyle: "solid",
+  borderColor: "var(--border)",
+  backgroundColor: "var(--bg-tertiary)",
+  borderRadius: "50%",
+  cursor: "pointer",
+  transitionProperty: "transform, background-color",
+  transitionDuration: "0.15s",
+  transitionTimingFunction: "ease",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "var(--text-secondary)",
+  fontSize: 16,
   ":active": {
    transform: "scale(1.15)",
+   backgroundColor: "var(--border)",
   },
  },
+
+ // ── Actions ────────────────────────────────────────────────────────────────
 
  actionsSection: {
   display: "flex",
@@ -202,7 +215,6 @@ export const MessageActionsSheetStyles = stylex.create({
   transitionTimingFunction: "ease",
   width: "100%",
   textAlign: "left",
-
   ":active": {
    transform: "scale(0.98)",
    backgroundColor: "var(--border)",
@@ -219,10 +231,7 @@ export const MessageActionsSheetStyles = stylex.create({
 
  deleteAction: {
   color: "#ef4444",
-
-  ":active": {
-   backgroundColor: "rgba(239, 68, 68, 0.1)",
-  },
+  ":active": { backgroundColor: "rgba(239, 68, 68, 0.1)" },
  },
 
  deleteIcon: {

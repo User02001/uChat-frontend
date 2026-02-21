@@ -117,7 +117,6 @@ export const styles = stylex.create({
   backgroundColor: 'var(--bg-primary)',
   scrollBehavior: 'auto',
   WebkitOverflowScrolling: 'touch',
-  transform: 'translateZ(0)',
   willChange: 'scroll-position',
   overflowAnchor: 'none',
   position: 'relative',
@@ -253,6 +252,11 @@ export const styles = stylex.create({
  },
 
  deletedRequestMessage: {
+  fontStyle: 'italic',
+  color: 'var(--text-muted)',
+  padding: '8px 0',
+ },
+ deletedMessage: {
   fontStyle: 'italic',
   color: 'var(--text-muted)',
   padding: '8px 0',

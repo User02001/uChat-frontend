@@ -37,6 +37,7 @@ const Message = ({
  const longPressTimerRef = useRef(null);
  const [pressing, setPressing] = useState(false);
  const [isHovered, setIsHovered] = useState(false);
+ const [pickerOpen, setPickerOpen] = useState(false);
  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
 
  const handleTouchStart = (e) => {
@@ -92,8 +93,17 @@ const Message = ({
    onMouseEnter={() => {
     if (!disableActions) setIsHovered(true);
    }}
-   onMouseLeave={() => {
-    if (!disableActions) setIsHovered(false);
+   onMouseLeave={(e) => {
+    if (!disableActions) {
+     const related = e.relatedTarget;
+     if (pickerOpen) return;
+     if (related instanceof Node && e.currentTarget.contains(related)) return;
+     const picker = document.querySelector('[data-reaction-picker]');
+     if (picker && related instanceof Node && picker.contains(related)) return;
+     const popupRoot = document.querySelector('[data-reaction-popup-root]');
+     if (popupRoot && related instanceof Node && popupRoot.contains(related)) return;
+     setIsHovered(false);
+    }
    }}
    style={pressing ? { background: 'var(--bg-tertiary)' } : {}}
   >
@@ -201,6 +211,7 @@ const Message = ({
       onReport={onReport}
       message={message}
       isOwnMessage={message.sender_id === user.id}
+      onPickerToggle={(open) => { setPickerOpen(open); if (open) setIsHovered(true); }}
      />
     </div>
    )}
